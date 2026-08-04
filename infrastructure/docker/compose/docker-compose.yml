@@ -4,52 +4,69 @@ services:
     image: ollama/ollama:latest
     container_name: mx-ollama
     restart: unless-stopped
+
     ports:
       - "11434:11434"
-    volumes:
-      - ../../../data/ollama:/root/.ollama
+
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+
+    volumes:
+      - ollama_data:/root/.ollama
 
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: mx-open-webui
     restart: unless-stopped
+
     depends_on:
       - ollama
+
     ports:
       - "3000:8080"
+
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+
     volumes:
       - ../../../data/open-webui:/app/backend/data
-    environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
 
 
   postgres:
     image: postgres:16
     container_name: mx-postgres
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: mx
-      POSTGRES_USER: mx
-      POSTGRES_PASSWORD: mx_dev_password
-    volumes:
-      - ../../../data/postgres:/var/lib/postgresql/data
+
+    env_file:
+      - ../env/.env
+
     ports:
       - "5432:5432"
+
+    volumes:
+      - ../../../data/postgres:/var/lib/postgresql/data
 
 
   redis:
     image: redis:7
     container_name: mx-redis
     restart: unless-stopped
-    volumes:
-      - ../../../data/redis:/data
+
     ports:
       - "6379:6379"
 
+    volumes:
+      - ../../../data/redis:/data
 
+
+
+volumes:
+
+  ollama_data:
