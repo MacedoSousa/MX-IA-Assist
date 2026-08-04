@@ -1,0 +1,18 @@
+services:
+
+  spring-init:
+    image: curlimages/curl
+    volumes:
+      - .:/app
+    command: >
+      curl https://start.spring.io/starter.zip
+      -d type=maven-project
+      -d language=java
+      -d javaVersion=21
+      -d bootVersion=3.5.0
+      -d groupId=com.macedxs
+      -d artifactId=mx-core
+      -d name=MX-Core
+      -d packageName=com.macedxs.mx
+      -d dependencies=web,data-jpa,data-redis,postgresql
+      -o /app/mx-core.zip
