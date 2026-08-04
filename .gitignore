@@ -1,0 +1,19 @@
+# Data
+data/
+
+# Models
+models/
+
+# Logs
+logs/
+
+# Secrets
+*.env
+!.env.example
+
+# Backups
+backups/
+
+# OS
+Thumbs.db
+.DS_Store
