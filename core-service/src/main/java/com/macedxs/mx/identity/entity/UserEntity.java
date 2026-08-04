@@ -9,32 +9,36 @@ import java.util.UUID;
 public class UserEntity {
 
     @Id
+    @GeneratedValue
     private UUID id;
 
+    @Column(nullable = false, length = 120)
     private String name;
 
+    @Column(nullable = false, unique = true, length = 255)
     private String email;
 
-    private String role;
-
-    @Column(name = "password_hash")
+    @Column(length = 255)
     private String passwordHash;
 
-    @Column(name = "is_active")
-    private Boolean active;
+    @Column(nullable = false, length = 50)
+    private String role = "user";
 
-    @Column(name = "last_login")
+    private Boolean isActive = true;
+
     private LocalDateTime lastLogin;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
 
     public UUID getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getEmail() {
@@ -43,5 +47,13 @@ public class UserEntity {
 
     public String getRole() {
         return role;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 }
