@@ -8,10 +8,14 @@ import {
 const DEFAULT_API_URL = "http://localhost:8080";
 
 function resolveDefaultApiUrl(): string {
-  if (typeof window !== "undefined" && window.location?.hostname) {
-    return `http://${window.location.hostname}:8080`;
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return "";
   }
   return DEFAULT_API_URL;
+}
+
+function configuredApiUrl(): string {
+  return process.env.EXPO_PUBLIC_MX_API_URL?.trim() || resolveDefaultApiUrl();
 }
 
 export type ChatMessage = {
@@ -121,7 +125,7 @@ export class MxApiClient {
   private readonly baseUrl: string;
   private refreshPromise: Promise<string | null> | null = null;
 
-  constructor(baseUrl = process.env.EXPO_PUBLIC_MX_API_URL ?? resolveDefaultApiUrl()) {
+  constructor(baseUrl = configuredApiUrl()) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
   }
 

@@ -99,7 +99,7 @@ services:
       context: ../../../clients/mx-app
       dockerfile: Dockerfile
       args:
-        EXPO_PUBLIC_MX_API_URL: ${EXPO_PUBLIC_MX_API_URL:-http://localhost:8080}
+        EXPO_PUBLIC_MX_API_URL: ${EXPO_PUBLIC_MX_API_URL:-}
     image: mx-web:latest
     container_name: mx-web
     restart: unless-stopped
