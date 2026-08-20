@@ -1,9 +1,9 @@
 # MX — Universo Local de Inteligência, Cuidado e Produtividade
 
-**Documentação técnica e portfólio profissional — Português (Brasil)**  
-**Autor:** Macedo Sousa  
-**Projeto:** `MacedoSousa/MX-IA-Assist`  
-**Data da evidência principal:** 20 de agosto de 2026  
+**Documentação técnica e portfólio profissional — Português (Brasil)**
+**Autor:** Macedo Sousa
+**Projeto:** `MacedoSousa/MX-IA-Assist`
+**Data da evidência principal:** 20 de agosto de 2026
 **Licença e acesso:** repositório privado, ambiente executado localmente no Windows
 
 > O MX é um assistente pessoal local, inspirado no conceito de “Jarvis”, cujo princípio arquitetural é manter o usuário conectado a um único núcleo inteligente. O MX Core interpreta a intenção, seleciona uma skill especialista, aplica políticas de segurança, coordena tools autorizadas e entrega uma resposta pelo canal central.

@@ -1,25 +1,25 @@
 ﻿
-Image                               Id           Size   Created      
------                               --           ----   -------      
-eclipse-temurin:21-jre              c8e00005c840 459MB  42 hours ago 
-eclipse-temurin:21-jdk              98155457fcdb 726MB  42 hours ago 
-maven:3.9-eclipse-temurin-21        c07f7ccfb8ca 811MB  2 weeks ago  
-eclipse-temurin:17-jre              e4f018a55645 464MB  2 weeks ago  
-node:22-alpine                      c610fcdfb1d5 232MB  3 weeks ago  
-auditoria-noc-noc-api:latest        2f87c5146f27 342MB  7 weeks ago  
-avpnusr/ts3audiobot:latest          058d245e3348 1.15GB 2 months ago 
-infra-frontend:latest               b6e107acd027 643MB  2 months ago 
-auditoria-noc-noc:latest            500953a45984 485MB  2 months ago 
-frontend-test:latest                809344925b93 845MB  2 months ago 
-infra-backend:latest                e6014a48cb52 764MB  2 months ago 
-alpine/socat:latest                 beb4a68d9e4f 15MB   2 months ago 
-node:22-bookworm                    103199348179 1.64GB 3 months ago 
-curlimages/curl:latest              b3f1fb2a51d9 35.2MB 3 months ago 
-node:20-bookworm                    8f693eaa7e0a 1.59GB 4 months ago 
-python:3.12-alpine                  236173eb7400 74.9MB 4 months ago 
-node:20-alpine                      fb4cd12c85ee 194MB  4 months ago 
-alpine:latest                       5b10f432ef3d 13.1MB 4 months ago 
+Image                               Id           Size   Created
+-----                               --           ----   -------
+eclipse-temurin:21-jre              c8e00005c840 459MB  42 hours ago
+eclipse-temurin:21-jdk              98155457fcdb 726MB  42 hours ago
+maven:3.9-eclipse-temurin-21        c07f7ccfb8ca 811MB  2 weeks ago
+eclipse-temurin:17-jre              e4f018a55645 464MB  2 weeks ago
+node:22-alpine                      c610fcdfb1d5 232MB  3 weeks ago
+auditoria-noc-noc-api:latest        2f87c5146f27 342MB  7 weeks ago
+avpnusr/ts3audiobot:latest          058d245e3348 1.15GB 2 months ago
+infra-frontend:latest               b6e107acd027 643MB  2 months ago
+auditoria-noc-noc:latest            500953a45984 485MB  2 months ago
+frontend-test:latest                809344925b93 845MB  2 months ago
+infra-backend:latest                e6014a48cb52 764MB  2 months ago
+alpine/socat:latest                 beb4a68d9e4f 15MB   2 months ago
+node:22-bookworm                    103199348179 1.64GB 3 months ago
+curlimages/curl:latest              b3f1fb2a51d9 35.2MB 3 months ago
+node:20-bookworm                    8f693eaa7e0a 1.59GB 4 months ago
+python:3.12-alpine                  236173eb7400 74.9MB 4 months ago
+node:20-alpine                      fb4cd12c85ee 194MB  4 months ago
+alpine:latest                       5b10f432ef3d 13.1MB 4 months ago
 nvidia/cuda:12.8.0-base-ubuntu22.04 12242992c121 402MB  19 months ago
-gcr.io/cadvisor/cadvisor:v0.49.1    3cde6faf0791 115MB  2 years ago  
+gcr.io/cadvisor/cadvisor:v0.49.1    3cde6faf0791 115MB  2 years ago
 
 

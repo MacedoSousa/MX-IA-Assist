@@ -44,7 +44,7 @@ public class GeneralSkill implements Skill {
     public SkillDefinition definition() {
         return new SkillDefinition(
                 "general",
-                "1.1.0",
+                "1.0.0",
                 "Conversação geral e esclarecimento de solicitações",
                 Set.of(),
                 Set.of(),

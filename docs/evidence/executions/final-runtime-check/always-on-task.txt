@@ -1,3 +1,4 @@
+﻿
 TaskName                 State
 --------                 -----
 MX-AI-Assistant-AlwaysOn Ready

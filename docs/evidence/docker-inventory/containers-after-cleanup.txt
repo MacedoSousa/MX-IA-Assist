@@ -8,9 +8,9 @@ medsync-mysql-1              mysql:8.4                              Up 2 hours (
 mx-postgres                  postgres:16                            Up 2 hours (healthy)       0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
 mx-ollama                    ollama/ollama:latest                   Up 2 hours                 0.0.0.0:11434->11434/tcp, [::]:11434->11434/tcp
 deceasedcraft-server         deceasedcraft_docker_ready-minecraft   Up 14 hours                0.0.0.0:25565->25565/tcp, [::]:25565->25565/tcp
-core-service-spring-init-1   curlimages/curl                        Exited (0) 2 weeks ago     
+core-service-spring-init-1   curlimages/curl                        Exited (0) 2 weeks ago
 mx-open-webui                ghcr.io/open-webui/open-webui:main     Up 2 hours (healthy)       0.0.0.0:3000->8080/tcp, [::]:3000->8080/tcp
-minecraft                    itzg/minecraft-server:latest           Exited (137) 12 days ago   
-ts3-sinusbot                 drwarpman/sinusbot-docker:latest       Exited (137) 2 weeks ago   
-ts3-server                   teamspeak:latest                       Exited (0) 2 weeks ago     
-carpg-server                 eclipse-temurin:17-jdk                 Exited (137) 7 weeks ago   
+minecraft                    itzg/minecraft-server:latest           Exited (137) 12 days ago
+ts3-sinusbot                 drwarpman/sinusbot-docker:latest       Exited (137) 2 weeks ago
+ts3-server                   teamspeak:latest                       Exited (0) 2 weeks ago
+carpg-server                 eclipse-temurin:17-jdk                 Exited (137) 7 weeks ago

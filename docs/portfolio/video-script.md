@@ -6,8 +6,8 @@ A 60-second professional product pitch with a dark graphite background, electric
 
 ## Storyboard — Portuguese narration
 
-**Target duration:** 55–70 seconds.  
-**Format:** 16:9 for portfolio and LinkedIn; the same assets can be adapted to 9:16 later.  
+**Target duration:** 55–70 seconds.
+**Format:** 16:9 for portfolio and LinkedIn; the same assets can be adapted to 9:16 later.
 **Audio:** Brazilian Portuguese documentary-style narration, calm and confident, with restrained electronic ambience.
 
 | Time | Visual | On-screen text | Narration |

@@ -1,9 +1,9 @@
 # MX — Local Universe of Intelligence, Care and Productivity
 
-**Technical documentation and professional portfolio — English**  
-**Author:** Macedo Sousa  
-**Project:** `MacedoSousa/MX-IA-Assist`  
-**Evidence date:** August 20, 2026  
+**Technical documentation and professional portfolio — English**
+**Author:** Macedo Sousa
+**Project:** `MacedoSousa/MX-IA-Assist`
+**Evidence date:** August 20, 2026
 **License and access:** private repository, executed locally on Windows
 
 > MX is a local personal assistant inspired by the “Jarvis” concept. Its architectural principle is that the user communicates with one intelligent core. MX Core interprets intent, selects an expert skill, applies security policies, coordinates authorized tools and returns the result through the central channel.

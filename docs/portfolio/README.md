@@ -26,5 +26,5 @@ cd D:\MX
 .\start.bat
 ```
 
-Local web interface: `http://localhost:8082`  
+Local web interface: `http://localhost:8082`
 LAN access: `http://<COMPUTER-LAN-IP>:8082`
