@@ -31,7 +31,12 @@ public class ChatV1Controller {
         UserEntity user = currentUser();
 
         SendMessageResult result = sendMessageUseCase.execute(
-                new SendMessageCommand(user.getId(), request.conversationId(), request.prompt())
+                new SendMessageCommand(
+                        user.getId(),
+                        request.conversationId(),
+                        request.prompt(),
+                        request.idempotencyKey()
+                )
         );
 
         return ResponseEntity.ok(ChatV1ResponseMapper.completed(result));

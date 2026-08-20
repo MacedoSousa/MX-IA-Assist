@@ -10,9 +10,11 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OllamaServiceTest {
 
@@ -45,6 +47,34 @@ class OllamaServiceTest {
 
             assertThat(chunks).containsExactly("Oi ", "mundo");
             assertThat(reply).isEqualTo("Oi mundo");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void shouldFailWhenOllamaDoesNotRespondBeforeTheConfiguredTimeout() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/api/generate", exchange -> {
+            try {
+                Thread.sleep(300);
+                byte[] response = "{\"response\":\"late\"}".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, response.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response);
+                }
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        server.start();
+
+        try {
+            String url = "http://localhost:" + server.getAddress().getPort();
+
+            assertThatThrownBy(() -> new OllamaService(url, Duration.ofMillis(50)).generateText("hello"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("Failed to reach Ollama");
         } finally {
             server.stop(0);
         }

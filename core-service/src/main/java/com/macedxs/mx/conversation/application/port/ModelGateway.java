@@ -6,16 +6,25 @@ public interface ModelGateway {
 
     ModelResponse complete(ModelRequest request);
 
-    record ModelRequest(UUID userId, String prompt) {
+    record ModelRequest(UUID userId, String prompt, String idempotencyKey) {
         public ModelRequest {
             if (prompt == null || prompt.isBlank()) {
                 throw new IllegalArgumentException("Prompt is required");
             }
             prompt = prompt.trim();
+            idempotencyKey = normalize(idempotencyKey);
+        }
+
+        public ModelRequest(UUID userId, String prompt) {
+            this(userId, prompt, null);
         }
 
         public ModelRequest(String prompt) {
-            this(null, prompt);
+            this(null, prompt, null);
+        }
+
+        private static String normalize(String value) {
+            return value == null || value.isBlank() ? null : value.trim();
         }
     }
 

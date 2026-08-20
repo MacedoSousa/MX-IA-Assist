@@ -29,7 +29,7 @@ ollama --version
 
 ## Configuração
 
-A configuração de desenvolvimento fica em `core-service/src/main/resources/application-dev.yml` e no Compose. Segredos devem ser fornecidos pelo ambiente ou por arquivo local ignorado. O repositório contém apenas `.env.example` com placeholders.
+A configuração de desenvolvimento fica em `core-service/src/main/resources/application-dev.yml` e no Compose. Segredos devem ser fornecidos pelo ambiente ou por arquivo local ignorado. O repositório contém apenas `.env.example` com placeholders. `OLLAMA_TIMEOUT_MS` controla o timeout de cada requisição ao modelo e assume 120000 ms por padrão.
 
 O cliente Expo usa:
 
@@ -37,42 +37,57 @@ O cliente Expo usa:
 $env:EXPO_PUBLIC_MX_API_URL = "http://localhost:8080"
 ```
 
-Dentro do Compose, o backend usa o hostname do serviço Ollama definido no arquivo de composição. No cliente executado no host, `localhost` deve apontar para a porta publicada pelo backend.
+Para acessar pelo navegador do celular, substitua `localhost` pelo IPv4 privado da máquina Windows, por exemplo `http://192.168.0.10:8080`. O computador e o celular precisam estar na mesma rede privada, e o firewall do Windows deve permitir as portas escolhidas. Não exponha o serviço diretamente à internet.
+
+Dentro do Compose, o backend usa o hostname do serviço Ollama definido no arquivo de composição. No cliente executado no host, `localhost` deve apontar para a porta publicada pelo backend; em um dispositivo físico, use o IP LAN da máquina.
 
 ## Iniciar
 
-Para iniciar as dependências e o backend containerizado:
+O caminho recomendado para desenvolvimento no Windows é executar `start.bat` na raiz do projeto. O script valida Docker, Java, Node.js, npm e PowerShell; sobe PostgreSQL, Redis, Ollama e Open WebUI pelo Compose; inicia o MX Core diretamente com o Maven Wrapper; aguarda o Actuator; e abre o Expo Web em uma nova janela usando o IP LAN detectado.
+
+```powershell
+cd D:\MX
+.\start.bat
+```
+
+Ao final, o script informa os endereços local e LAN. No navegador do celular, conectado à mesma rede Wi-Fi, abra `http://<IP-LAN>:8081`. Se o Windows tiver mais de uma interface de rede, confirme o IP exibido e ajuste o firewall somente para a rede privada.
+
+Para executar as etapas manualmente, inicie as dependências:
 
 ```powershell
 cd D:\MX\infrastructure\docker\compose
-docker compose up -d --build
+docker compose up -d postgres redis ollama open-webui
 ```
 
-Verifique os serviços:
+Em seguida, execute o backend com o launcher equivalente ao usado pelo script:
 
 ```powershell
-docker compose ps
-docker compose logs --tail=100 mx-core
+cd D:\MX
+.\scripts\run-backend.bat
 ```
 
-Para desenvolvimento iterativo do backend, é possível iniciar PostgreSQL, Redis e Ollama pelo Compose e executar o Spring Boot diretamente em `core-service`:
-
-```powershell
-cd D:\MX\core-service
-.\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=dev
-```
-
-O cliente universal pode ser iniciado separadamente:
+O cliente universal pode ser iniciado separadamente, apontando a API para o host ou para o IP LAN:
 
 ```powershell
 cd D:\MX\clients\mx-app
 npm install
-npm run start
+$env:EXPO_PUBLIC_MX_API_URL = "http://localhost:8080"
+npm run web
+```
+
+Para executar diretamente pela LAN, use `D:\MX\scripts\run-expo-web.bat <IP-LAN>`.
+
+Verifique os serviços:
+
+```powershell
+cd D:\MX\infrastructure\docker\compose
+docker compose ps
+docker compose logs --tail=100 mx-ollama
 ```
 
 ## Health e smoke test
 
-O Actuator deve ser usado para verificar a aplicação e suas dependências. A rota exata exposta depende da configuração do perfil, portanto confirme em `application.properties` e nas configurações do Actuator antes de automatizar um probe.
+O Actuator expõe `GET /actuator/health` no perfil de desenvolvimento. O `start.bat` aguarda essa rota antes de iniciar o cliente; um status HTTP de resposta confirma que o processo está atendendo, mas a autenticação e o smoke test do contrato ainda precisam ser executados separadamente.
 
 Depois de autenticar, faça um smoke test do contrato atual:
 
@@ -113,7 +128,23 @@ docker compose logs --tail=200 mx-core
 docker compose logs --tail=100 ollama
 ```
 
-Correlacione uma ocorrência por `runId` e `correlationId`. Não inclua prompt completo, resposta completa, access token, refresh token, senha, chave de API ou conteúdo privado em logs operacionais. Falhas de telemetria não devem interromper a execução principal.
+O MX Core registra métricas Micrometer para o ciclo das skills. Os contadores atuais são `mx.skill.route{skill, outcome=selected}`, `mx.skill.execution{skill, outcome=completed}` e `mx.skill.execution{skill, outcome=failed}`. Consulte-as pelo Actuator:
+
+```powershell
+curl.exe -s http://localhost:8080/actuator/metrics/mx.skill.execution
+curl.exe -s http://localhost:8080/actuator/metrics/mx.skill.route
+```
+
+Use `runId` e `correlationId` para correlacionar uma ocorrência. Não inclua prompt completo, resposta completa, access token, refresh token, senha, chave de API ou conteúdo privado em logs operacionais. Falhas de telemetria não devem interromper a execução principal. Métricas são indicadores operacionais: não devem ser apresentadas como cobertura, conformidade ou confiabilidade estatística sem período, denominador e método de medição.
+
+Para medir latência do Ollama com amostras controladas e obter p50/p95, execute o benchmark sem registrar prompts ou respostas:
+
+```powershell
+cd D:\MX
+.\scripts\benchmark-ollama.ps1 -Samples 20 -Warmup 2 -TimeoutSec 120 -OutputFile .\logs\ollama-benchmark.json
+```
+
+Compare p50, p95, taxa de falha e limite de timeout por modelo e por alteração de infraestrutura. Não compare resultados de máquinas ou modelos diferentes sem registrar hardware, versão do Ollama, modelo carregado e tamanho das amostras.
 
 ## Parar e preservar dados
 

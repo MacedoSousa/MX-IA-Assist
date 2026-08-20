@@ -7,6 +7,13 @@ import {
 
 const DEFAULT_API_URL = "http://localhost:8080";
 
+function resolveDefaultApiUrl(): string {
+  if (typeof window !== "undefined" && window.location?.hostname) {
+    return `http://${window.location.hostname}:8080`;
+  }
+  return DEFAULT_API_URL;
+}
+
 export type ChatMessage = {
   role: "USER" | "ASSISTANT";
   content: string;
@@ -55,6 +62,11 @@ export type ExecutionRunStatusResponse = {
   errorCode: string | null;
   receivedAt: string;
   finishedAt: string | null;
+  pendingApprovalArguments: string | null;
+  approvalExpiresAt: string | null;
+  approvalNonceRequired: boolean;
+  updatedAt: string;
+  idempotencyKey: string | null;
 };
 
 export type ChatV1StreamStarted = {
@@ -109,7 +121,7 @@ export class MxApiClient {
   private readonly baseUrl: string;
   private refreshPromise: Promise<string | null> | null = null;
 
-  constructor(baseUrl = process.env.EXPO_PUBLIC_MX_API_URL ?? DEFAULT_API_URL) {
+  constructor(baseUrl = process.env.EXPO_PUBLIC_MX_API_URL ?? resolveDefaultApiUrl()) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
   }
 
@@ -181,10 +193,23 @@ export class MxApiClient {
     });
   }
 
-  async approveRun(runId: string): Promise<ExecutionRunStatusResponse> {
+  async listRuns(updatedSince?: string, limit = 100): Promise<ExecutionRunStatusResponse[]> {
+    const params = new URLSearchParams({ limit: String(Math.max(1, Math.min(limit, 100))) });
+    if (updatedSince) {
+      params.set("updatedSince", updatedSince);
+    }
+    return this.request<ExecutionRunStatusResponse[]>(`/api/v1/runs?${params.toString()}`, {
+      method: "GET",
+    });
+  }
+
+  async approveRun(runId: string, approvalNonce?: string): Promise<ExecutionRunStatusResponse> {
     return this.request<ExecutionRunStatusResponse>(
       `/api/v1/runs/${encodeURIComponent(runId)}/approve`,
-      { method: "POST" },
+      {
+        method: "POST",
+        body: JSON.stringify(approvalNonce ? { approvalNonce } : {}),
+      },
     );
   }
 

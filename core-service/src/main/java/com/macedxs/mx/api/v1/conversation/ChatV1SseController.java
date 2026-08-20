@@ -53,7 +53,12 @@ public class ChatV1SseController {
             SecurityContextHolder.setContext(securityContext);
             try {
                 SendMessageResult result = sendMessageUseCase.executeStreamingWithObserver(
-                        new SendMessageCommand(user.getId(), request.conversationId(), request.prompt()),
+                        new SendMessageCommand(
+                                user.getId(),
+                                request.conversationId(),
+                                request.prompt(),
+                                request.idempotencyKey()
+                        ),
                         new ModelStreamObserver() {
                             @Override
                             public void onStarted(UUID runId, UUID correlationId) {

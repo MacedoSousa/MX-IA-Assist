@@ -2,6 +2,8 @@ package com.macedxs.mx.ai.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -9,6 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -17,18 +20,41 @@ import java.util.stream.Stream;
 @Service
 public class OllamaService {
 
+    private static final Duration DEFAULT_REQUEST_TIMEOUT = Duration.ofSeconds(120);
+
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final String baseUrl;
+    private final Duration requestTimeout;
 
     public OllamaService() {
-        this("http://localhost:11434");
+        this("http://localhost:11434", DEFAULT_REQUEST_TIMEOUT);
     }
 
     public OllamaService(String baseUrl) {
-        this.httpClient = HttpClient.newHttpClient();
+        this(baseUrl, DEFAULT_REQUEST_TIMEOUT);
+    }
+
+    @Autowired
+    public OllamaService(
+            @Value("${mx.ollama.url:http://localhost:11434}") String baseUrl,
+            @Value("${mx.ollama.timeout-ms:120000}") long timeoutMs
+    ) {
+        this(baseUrl, Duration.ofMillis(timeoutMs));
+    }
+
+    public OllamaService(String baseUrl, Duration requestTimeout) {
+        if (requestTimeout == null || requestTimeout.isZero() || requestTimeout.isNegative()) {
+            throw new IllegalArgumentException("Ollama request timeout must be positive");
+        }
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(requestTimeout)
+                .build();
         this.objectMapper = new ObjectMapper();
-        this.baseUrl = baseUrl != null && !baseUrl.isBlank() ? baseUrl : "http://localhost:11434";
+        this.baseUrl = baseUrl != null && !baseUrl.isBlank()
+                ? baseUrl.replaceAll("/+$", "")
+                : "http://localhost:11434";
+        this.requestTimeout = requestTimeout;
     }
 
     public String generateText(String prompt) {
@@ -40,6 +66,7 @@ public class OllamaService {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/generate"))
+                .timeout(requestTimeout)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                 .build();
@@ -66,6 +93,7 @@ public class OllamaService {
         String body = "{\"model\":\"qwen3\",\"prompt\":\"" + escapeJson(prompt) + "\",\"stream\":true}";
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/generate"))
+                .timeout(requestTimeout)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                 .build();
@@ -78,7 +106,7 @@ public class OllamaService {
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 String errorBody;
                 try (Stream<String> lines = response.body()) {
-                    errorBody = lines.collect(Collectors.joining("\\n"));
+                    errorBody = lines.collect(Collectors.joining("\n"));
                 }
                 throw new IllegalStateException(
                         "Ollama request failed with status " + response.statusCode() + ": " + errorBody

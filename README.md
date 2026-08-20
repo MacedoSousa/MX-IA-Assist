@@ -64,7 +64,7 @@ cd D:\MX\infrastructure\docker\compose
 docker compose up -d --build
 ```
 
-O Compose atual inclui PostgreSQL, Redis, Ollama, Open WebUI e o container do MX Core. As portas e mounts devem ser confirmados em `infrastructure/docker/compose/docker-compose.yml`; não presuma que os scripts legados `start.bat` e `start.sh` representam o cliente Expo atual, pois eles ainda servem o frontend estático legado.
+O Compose atual inclui PostgreSQL, Redis, Ollama, Open WebUI e o container do MX Core. As portas e mounts devem ser confirmados em `infrastructure/docker/compose/docker-compose.yml`. Para desenvolvimento no Windows, `start.bat` sobe as dependências, inicia o backend direto com o Maven Wrapper e abre o cliente Expo Web pela LAN; os launchers em `scripts/` também podem ser executados separadamente. A pasta `frontend/` permanece legada.
 
 ### Backend
 
@@ -137,7 +137,7 @@ As validações executadas no ambiente de desenvolvimento foram:
 
 | Validação | Resultado conhecido |
 |---|---|
-| Suíte Maven do backend | 62 testes, 0 falhas, com diretórios temporários em `C:\Windows\Temp\mx-target` e `C:\Windows\Temp\mx-m2`. |
+| Suíte Maven do backend | 75 testes, 0 falhas, com diretórios temporários em `C:\Windows\Temp\mx-target` e `C:\Windows\Temp\mx-m2`. |
 | TypeScript do cliente | `npm run typecheck` aprovado. |
 | Exportação web Expo | `npx expo export --platform web` aprovado. |
 |

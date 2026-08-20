@@ -1,3 +1,7 @@
+server:
+  address: ${SERVER_ADDRESS:0.0.0.0}
+  port: ${SERVER_PORT:8080}
+
 spring:
 
   datasource:
@@ -35,15 +39,19 @@ auth:
 security:
   cors:
     allowed-origins: ${SECURITY_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8081,http://localhost:19006}
+    # Somente sub-redes privadas explícitas; use SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS para sua LAN.
+    allowed-origin-patterns: ${SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS:}
 
 mx:
   ollama:
 
     url: ${OLLAMA_URL:http://localhost:11434}
+    timeout-ms: ${OLLAMA_TIMEOUT_MS:120000}
   workspace:
     root: ${MX_WORKSPACE_ROOT:.}
     max-entries: ${MX_WORKSPACE_MAX_ENTRIES:500}
     max-depth: ${MX_WORKSPACE_MAX_DEPTH:4}
+    max-read-bytes: ${MX_WORKSPACE_MAX_READ_BYTES:1048576}
     max-write-bytes: ${MX_WORKSPACE_MAX_WRITE_BYTES:1048576}
 
 management:

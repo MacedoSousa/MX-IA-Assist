@@ -1,29 +1,33 @@
 package com.macedxs.mx.bootstrap;
 
-import com.macedxs.mx.agent.application.Skill;
 import com.macedxs.mx.agent.application.SkillRegistry;
 import com.macedxs.mx.agent.application.SkillRouter;
-import com.macedxs.mx.tool.application.PolicyEngine;
-import com.macedxs.mx.tool.application.ToolExecutor;
-import com.macedxs.mx.tool.application.ToolRegistry;
-import com.macedxs.mx.tool.workspace.WorkspaceListTool;
-import org.springframework.beans.factory.annotation.Value;
 import com.macedxs.mx.agent.skill.development.DevelopmentSkill;
 import com.macedxs.mx.agent.skill.general.GeneralSkill;
+import com.macedxs.mx.agent.skill.quality.QualitySkill;
 import com.macedxs.mx.conversation.application.SendMessageUseCase;
 import com.macedxs.mx.conversation.application.port.ConversationStore;
 import com.macedxs.mx.conversation.application.port.ModelGateway;
 import com.macedxs.mx.core.application.MxCoreService;
 import com.macedxs.mx.core.application.run.ApproveExecutionRunUseCase;
+import com.macedxs.mx.core.application.run.CancelExecutionRunUseCase;
 import com.macedxs.mx.core.application.run.ExecutionRunStore;
-import com.macedxs.mx.core.application.run.RejectExecutionRunUseCase;
 import com.macedxs.mx.core.application.run.GetExecutionRunUseCase;
+import com.macedxs.mx.core.application.run.ListExecutionRunsUseCase;
+import com.macedxs.mx.core.application.run.RejectExecutionRunUseCase;
 import com.macedxs.mx.core.infrastructure.MxCoreModelGateway;
+import com.macedxs.mx.tool.application.PolicyEngine;
+import com.macedxs.mx.tool.application.ToolExecutor;
+import com.macedxs.mx.tool.application.ToolRegistry;
+import com.macedxs.mx.tool.workspace.WorkspaceListTool;
+import com.macedxs.mx.tool.workspace.WorkspaceReadFileTool;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -41,10 +45,20 @@ public class ConversationConfiguration {
     }
 
     @Bean
-    SkillRegistry skillRegistry(GeneralSkill generalSkill, DevelopmentSkill developmentSkill) {
+    QualitySkill qualitySkill(@Qualifier("ollamaModelGateway") ModelGateway modelGateway) {
+        return new QualitySkill(modelGateway);
+    }
+
+    @Bean
+    SkillRegistry skillRegistry(
+            GeneralSkill generalSkill,
+            DevelopmentSkill developmentSkill,
+            QualitySkill qualitySkill
+    ) {
         SkillRegistry registry = new SkillRegistry();
         registry.register(generalSkill);
         registry.register(developmentSkill);
+        registry.register(qualitySkill);
         return registry;
     }
 
@@ -68,8 +82,18 @@ public class ConversationConfiguration {
     }
 
     @Bean
+    ListExecutionRunsUseCase listExecutionRunsUseCase(ExecutionRunStore executionRunStore) {
+        return new ListExecutionRunsUseCase(executionRunStore);
+    }
+
+    @Bean
     ApproveExecutionRunUseCase approveExecutionRunUseCase(ExecutionRunStore executionRunStore) {
         return new ApproveExecutionRunUseCase(executionRunStore);
+    }
+
+    @Bean
+    CancelExecutionRunUseCase cancelExecutionRunUseCase(ExecutionRunStore executionRunStore) {
+        return new CancelExecutionRunUseCase(executionRunStore);
     }
 
     @Bean
@@ -92,6 +116,14 @@ public class ConversationConfiguration {
     }
 
     @Bean
+    WorkspaceReadFileTool workspaceReadFileTool(
+            @Value("${mx.workspace.root:.}") String workspaceRoot,
+            @Value("${mx.workspace.max-read-bytes:1048576}") long maxReadBytes
+    ) {
+        return new WorkspaceReadFileTool(Path.of(workspaceRoot), maxReadBytes);
+    }
+
+    @Bean
     com.macedxs.mx.tool.workspace.WorkspaceWriteTool workspaceWriteTool(
             @Value("${mx.workspace.root:.}") String workspaceRoot,
             @Value("${mx.workspace.max-write-bytes:1048576}") long maxWriteBytes
@@ -102,10 +134,12 @@ public class ConversationConfiguration {
     @Bean
     ToolRegistry toolRegistry(
             WorkspaceListTool workspaceListTool,
+            WorkspaceReadFileTool workspaceReadFileTool,
             com.macedxs.mx.tool.workspace.WorkspaceWriteTool workspaceWriteTool
     ) {
         ToolRegistry registry = new ToolRegistry();
         registry.register(workspaceListTool);
+        registry.register(workspaceReadFileTool);
         registry.register(workspaceWriteTool);
         return registry;
     }
@@ -116,8 +150,18 @@ public class ConversationConfiguration {
     }
 
     @Bean
-    ToolExecutor toolExecutor(ToolRegistry toolRegistry, PolicyEngine policyEngine) {
-        return new ToolExecutor(toolRegistry, policyEngine);
+    ToolExecutor toolExecutor(
+            ToolRegistry toolRegistry,
+            PolicyEngine policyEngine,
+            ExecutionRunStore executionRunStore,
+            @Value("${mx.approval.expiration-ms:900000}") long approvalExpirationMs
+    ) {
+        return new ToolExecutor(
+                toolRegistry,
+                policyEngine,
+                executionRunStore,
+                Duration.ofMillis(approvalExpirationMs)
+        );
     }
 
     @Bean

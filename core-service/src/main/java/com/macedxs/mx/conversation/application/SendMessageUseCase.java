@@ -8,8 +8,8 @@ import com.macedxs.mx.conversation.application.port.ModelGateway.ModelResponse;
 import com.macedxs.mx.conversation.application.port.ModelStreamObserver;
 import com.macedxs.mx.conversation.application.port.StreamingModelGateway;
 
-import java.util.UUID;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public class SendMessageUseCase {
@@ -37,35 +37,14 @@ public class SendMessageUseCase {
 
         ModelResponse response;
         try {
-            response = modelGateway.complete(new ModelRequest(command.ownerId(), prompt));
+            response = modelGateway.complete(new ModelRequest(command.ownerId(), prompt, command.idempotencyKey()));
         } catch (ModelGenerationException exception) {
             throw exception;
         } catch (RuntimeException exception) {
             throw new ModelGenerationException("Model generation failed", exception);
         }
 
-        if (response == null || response.answer() == null || response.answer().isBlank()) {
-            throw new ModelGenerationException("Model returned an empty answer");
-        }
-
-        String answer = response.answer().trim();
-        UUID assistantMessageId = conversationStore.appendMessage(
-                conversation.id(),
-                MessageRole.ASSISTANT,
-                answer
-        );
-
-        return new SendMessageResult(
-                conversation.id(),
-                userMessageId,
-                assistantMessageId,
-                answer,
-                response.model(),
-                response.durationMs(),
-                response.correlationId(),
-                response.skillName(),
-                response.runId()
-        );
+        return persistResponse(conversation.id(), userMessageId, response);
     }
 
     public SendMessageResult executeStreaming(SendMessageCommand command, Consumer<String> chunkConsumer) {
@@ -97,7 +76,7 @@ public class SendMessageUseCase {
         ModelResponse response;
         try {
             response = streamingModelGateway.streamWithObserver(
-                    new ModelRequest(command.ownerId(), prompt),
+                    new ModelRequest(command.ownerId(), prompt, command.idempotencyKey()),
                     observer
             );
         } catch (ModelGenerationException exception) {
@@ -106,19 +85,23 @@ public class SendMessageUseCase {
             throw new ModelGenerationException("Model generation failed", exception);
         }
 
+        return persistResponse(conversation.id(), userMessageId, response);
+    }
+
+    private SendMessageResult persistResponse(UUID conversationId, UUID userMessageId, ModelResponse response) {
         if (response == null || response.answer() == null || response.answer().isBlank()) {
             throw new ModelGenerationException("Model returned an empty answer");
         }
 
         String answer = response.answer().trim();
         UUID assistantMessageId = conversationStore.appendMessage(
-                conversation.id(),
+                conversationId,
                 MessageRole.ASSISTANT,
                 answer
         );
 
         return new SendMessageResult(
-                conversation.id(),
+                conversationId,
                 userMessageId,
                 assistantMessageId,
                 answer,
@@ -129,7 +112,6 @@ public class SendMessageUseCase {
                 response.runId()
         );
     }
-
 
     private void validate(SendMessageCommand command) {
         if (command == null || command.ownerId() == null) {

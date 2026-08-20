@@ -4,6 +4,8 @@ import { Platform } from "react-native";
 
 const ACCESS_TOKEN_KEY = "mx.access-token";
 const REFRESH_TOKEN_KEY = "mx.refresh-token";
+const CONVERSATION_ID_KEY = "mx.conversation-id";
+const RUN_CURSOR_KEY = "mx.run-cursor";
 
 async function readValue(key: string): Promise<string | null> {
   if (Platform.OS === "web") {
@@ -55,7 +57,13 @@ export async function clearAccessToken(): Promise<void> {
 }
 
 export async function clearSession(): Promise<void> {
-  await Promise.all([clearValue(ACCESS_TOKEN_KEY), clearValue(REFRESH_TOKEN_KEY)]);
+  await Promise.all([
+    clearValue(ACCESS_TOKEN_KEY),
+    clearValue(REFRESH_TOKEN_KEY),
+    AsyncStorage.removeItem(CONVERSATION_ID_KEY),
+    AsyncStorage.removeItem(RUN_CURSOR_KEY),
+    AsyncStorage.removeItem("mx.draft-prompt"),
+  ]);
 }
 
 export async function readDraftPrompt(): Promise<string> {
@@ -64,4 +72,28 @@ export async function readDraftPrompt(): Promise<string> {
 
 export async function writeDraftPrompt(prompt: string): Promise<void> {
   await AsyncStorage.setItem("mx.draft-prompt", prompt);
+}
+
+export async function readConversationId(): Promise<string | null> {
+  return AsyncStorage.getItem(CONVERSATION_ID_KEY);
+}
+
+export async function writeConversationId(conversationId: string | null): Promise<void> {
+  if (conversationId) {
+    await AsyncStorage.setItem(CONVERSATION_ID_KEY, conversationId);
+  } else {
+    await AsyncStorage.removeItem(CONVERSATION_ID_KEY);
+  }
+}
+
+export async function readRunCursor(): Promise<string | null> {
+  return AsyncStorage.getItem(RUN_CURSOR_KEY);
+}
+
+export async function writeRunCursor(cursor: string | null): Promise<void> {
+  if (cursor) {
+    await AsyncStorage.setItem(RUN_CURSOR_KEY, cursor);
+  } else {
+    await AsyncStorage.removeItem(RUN_CURSOR_KEY);
+  }
 }

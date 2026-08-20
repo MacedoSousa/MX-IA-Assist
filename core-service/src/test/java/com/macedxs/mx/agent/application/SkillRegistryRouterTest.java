@@ -26,6 +26,20 @@ class SkillRegistryRouterTest {
     }
 
     @Test
+    void shouldRouteQualityRequestsToQualitySkill() {
+        SkillRegistry registry = new SkillRegistry();
+        registry.register(skill("general", Set.of()));
+        registry.register(skill("development", Set.of("bug", "java", "spring", "código")));
+        registry.register(skill("quality", Set.of("qualidade", "testes", "métricas", "cmmi")));
+
+        RouteDecision decision = new SkillRouter(registry).route("Avalie a qualidade e a cobertura dos testes");
+
+        assertThat(decision.skill().definition().name()).isEqualTo("quality");
+        assertThat(decision.confidence()).isGreaterThan(0.0d);
+        assertThat(decision.requiresClarification()).isFalse();
+    }
+
+    @Test
     void shouldUseGeneralSkillWhenNoSpecialistMatches() {
         SkillRegistry registry = new SkillRegistry();
         registry.register(skill("general", Set.of()));
