@@ -1,0 +1,2 @@
+{"timestamp":"2026-08-20T15:14:28.882102+00:00","command":"bootstrap_learning","source":"estudos-autorizados","destination":"mx","dry_run":false,"force":false,"counts":{"records":49,"copied":49,"skipped":0,"errors":0},"errors":[]}
+{"timestamp":"2026-08-20T15:15:51.279650+00:00","command":"bootstrap_learning","source":"estudos-autorizados","destination":"mx","dry_run":false,"force":false,"counts":{"records":49,"copied":0,"skipped":49,"errors":0},"errors":[]}

@@ -1,0 +1,835 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-20T15:15:51.278633+00:00",
+  "source": "estudos-autorizados",
+  "records": [
+    {
+      "source": "curriculo_ai_engineer_priorizado.md",
+      "destination": "knowledge/estudos/curriculo_ai_engineer_priorizado.md",
+      "sha256": "9ce9e63a57a1014471718837b1645b837ae2d1c3c3dd6261f46181b5fa86df04",
+      "bytes": 6611,
+      "kind": "knowledge",
+      "headings": [
+        "# Currículo modular priorizado — AI Engineer",
+        "## Objetivo",
+        "## Módulos e prioridade",
+        "## Sequência de execução",
+        "## Regra de modularização",
+        "## Primeiro lote recomendado",
+        "## Integração com o projeto referenciado"
+      ]
+    },
+    {
+      "source": "curriculo_ampliado_priorizado.md",
+      "destination": "knowledge/estudos/curriculo_ampliado_priorizado.md",
+      "sha256": "082d1f6b213dd29bfa26235f822a3a483e82441716bb011286d029901ffb874e",
+      "bytes": 5217,
+      "kind": "knowledge",
+      "headings": [
+        "# Currículo ampliado priorizado — MX e assistente pessoal local",
+        "## Objetivo",
+        "## Fase A — Fundamentos de dados e software",
+        "## Fase B — Arquitetura e operação",
+        "## Fase C — Interfaces e experiência",
+        "## Fase D — Mobile",
+        "## Fase E — Gestão e finanças técnicas",
+        "## Fase F — Integração ao MX",
+        "## Matriz de prioridade",
+        "## Regra de estudo",
+        "## Módulos já consolidados",
+        "## Skills criadas",
+        "## Dependências de estudo"
+      ]
+    },
+    {
+      "source": "integracao_modulos_com_mx.md",
+      "destination": "knowledge/estudos/integracao_modulos_com_mx.md",
+      "sha256": "29476ebfc96c6dce78e2970180ed2cd54d4b0f76dd5e84856a92f9437ed199f9",
+      "bytes": 12956,
+      "kind": "knowledge",
+      "headings": [
+        "# Integração dos módulos AI Engineer com o projeto MX",
+        "## Diretriz",
+        "## Mapeamento de responsabilidades",
+        "## Fluxo conversacional recomendado",
+        "## Primeiro incremento técnico",
+        "## Persistência mínima",
+        "## Streaming e mensageria — próxima etapa",
+        "## AWS e Azure — princípio de portabilidade",
+        "## Critérios de integração",
+        "## Limitação atual",
+        "## Contratos de eventos e mensageria",
+        "## Servindo modelos auxiliares",
+        "## Pipeline MLOps",
+        "## Observabilidade ponta a ponta",
+        "## Implantação AWS e Azure",
+        "## Integração ampliada — dados e operação",
+        "### Persistência",
+        "### Qualidade e entrega",
+        "### Frontend e mobile",
+        "### UX/UI e acessibilidade"
+      ]
+    },
+    {
+      "source": "mapa_ai_engineer_inicial.md",
+      "destination": "knowledge/estudos/mapa_ai_engineer_inicial.md",
+      "sha256": "dbb3cd4cca7901cd1a29c7e03f16a2d6bf5a45508c92e5a88e3592f75011b0f9",
+      "bytes": 2970,
+      "kind": "knowledge",
+      "headings": [
+        "# Mapa inicial — AI Engineer",
+        "## Fonte consultada",
+        "## Conteúdo visível no primeiro módulo",
+        "## Diretriz de modularização",
+        "## Contexto do projeto referenciado",
+        "## Observação de escopo"
+      ]
+    },
+    {
+      "source": "mapa_cursos_cloud_mlops_inicial.md",
+      "destination": "knowledge/estudos/mapa_cursos_cloud_mlops_inicial.md",
+      "sha256": "6cf74c28b6bdfac8b3c8f77605e4d6d0a27b23b4aef68aede15a1bb04445f29b",
+      "bytes": 2620,
+      "kind": "knowledge",
+      "headings": [
+        "# Mapa inicial — Cloud, observabilidade e MLOps",
+        "## Fonte",
+        "## Cursos prioritários identificados",
+        "## Próxima ordem de estudo",
+        "## Azure — opções identificadas"
+      ]
+    },
+    {
+      "source": "mapa_novo_curriculo_inicial.md",
+      "destination": "knowledge/estudos/mapa_novo_curriculo_inicial.md",
+      "sha256": "1a2f5d7aa0d2d66429562b10a9b5298ae466ed0a64d22d068368144113d6e46f",
+      "bytes": 17178,
+      "kind": "knowledge",
+      "headings": [
+        "# Mapa inicial do novo currículo",
+        "## Bancos de dados",
+        "## Ordem preliminar",
+        "## Próximas frentes a mapear",
+        "## Testes e qualidade de software",
+        "## Critério de integração",
+        "## Frontend, UX/UI e acessibilidade",
+        "## Critério de integração",
+        "## Mobile Android, iOS e multiplataforma",
+        "## Critério de integração",
+        "## Kanban, administração, finanças e gestão técnica",
+        "## Aplicação",
+        "## Arquitetura e infraestrutura",
+        "## Critério de integração",
+        "## Cálculos, estatística e machine learning aplicado",
+        "## Cálculos a registrar",
+        "## NoSQL, cache e bancos distribuídos",
+        "## Critério de decisão",
+        "## Testes, qualidade e entrega contínua",
+        "## Estratégia de qualidade"
+      ]
+    },
+    {
+      "source": "ml-evaluation/casos_avaliacao_iniciais.jsonl",
+      "destination": "evaluation/estudos/casos_avaliacao_iniciais.jsonl",
+      "sha256": "1b828124f17ef60515d07ff1b6ab2b250e632700b8e7093901e3ef6c0db6d237",
+      "bytes": 6660,
+      "kind": "evaluation",
+      "headings": []
+    },
+    {
+      "source": "ml-evaluation/model_card_template.md",
+      "destination": "evaluation/estudos/model_card_template.md",
+      "sha256": "d3354472c3d8c033bacef1ce3a8bb5cf045174394c87af064f50a3c012fc8495",
+      "bytes": 972,
+      "kind": "evaluation",
+      "headings": [
+        "# Modelo de registro de ML/LLM",
+        "## Identificação",
+        "## Dados",
+        "## Divisão e avaliação",
+        "## Segurança e governança",
+        "## Operação",
+        "## Regra"
+      ]
+    },
+    {
+      "source": "modulo_01_fundamentos_ia_generativa.md",
+      "destination": "knowledge/estudos/modulo_01_fundamentos_ia_generativa.md",
+      "sha256": "a0969955206011899f7c82a70e00960fda8c021063695d931ff253ee369fa431",
+      "bytes": 3467,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 01 — Fundamentos de IA generativa",
+        "## Fonte",
+        "## Ementa observada",
+        "## Registro da primeira aula",
+        "## Conhecimento operacional derivado",
+        "## Skill proposta: selecionar e usar um modelo generativo",
+        "## Aplicação ao projeto MX",
+        "## Próximos conceitos a consolidar",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_02_python_gpt_chatbot.md",
+      "destination": "knowledge/estudos/modulo_02_python_gpt_chatbot.md",
+      "sha256": "57c3d5b45cfb86b6f05e982cd8e76d8aa26cf4408ea4f3a3a2914aeaebbc5e55",
+      "bytes": 3400,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 02 — Python, GPT e chatbots",
+        "## Fonte",
+        "## Conteúdo observado",
+        "## Conhecimento aplicado",
+        "## Skill proposta: orquestrar uma conversa com contexto",
+        "## Arquitetura sugerida para o projeto MX",
+        "## Testes mínimos",
+        "## Relação com o curso de fundamentos",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_03_spring_ai_observabilidade.md",
+      "destination": "knowledge/estudos/modulo_03_spring_ai_observabilidade.md",
+      "sha256": "84d41596f7d10f5c26709f4c11ef367288df3a0574712c8924546fed5af20ad6",
+      "bytes": 3107,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 03 — Spring AI, custos e observabilidade",
+        "## Fonte",
+        "## Conteúdo observado",
+        "## Conhecimento aplicado ao MX",
+        "## Skill proposta: chamada de modelo em Spring",
+        "## Padrão de observabilidade inicial",
+        "## Relação com métricas, logs e monitoramento solicitados",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_04_anthropic_python.md",
+      "destination": "knowledge/estudos/modulo_04_anthropic_python.md",
+      "sha256": "9d58a6035edf9795d42c95d291a26348b583786a9824c81085f867ed69a1a401",
+      "bytes": 3134,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 04 — Anthropic, Python e chatbots multimodais",
+        "## Fonte",
+        "## Conteúdo observado",
+        "## Conhecimento aplicado",
+        "## Skill proposta: adaptador multimodelo",
+        "## Aplicação no assistente local",
+        "## Relação com machine learning",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_05_rag_agentes_langgraph.md",
+      "destination": "knowledge/estudos/modulo_05_rag_agentes_langgraph.md",
+      "sha256": "46da9b72d036a04fa880f0b6e99466eade2985fe8af2c461e2fd407deea9e463",
+      "bytes": 3912,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 05 — RAG, agentes e LangGraph",
+        "## Fonte",
+        "## Estrutura observada",
+        "## Conhecimento aplicado",
+        "## Skill proposta: pipeline RAG para estudos",
+        "## Skill proposta: agente com ferramentas",
+        "## Integração com o MX",
+        "## Avaliação",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_06_rag_detalhado.md",
+      "destination": "knowledge/estudos/modulo_06_rag_detalhado.md",
+      "sha256": "344e17e1d9d7d5a6a7548f111a4abaf1fe50c08f6a66b9d4ece6667e35fa0d81",
+      "bytes": 2930,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 06 — RAG detalhado: embeddings, chunking e indexação",
+        "## Fonte",
+        "## Ementa registrada",
+        "## Aplicação aos materiais de estudo",
+        "## Pipeline recomendado",
+        "## Critérios de qualidade",
+        "## Riscos",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_07_rag_avancado_ollama_avaliacao.md",
+      "destination": "knowledge/estudos/modulo_07_rag_avancado_ollama_avaliacao.md",
+      "sha256": "b2716f82cd53bbe204dd8a596881c45a8d874669ec0cb769c0bee46e81fb1243",
+      "bytes": 2749,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 07 — RAG avançado, Ollama e avaliação",
+        "## Fonte",
+        "## Ementa observada",
+        "## Aplicação ao assistente local",
+        "## Skill: avaliar uma pipeline RAG",
+        "## Melhorias técnicas derivadas",
+        "## Integração com o MX",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_08_langgraph_estado_hitl_multiagentes.md",
+      "destination": "knowledge/estudos/modulo_08_langgraph_estado_hitl_multiagentes.md",
+      "sha256": "338345dfec6c24154219accd887b258bc1f18e4cdbceae38cb3c470133534926",
+      "bytes": 3152,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 08 — LangGraph, estado, HITL e multiagentes",
+        "## Fonte",
+        "## Conteúdo observado",
+        "## Modelo de estado para o MX",
+        "## Grafo recomendado",
+        "## Human in the Loop",
+        "## Streaming",
+        "## Multiagentes",
+        "## Skill derivada",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_09_protocolos_mcp_a2a_agui_bfa.md",
+      "destination": "knowledge/estudos/modulo_09_protocolos_mcp_a2a_agui_bfa.md",
+      "sha256": "cf846760f79d3255a5ed7196508dcb6238e7c47e5dc5177d5c60b0ebb9943e22",
+      "bytes": 3024,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 09 — MCP, A2A, AG-UI e Backend for Agents",
+        "## Fonte",
+        "## Conteúdo observado",
+        "## Aplicação ao MX",
+        "## Contrato mínimo de evento",
+        "## Regras de segurança",
+        "## Skill derivada",
+        "## Decisão para o assistente local",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_10_mensageria_java_rabbitmq_kafka.md",
+      "destination": "knowledge/estudos/modulo_10_mensageria_java_rabbitmq_kafka.md",
+      "sha256": "8e0449b5719c880df14ebd037040333b9ac409c72a71ef80810e3648241749ab",
+      "bytes": 2791,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 10 — Mensageria Java, RabbitMQ, Kafka e Saga",
+        "## Fonte",
+        "## Decisões para o MX",
+        "## Eventos de IA recomendados",
+        "## Contrato de evento",
+        "## Resiliência",
+        "## Saga no assistente",
+        "## Streaming de respostas",
+        "## Aplicação ao MX Core",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_11_mensageria_python_kafka.md",
+      "destination": "knowledge/estudos/modulo_11_mensageria_python_kafka.md",
+      "sha256": "5bd45873538b3a21e679cfd50aa3ced14487da903afbd333d4ceb15c8adc635b",
+      "bytes": 1901,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 11 — Kafka com Python e sistemas distribuídos",
+        "## Fonte",
+        "## Aplicação ao assistente local",
+        "## Semântica de consumo",
+        "## Pipeline de ingestão",
+        "## Observabilidade",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_12_observabilidade_cloudwatch.md",
+      "destination": "knowledge/estudos/modulo_12_observabilidade_cloudwatch.md",
+      "sha256": "7e7bca1da95757c9c31e4c76e42bf9de5de295741c662bfaffc768a6c2ef7c9b",
+      "bytes": 2295,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 12 — Observabilidade com AWS CloudWatch",
+        "## Fonte",
+        "## Conteúdo observado",
+        "## Aplicação ao MX",
+        "## Alarmes recomendados",
+        "## Logs",
+        "## Skill derivada",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_13_mlops_modelos_apis.md",
+      "destination": "knowledge/estudos/modulo_13_mlops_modelos_apis.md",
+      "sha256": "abb203b6ab1df7096d6542fa826a63f668f15ffea627f6beeefee490dc562186",
+      "bytes": 1903,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 13 — MLOps, modelos e APIs",
+        "## Fonte",
+        "## Aplicação ao MX",
+        "## Governança mínima",
+        "## Operação",
+        "## Skill derivada",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_14_azure_rede_seguranca_monitoramento.md",
+      "destination": "knowledge/estudos/modulo_14_azure_rede_seguranca_monitoramento.md",
+      "sha256": "5a256dfeebd3b6db953c7b4f7b9acbe47cd4c2b4092542d17c1b652194e9458e",
+      "bytes": 1498,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 14 — Azure: rede, segurança, balanceamento e monitoramento",
+        "## Fonte",
+        "## Aplicação ao MX",
+        "## Monitoramento",
+        "## Skill derivada",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_15_pipeline_ml_aws_testes.md",
+      "destination": "knowledge/estudos/modulo_15_pipeline_ml_aws_testes.md",
+      "sha256": "2967916667ea9987896928274a4bd5b569d609b05661fabea307ea9bc1e9a1df",
+      "bytes": 2028,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 15 — Pipeline de ML, testes e integração com AWS",
+        "## Fonte",
+        "## Aplicação ao assistente local",
+        "## Qualidade",
+        "## Champion e challenger",
+        "## Integração AWS",
+        "## Skill derivada",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_16_databricks_lakehouse_mlops.md",
+      "destination": "knowledge/estudos/modulo_16_databricks_lakehouse_mlops.md",
+      "sha256": "d2f02a2e5b09d9dce15949af646512c1586aa78316bac38c24f5feb37af81dd1",
+      "bytes": 2073,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 16 — Databricks, Lakehouse e MLOps em escala",
+        "## Fonte",
+        "## Arquitetura aplicável",
+        "## Features e modelos",
+        "## Serving",
+        "## MLOps",
+        "## Skill derivada",
+        "## Referências"
+      ]
+    },
+    {
+      "source": "modulo_17_postgresql_sql_plpgsql_dba.md",
+      "destination": "knowledge/estudos/modulo_17_postgresql_sql_plpgsql_dba.md",
+      "sha256": "e71111005e1908695e5984620543bf19d63988d02a199690765417260a36cf2b",
+      "bytes": 1653,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 17 — PostgreSQL, SQL, PL/pgSQL e administração",
+        "## Fonte",
+        "## Sequência observada",
+        "## Aplicação técnica",
+        "## Cálculos associados"
+      ]
+    },
+    {
+      "source": "modulo_18_bancos_calculos_e_decisoes.md",
+      "destination": "knowledge/estudos/modulo_18_bancos_calculos_e_decisoes.md",
+      "sha256": "cfd91f68cb838e63719e7f6347aa1dd47591aed5b90552432ee228421d4e17a8",
+      "bytes": 3415,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 18 — Bancos de dados, cálculos e decisões quantitativas",
+        "## Objetivo",
+        "## Camadas de persistência",
+        "## Contratos de dados",
+        "## Cálculos de capacidade",
+        "## Métricas de qualidade de ML/RAG",
+        "## Skills a produzir",
+        "## Aplicação no MX"
+      ]
+    },
+    {
+      "source": "modulo_19_arquitetura_java_ddd_infra.md",
+      "destination": "knowledge/estudos/modulo_19_arquitetura_java_ddd_infra.md",
+      "sha256": "dd2dc01e48ba905bfb61a5c4004472a86d6bea4893f36936c16d6dd40c8c2e68",
+      "bytes": 1936,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 19 — Arquitetura Java, DDD, Clean Architecture e infraestrutura",
+        "## Fonte",
+        "## Sequência",
+        "## Decisões arquiteturais",
+        "## Operação"
+      ]
+    },
+    {
+      "source": "modulo_20_testes_qualidade_ci.md",
+      "destination": "knowledge/estudos/modulo_20_testes_qualidade_ci.md",
+      "sha256": "350bef407b59802833b754e7e73892682c0707e08a527809828c02f7dee97881",
+      "bytes": 2178,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 20 — Testes, qualidade e entrega contínua",
+        "## Objetivo",
+        "## Camadas",
+        "## Pipeline",
+        "## Qualidade de IA",
+        "## Critérios de aprovação",
+        "## Integração com Kanban"
+      ]
+    },
+    {
+      "source": "modulo_21_frontend_react_typescript_design_system.md",
+      "destination": "knowledge/estudos/modulo_21_frontend_react_typescript_design_system.md",
+      "sha256": "a81d91d6f0ba64a29d77432bd0ca063e248fbaafd163afede4be9539a1931885",
+      "bytes": 1817,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 21 — Frontend, React, TypeScript e Design System",
+        "## Fonte",
+        "## Conteúdos prioritários",
+        "## Aplicação no MX",
+        "## Critérios de qualidade",
+        "## UX/UI"
+      ]
+    },
+    {
+      "source": "modulo_22_mobile_flutter_android_ios.md",
+      "destination": "knowledge/estudos/modulo_22_mobile_flutter_android_ios.md",
+      "sha256": "6def317470c1976581ff5e90f4d92ca98520544f34f0cbb1461d8a7a8dc4571f",
+      "bytes": 2157,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 22 — Mobile Android, iOS, Flutter e React Native",
+        "## Fonte",
+        "## Estratégia de estudo",
+        "## Aplicação no MX",
+        "## UX móvel",
+        "## Qualidade e publicação",
+        "## Nota"
+      ]
+    },
+    {
+      "source": "modulo_23_ux_ui_pesquisa_acessibilidade.md",
+      "destination": "knowledge/estudos/modulo_23_ux_ui_pesquisa_acessibilidade.md",
+      "sha256": "6cae63592b428a3bb034b908ecf03b07cb66f229ca3c2ef49dfff8773a06793f",
+      "bytes": 1558,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 23 — UX/UI, pesquisa, prototipação e acessibilidade",
+        "## Fonte",
+        "## Conteúdos prioritários",
+        "## Aplicação no MX",
+        "## Validação"
+      ]
+    },
+    {
+      "source": "modulo_24_kanban_governanca_financas.md",
+      "destination": "knowledge/estudos/modulo_24_kanban_governanca_financas.md",
+      "sha256": "0dfeafe7486bc01525b040fac082cc76effb469572f5a57962909a2089c9cb87",
+      "bytes": 3101,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 24 — Kanban, governança, administração, finanças e custos",
+        "## Objetivo",
+        "## Kanban operacional",
+        "## Governança técnica",
+        "## Finanças e custos técnicos",
+        "## Administração operacional",
+        "## Indicadores de decisão",
+        "## Aplicação no assistente local"
+      ]
+    },
+    {
+      "source": "modulo_25_kubernetes_helm_pipelines_releases.md",
+      "destination": "knowledge/estudos/modulo_25_kubernetes_helm_pipelines_releases.md",
+      "sha256": "a48e2dd830571f0bdca937073491606de98e9a41007ccc08e8b2cd28cf2e4caf",
+      "bytes": 3576,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 25 — Kubernetes, Helm, pipelines e releases",
+        "## Fontes Alura",
+        "## Modelo estrutural",
+        "## Pipeline recomendado",
+        "## Checklist de release",
+        "## Aplicação no MX"
+      ]
+    },
+    {
+      "source": "modulo_26_servidores_linux_windows_dns_rotas.md",
+      "destination": "knowledge/estudos/modulo_26_servidores_linux_windows_dns_rotas.md",
+      "sha256": "1e579fe60c32a68d976c0093ffb4e22e19d57f188fdd05e323bb45c99e7b0641",
+      "bytes": 2848,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 26 — Servidores Linux/Windows, DNS, rotas e redes",
+        "## Fontes Alura",
+        "## Modelo operacional",
+        "## Operação segura",
+        "## Aplicação no MX"
+      ]
+    },
+    {
+      "source": "modulo_27_criptografia_seguranca_operacional.md",
+      "destination": "knowledge/estudos/modulo_27_criptografia_seguranca_operacional.md",
+      "sha256": "f843e73c965393115c0dd581dda4e98fc58dcd3b686ba04f6c3125a784984d0b",
+      "bytes": 2984,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 27 — Criptografia e segurança operacional",
+        "## Fontes Alura",
+        "## Princípios para o MX",
+        "## Análise crítica estrutural",
+        "## Controles mínimos"
+      ]
+    },
+    {
+      "source": "modulo_28_matriz_linguagens_paradigmas.md",
+      "destination": "knowledge/estudos/modulo_28_matriz_linguagens_paradigmas.md",
+      "sha256": "9ded663de8a0e2234c90b96255242c7b51756260eb6ee055ce4e9549154600d8",
+      "bytes": 3135,
+      "kind": "knowledge",
+      "headings": [
+        "# Módulo 28 — Matriz de linguagens e paradigmas",
+        "## Fonte Alura",
+        "## Matriz de estudo",
+        "## Método para “todas as linguagens”",
+        "## Política de geração de código"
+      ]
+    },
+    {
+      "source": "pacote_aprendizado_assistente_local.md",
+      "destination": "knowledge/estudos/pacote_aprendizado_assistente_local.md",
+      "sha256": "174e3cd83a7246bc7e0a31c801e6485452a6aec2eb406e34325b0230f4342d15",
+      "bytes": 16385,
+      "kind": "knowledge",
+      "headings": [
+        "# Pacote de aprendizado — Assistente pessoal local com IA",
+        "## Objetivo",
+        "## Contexto de integração identificado",
+        "## Mapa de módulos",
+        "## Skills operacionais",
+        "### Skill S-01 — Geração segura",
+        "### Skill S-02 — Conversação com memória",
+        "### Skill S-03 — Adaptador multimodelo",
+        "### Skill S-04 — Pipeline RAG",
+        "### Skill S-05 — Agente com ferramentas",
+        "### Skill S-06 — Observabilidade de IA",
+        "## Contratos recomendados",
+        "## Separação de memória",
+        "## Dados para machine learning e avaliação",
+        "## Casos de avaliação iniciais",
+        "## Ordem de implementação",
+        "## Regra de governança",
+        "## Fontes do aprendizado",
+        "## Módulos adicionais — agentes e mensageria",
+        "### AI-07 — RAG avançado e avaliação"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-agente-ferramentas.md",
+      "destination": "skills/estudos/ai-assistant/skill-agente-ferramentas.md",
+      "sha256": "3fb0d98ffde518c302c98cd1cee9b10d680c1c729014b4d2742519e9f7a45d26",
+      "bytes": 1178,
+      "kind": "skill",
+      "headings": [
+        "# Skill: Agente com ferramentas",
+        "## Objetivo",
+        "## Entradas",
+        "## Procedimento",
+        "## Saídas",
+        "## Restrições",
+        "## Avaliação"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-engenharia-linguagens.md",
+      "destination": "skills/estudos/ai-assistant/skill-engenharia-linguagens.md",
+      "sha256": "4b85343b44ed02237a2b91dd53ce226e8e4b844332b14fd940c4f0a806d066d7",
+      "bytes": 1416,
+      "kind": "skill",
+      "headings": [
+        "# Skill — Engenharia de linguagens",
+        "## Finalidade",
+        "## Entradas",
+        "## Procedimento",
+        "## Saída",
+        "## Clipper",
+        "## Restrições"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-fluxo-kanban-custos.md",
+      "destination": "skills/estudos/ai-assistant/skill-fluxo-kanban-custos.md",
+      "sha256": "6b7e30f5df0cd6ff692edc5ef41794b33198277953ad4cbf31b0374eddd78351",
+      "bytes": 955,
+      "kind": "skill",
+      "headings": [
+        "# Skill — Fluxo Kanban, governança e custos",
+        "## Finalidade",
+        "## Entradas",
+        "## Procedimento",
+        "## Saída",
+        "## Restrições"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-geracao-segura.md",
+      "destination": "skills/estudos/ai-assistant/skill-geracao-segura.md",
+      "sha256": "0bc6b13329ea4445502fff9221dc0b2a32a659d20af4ce21fe78bc4ca941e7b1",
+      "bytes": 1361,
+      "kind": "skill",
+      "headings": [
+        "# Skill: Geração segura e seleção de modelos",
+        "## Objetivo",
+        "## Entradas",
+        "## Procedimento",
+        "## Saídas",
+        "## Restrições",
+        "## Avaliação"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-infraestrutura-release.md",
+      "destination": "skills/estudos/ai-assistant/skill-infraestrutura-release.md",
+      "sha256": "98b612fa128b42ee9dffeb42d9837337018d3f31b26ffc739f7ac9e1fb3224e9",
+      "bytes": 1142,
+      "kind": "skill",
+      "headings": [
+        "# Skill — Infraestrutura, redes e release",
+        "## Finalidade",
+        "## Entradas",
+        "## Procedimento",
+        "## Saída",
+        "## Restrições"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-interface-acessivel.md",
+      "destination": "skills/estudos/ai-assistant/skill-interface-acessivel.md",
+      "sha256": "fe9af8651c63b7c38e9a2cbf2519c7dbc20abf5ad18a594fa2ea99a33ff8aedc",
+      "bytes": 1007,
+      "kind": "skill",
+      "headings": [
+        "# Skill — Interface acessível",
+        "## Finalidade",
+        "## Entradas",
+        "## Procedimento",
+        "## Saída",
+        "## Restrições"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-mlops-cloud.md",
+      "destination": "skills/estudos/ai-assistant/skill-mlops-cloud.md",
+      "sha256": "a8c6e76b3189ed4f453c5ed93edfd0d3099814c0afa553c4086f83890cbb4876",
+      "bytes": 2630,
+      "kind": "skill",
+      "headings": [
+        "# Skill: MLOps e Cloud para serviços de IA",
+        "## Objetivo",
+        "## Entrada",
+        "## Fluxo",
+        "## Saída",
+        "## Restrições",
+        "## Métricas mínimas",
+        "## Critérios de aceitação"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-mobile-offline-first.md",
+      "destination": "skills/estudos/ai-assistant/skill-mobile-offline-first.md",
+      "sha256": "6598878e98c02ce92f0893653168978fc17fd369aa655cabaa6b0e8617e64931",
+      "bytes": 1009,
+      "kind": "skill",
+      "headings": [
+        "# Skill — Mobile offline-first",
+        "## Finalidade",
+        "## Entradas",
+        "## Procedimento",
+        "## Saída",
+        "## Restrições"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-observabilidade-ia.md",
+      "destination": "skills/estudos/ai-assistant/skill-observabilidade-ia.md",
+      "sha256": "0ed80cc767436acaa7cd4b0c2596a89e83b238846a4501874727666196c4b319",
+      "bytes": 1317,
+      "kind": "skill",
+      "headings": [
+        "# Skill: Observabilidade de IA",
+        "## Objetivo",
+        "## Eventos",
+        "## Métricas",
+        "## Procedimento",
+        "## Restrições",
+        "## Avaliação"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-persistencia-e-capacidade.md",
+      "destination": "skills/estudos/ai-assistant/skill-persistencia-e-capacidade.md",
+      "sha256": "0f1991a43bd3bba430fc4ac408a84f6a7903aae1ccd868634ba2665e84efad46",
+      "bytes": 927,
+      "kind": "skill",
+      "headings": [
+        "# Skill — Persistência e capacidade",
+        "## Finalidade",
+        "## Entradas",
+        "## Procedimento",
+        "## Saída",
+        "## Restrições"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-qualidade-e-release.md",
+      "destination": "skills/estudos/ai-assistant/skill-qualidade-e-release.md",
+      "sha256": "8bebaa01ab96ddb6619f74d792453580d74095054666eb2f490b49bc0a2e9080",
+      "bytes": 983,
+      "kind": "skill",
+      "headings": [
+        "# Skill — Qualidade e release",
+        "## Finalidade",
+        "## Entradas",
+        "## Procedimento",
+        "## Saída",
+        "## Restrições"
+      ]
+    },
+    {
+      "source": "skills/ai-assistant/skill-rag-documental.md",
+      "destination": "skills/estudos/ai-assistant/skill-rag-documental.md",
+      "sha256": "073d1dd2f90e8772cb89bb588e229a46480bb12095d7ae49c830f0839bbac1e8",
+      "bytes": 1299,
+      "kind": "skill",
+      "headings": [
+        "# Skill: RAG documental para estudos",
+        "## Objetivo",
+        "## Entradas",
+        "## Procedimento",
+        "## Metadados mínimos",
+        "## Saídas",
+        "## Restrições",
+        "## Avaliação"
+      ]
+    }
+  ],
+  "counts": {
+    "records": 49,
+    "copied": 0,
+    "skipped": 49,
+    "errors": 0
+  }
+}
