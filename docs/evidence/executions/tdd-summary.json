@@ -1,0 +1,11 @@
+﻿{
+    "generatedAt":  "2026-08-20T10:59:57.2923301-03:00",
+    "reportsDirectory":  "D:\\MX\\maven-test-target\\surefire-reports",
+    "reportFiles":  30,
+    "tests":  79,
+    "failures":  0,
+    "errors":  0,
+    "skipped":  0,
+    "durationSeconds":  54.05,
+    "passed":  true
+}

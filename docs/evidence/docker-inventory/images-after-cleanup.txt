@@ -1,0 +1,16 @@
+﻿REPOSITORY                             TAG       IMAGE ID       SIZE
+mx-core                                latest    5e2c049feea8   613MB
+mx-web                                 latest    26c0be099cb2   74.2MB
+medsync-web                            latest    0245346a82f2   79.6MB
+medsync-api                            latest    07a5a89d893c   998MB
+deceasedcraft_docker_ready-minecraft   latest    e9ed52d6f4a1   718MB
+mysql                                  8.4       b3b90af2a655   1.12GB
+ollama/ollama                          latest    4dea9fb51194   8.04GB
+ghcr.io/open-webui/open-webui          main      6a773e5c3a24   7.16GB
+redis                                  7         595cc6f2bb3a   170MB
+postgres                               16        33f923b05f64   642MB
+itzg/minecraft-server                  latest    9ca18aee262e   1.26GB
+teamspeak                              latest    11fb1dd03c68   47.7MB
+eclipse-temurin                        17-jdk    859dc576f4af   687MB
+curlimages/curl                        latest    b3f1fb2a51d9   35.2MB
+drwarpman/sinusbot-docker              latest    54064881f8ef   1.11GB

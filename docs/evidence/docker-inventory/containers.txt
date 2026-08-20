@@ -1,0 +1,25 @@
+﻿NAMES                        IMAGE                                  STATUS                         PORTS
+mx-core                      mx-core:latest                         Up 10 minutes (healthy)        0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+mx-web                       mx-web:latest                          Up About an hour               0.0.0.0:8082->80/tcp, [::]:8082->80/tcp
+medsync-web-1                medsync-web                            Up About an hour               0.0.0.0:8081->80/tcp, [::]:8081->80/tcp
+frosty_stonebraker           270bee6a31f9                           Exited (1) About an hour ago   
+nervous_mirzakhani           38d72d7e1565                           Exited (1) About an hour ago   
+fervent_banzai               38d72d7e1565                           Exited (1) About an hour ago   
+charming_antonelli           63bec71c9242                           Exited (1) About an hour ago   
+medsync-api-1                medsync-api                            Up About an hour               0.0.0.0:3001->3000/tcp, [::]:3001->3000/tcp
+medsync-mysql-1              mysql:8.4                              Up About an hour (healthy)     3306/tcp
+competent_herschel           a80aed51b8ea                           Exited (1) About an hour ago   
+kind_pascal                  1b5053814833                           Exited (1) 2 hours ago         
+objective_poitras            98b2fad7d539                           Exited (1) 2 hours ago         
+interesting_ganguly          9b2a19e5c305                           Exited (1) 2 hours ago         
+bold_diffie                  470ae2196f3e                           Exited (1) 2 hours ago         
+mx-postgres                  postgres:16                            Up 2 hours (healthy)           0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+mx-redis                     redis:7                                Up 2 hours (healthy)           0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp
+mx-ollama                    ollama/ollama:latest                   Up 2 hours                     0.0.0.0:11434->11434/tcp, [::]:11434->11434/tcp
+deceasedcraft-server         deceasedcraft_docker_ready-minecraft   Up 14 hours                    0.0.0.0:25565->25565/tcp, [::]:25565->25565/tcp
+core-service-spring-init-1   curlimages/curl                        Exited (0) 2 weeks ago         
+mx-open-webui                ghcr.io/open-webui/open-webui:main     Up 2 hours (healthy)           0.0.0.0:3000->8080/tcp, [::]:3000->8080/tcp
+minecraft                    itzg/minecraft-server:latest           Exited (137) 12 days ago       
+ts3-sinusbot                 drwarpman/sinusbot-docker:latest       Exited (137) 2 weeks ago       
+ts3-server                   teamspeak:latest                       Exited (0) 2 weeks ago         
+carpg-server                 eclipse-temurin:17-jdk                 Exited (137) 7 weeks ago       

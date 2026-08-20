@@ -1,0 +1,4 @@
+﻿NAME                         STATUS              CONFIG FILES
+compose                      running(6)          D:\MX\infrastructure\docker\compose\docker-compose.yml
+deceasedcraft_docker_ready   running(1)          D:\server\DeceasedCraft_Docker_Ready\docker-compose.yml
+medsync                      running(3)          C:\Users\pedro\OneDrive\├ürea de Trabalho\AI MEDSYNC\docker\compose.yaml

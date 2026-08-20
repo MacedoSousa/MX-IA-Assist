@@ -1,0 +1,12 @@
+﻿NAME                                 DRIVER    SCOPE
+bridge                               bridge    local
+carpgultimatev8bserv_default         bridge    local
+compose_default                      bridge    local
+core-service_default                 bridge    local
+deceasedcraft_docker_ready_default   bridge    local
+host                                 host      local
+medsync_medsync_private              bridge    local
+medsync_medsync_public               bridge    local
+minecraft-server_default             bridge    local
+none                                 null      local
+teamspeak_default                    bridge    local

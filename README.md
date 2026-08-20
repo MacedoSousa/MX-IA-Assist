@@ -1,6 +1,6 @@
 # MX — Assistente pessoal local
 
-> **Status:** fundação avançada em evolução. A base P0–P3 está implementada e validada em nível de testes automatizados, mas o projeto ainda não deve ser tratado como produto final ou como sistema de produção.
+> **Status:** fundação avançada executável localmente. O stack Docker, o cliente web, a integração de tools estruturadas, a aprovação humana, a operação Always-On e as evidências técnicas estão implementados e validados. O projeto continua evoluindo e não deve ser tratado como serviço de alta disponibilidade em produção.
 
 O **MX** é um assistente pessoal local inspirado em um “Jarvis”, projetado para apoiar programação, organização pessoal e consultas gerais usando modelos executados localmente pelo Ollama. O usuário conversa somente com o **MX Core**. As skills especialistas, as tools e as políticas de autonomia são capacidades internas coordenadas pelo núcleo e não canais independentes de comunicação.
 
@@ -41,11 +41,11 @@ A regra central é que dependências apontam para dentro: o domínio e os casos 
 | Autenticação | Implementado em nível de fundação | JWT com `sessionId`, sessão persistida, refresh rotativo com hash SHA-256 e logout revogável. |
 | ExecutionRun | Implementado em nível de fundação | Lifecycle `RECEIVED → ROUTED → EXECUTING → VERIFYING → COMPLETED/FAILED`, com `AWAITING_APPROVAL` e `CANCELLED`. |
 | Streaming | Implementado | SSE com eventos `started`, `token`, `completed` e `error`; parser NDJSON do Ollama. |
-| Skills | Implementado inicialmente | Skills `general` e `development` atrás do MX Core, incluindo suporte a streaming. |
-| Tools | Fundação segura | `WorkspaceWriteTool` com sandbox, bloqueio de traversal/symlink, escrita atômica e limite de bytes. |
-| Aprovação | Parcialmente integrada | Casos de uso, endpoints e cliente existem; a criação automática do run a partir de `REQUIRE_APPROVAL` ainda é uma lacuna. |
+| Skills | Implementado | Skills `general`, `development` e `quality` atrás do MX Core, com contratos explícitos e roteamento interno. |
+| Tools | Integradas com segurança | Parser estruturado `[MX_TOOL_CALL]`, allowlist, `ToolExecutor`, sandbox, bloqueio de traversal/symlink, escrita atômica e limite de bytes. |
+| Aprovação | Integrada no caminho de produção | `REQUIRE_APPROVAL` cria `ExecutionRun` em `AWAITING_APPROVAL` com nonce hash, expiração, idempotência e propagação REST/SSE. |
 | Cliente | Implementado em nível funcional | App Expo universal com login, logout, refresh automático, chat síncrono, streaming e consulta/aprovação de runs. |
-| Observabilidade | Fundação implementada | Actuator, métricas e correlação; dashboards, alertas e baseline de performance ainda estão planejados. |
+| Observabilidade | Implementada na fundação operacional | Actuator, healthchecks, métricas Micrometer, correlação, evidências de execução e runbook operacional. Dashboards históricos e alertas externos continuam como evolução. |
 
 ## Requisitos locais
 
@@ -64,7 +64,7 @@ cd D:\MX
 .\start.bat
 ```
 
-O Compose atual inclui PostgreSQL, Redis, Ollama, Open WebUI, MX Core e mx-web. O launcher detecta o IP LAN, constrói o bundle Expo com a URL correta da API, configura CORS para a origem web da LAN, aguarda os healthchecks e informa os endereços finais. A interface web oficial fica em `http://localhost:8082` ou `http://<IP-LAN>:8082`; a API fica em `http://localhost:8080` ou `http://<IP-LAN>:8080`. A porta `MX_WEB_PORT` é configurável; 8082 é o padrão atual porque 8081 já estava ocupada por outro serviço local. As portas e mounts devem ser confirmados em `infrastructure/docker/compose/docker-compose.yml`. A pasta `frontend/` permanece legada.
+O Compose atual inclui PostgreSQL, Redis, Ollama, Open WebUI, MX Core e mx-web. Todos os serviços MX usam `restart: unless-stopped`; PostgreSQL, Redis, Ollama e Open WebUI possuem dados persistentes, e Redis utiliza AOF. O launcher detecta o IP LAN, constrói o bundle Expo com a URL correta da API, configura CORS para a origem web da LAN, aguarda os healthchecks e informa os endereços finais. A interface web oficial fica em `http://localhost:8082` ou `http://<IP-LAN>:8082`; a API fica em `http://localhost:8080` ou `http://<IP-LAN>:8080`. A tarefa `MX-AI-Assistant-AlwaysOn` inicia o launcher automaticamente no Windows. A porta `MX_WEB_PORT` é configurável; 8082 é o padrão atual porque 8081 já estava ocupada por outro serviço local. As portas e mounts devem ser confirmados em `infrastructure/docker/compose/docker-compose.yml`. A pasta `frontend/` permanece legada.
 
 ### Backend
 
@@ -129,7 +129,7 @@ O endpoint de streaming retorna eventos SSE. O evento `started` apresenta `runId
 
 A autenticação combina access token de curta duração, refresh token rotativo, sessão persistida e revogação. O filtro JWT consulta o estado da sessão e bloqueia tokens associados a sessões revogadas. Casos de uso de runs restringem consultas e decisões ao `userId` autenticado.
 
-Tools não executam diretamente a partir do texto do modelo. Elas passam pelo registry e pelo **Policy Engine**, que avalia efeito, allowlist, autonomia e contexto. A `WorkspaceWriteTool` limita o diretório ao workspace configurado, bloqueia path traversal e symlink, usa escrita atômica e possui limite configurável de bytes. A integração automática entre `REQUIRE_APPROVAL` e `ExecutionRun` em `AWAITING_APPROVAL` ainda está no backlog técnico imediato.
+Tools não executam diretamente a partir de texto livre do modelo. Elas passam pelo parser estruturado, registry e **Policy Engine**, que avaliam efeito, allowlist, autonomia e contexto. A `WorkspaceWriteTool` limita o diretório ao workspace configurado, bloqueia path traversal e symlink, usa escrita atômica e possui limite configurável de bytes. Quando a política exige intervenção, o `ToolExecutor` cria um `ExecutionRun` em `AWAITING_APPROVAL`, com nonce, expiração e idempotência; o chat síncrono e o SSE propagam os metadados de aprovação pelo canal único do MX.
 
 ## Validações conhecidas
 
@@ -137,14 +137,15 @@ As validações executadas no ambiente de desenvolvimento foram:
 
 | Validação | Resultado conhecido |
 |---|---|
-| Suíte TDD do backend | 75 testes, 0 falhas na validação anterior; a compilação da imagem `mx-core` também foi concluída com sucesso após a correção do modelo Ollama. |
+| Suíte TDD do backend | 79 testes, 0 falhas, 0 erros e 0 ignorados; imagem `mx-core` reconstruída com sucesso. |
 | TypeScript do cliente | `npm run typecheck` aprovado. |
 | Exportação web Expo | `npx expo export --platform web` aprovado e servido pelo Nginx em `mx-web`. |
-| Stack Docker | `mx-core` healthy, `mx-web` ativo em 8082, Ollama respondendo com `qwen3:8b` disponível. |
-| E2E local | Registro, login com access/refresh token e chat síncrono concluídos; resposta validada como `OK.`. |
+| Stack Docker | `mx-core` healthy, `mx-web` ativo em 8082, PostgreSQL/Redis/Open WebUI saudáveis e Ollama com `qwen3:8b` disponível. |
+| E2E local | Registro, login, sessão persistida e chat síncrono concluídos contra o Ollama local. |
+| Always-On | Tarefa `MX-AI-Assistant-AlwaysOn` executada com `LastTaskResult = 0`; reinício idempotente validado. |
 |
 
-Execute novamente os comandos após qualquer alteração. O sucesso dessas verificações não substitui os testes E2E, adversariais e operacionais ainda planejados.
+As provas detalhadas e os comandos reproduzíveis estão em [`docs/portfolio/README.md`](docs/portfolio/README.md), incluindo inventário Docker, healthchecks, log Maven, sumário TDD, teste E2E, diagrama e vídeo de apresentação. Execute novamente os comandos após qualquer alteração. O sucesso dessas verificações não equivale a alta disponibilidade de produção; backups restauráveis e observabilidade histórica continuam como evoluções recomendadas.
 
 ## Estrutura do projeto
 
@@ -164,9 +165,11 @@ D:\MX
 └── CONTRIBUTING.md               # Fluxo de contribuição e validação
 ```
 
-## Próximos incrementos prioritários
+## Portfólio, evidências e próximos incrementos
 
-O próximo incremento técnico é integrar `ToolExecutor → ExecutionRun`, criando um run auditável em `AWAITING_APPROVAL` quando a política exigir intervenção humana. Em seguida vêm sincronização cross-channel com reconexão idempotente, threat model e testes adversariais, retenção/privacidade, backup e restauração, timeout e benchmark do Ollama, além das integrações controladas com Git, notas e serviços externos.
+A documentação profissional bilíngue está em [`docs/portfolio/README.md`](docs/portfolio/README.md), com versões em português e inglês, roteiro do vídeo, diagrama, provas de execução, inventário pós-limpeza e instruções de reprodução. O vídeo de apresentação está em [`docs/portfolio/mx-presentation-ptbr.mp4`](docs/portfolio/mx-presentation-ptbr.mp4).
+
+Os próximos incrementos técnicos são reexecução idempotente após aprovação humana, sincronização cross-channel com reconexão, threat model ampliado, retenção/privacidade, backup e restauração testados, observabilidade histórica e integrações controladas com Git, notas e serviços externos.
 
 O backlog detalhado está em [`docs/product-backlog.md`](docs/product-backlog.md). A documentação técnica complementar está organizada em [`docs/architecture-clean.md`](docs/architecture-clean.md), [`docs/mx-core-skills-architecture.md`](docs/mx-core-skills-architecture.md), [`docs/multiplatform-architecture.md`](docs/multiplatform-architecture.md), [`docs/streaming-sse.md`](docs/streaming-sse.md), [`docs/approvals-and-tools.md`](docs/approvals-and-tools.md), [`docs/security/threat-model.md`](docs/security/threat-model.md), [`docs/operations/local-runbook.md`](docs/operations/local-runbook.md) e [`docs/testing/test-strategy.md`](docs/testing/test-strategy.md).
 

@@ -1,0 +1,7 @@
+﻿{
+    "GeneratedAt":  "2026-08-20T10:43:59.2167608-03:00",
+    "RunningOrStoppedContainerImages":  23,
+    "TotalImageRows":  50,
+    "CandidateRows":  20,
+    "Policy":  "Never delete images referenced by any container or matching an explicitly preserved service family; volumes are never pruned by this script."
+}

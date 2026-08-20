@@ -1,0 +1,43 @@
+flowchart LR
+    U[Usuário / User] --> C[Expo Universal Client<br/>Web • Android • iOS]
+    C -->|JWT / SSE / REST| X[MX Core<br/>Single Communication Point]
+
+    subgraph DOMAIN[MX Core Domain]
+      R[Skill Registry Router]
+      G[General Skill]
+      D[Development Skill]
+      Q[Quality Skill]
+      T[Tool Executor<br/>Allowlist + Policy]
+      A[Approval Runs<br/>Nonce + Expiration]
+      O[Observability<br/>Micrometer + Actuator]
+      R --> G
+      R --> D
+      R --> Q
+      D --> T
+      T --> A
+      X --> R
+      X --> O
+    end
+
+    X --> L[Ollama<br/>qwen3:8b local]
+    X --> P[(PostgreSQL<br/>Users • Sessions • Runs)]
+    X --> K[(Redis<br/>AOF persistence)]
+    C --> W[MX Web :8082]
+
+    subgraph PRESERVED[Preserved Ecosystem]
+      M[MedSync]
+      DC[DeceasedCraft]
+      MC[Minecraft Server]
+      TS[TeamSpeak Server]
+      CP[carpgultimatev8bserv]
+      CS[core-service]
+    end
+
+    classDef core fill:#11263d,stroke:#4cc9f0,color:#ffffff;
+    classDef specialist fill:#183d3d,stroke:#80ed99,color:#ffffff;
+    classDef storage fill:#3a2e1f,stroke:#ffca3a,color:#ffffff;
+    classDef preserved fill:#3b1f3a,stroke:#f72585,color:#ffffff;
+    class X,R,T,A,O core;
+    class G,D,Q,L,C,W specialist;
+    class P,K storage;
+    class M,DC,MC,TS,CP,CS preserved;

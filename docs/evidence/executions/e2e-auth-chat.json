@@ -1,0 +1,13 @@
+﻿{
+    "generatedAt":  "2026-08-20T10:53:57.5315243-03:00",
+    "durationMs":  27707,
+    "baseUrl":  "http://localhost:8080",
+    "registeredUserId":  "a349ea12-5938-46cf-b2c6-db2ff00417d8",
+    "email":  "mx.e2e.1787234009@example.local",
+    "sessionId":  "32321c4f-664a-4859-99f3-de24078e71e4",
+    "chatStatus":  "COMPLETED",
+    "skillName":  "general",
+    "runId":  "45f61bbb-6920-47c7-adaf-0e924430beff",
+    "answer":  "MX E2E OK",
+    "passed":  true
+}

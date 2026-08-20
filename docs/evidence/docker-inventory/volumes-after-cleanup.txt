@@ -1,0 +1,20 @@
+﻿DRIVER    VOLUME NAME
+local     1524c78a36b900229282aab4becdb16d554dd7ad042914078fc44e087949fbdb
+local     9848c08d6bc4267913765e8220535c2ac5dfa18bc6acfb3ba9ca6a7d30e82920
+local     93542f5333af6486f112ba9acb0a2438aa2ee656e576e237bbc6ea5202c762a2
+local     a51006c1000202a5a297c4c7e22111da117863ed9c02dba826304ad40657e430
+local     auditoria-noc_noc_data
+local     auditoria_app_storage
+local     auditoria_grafana_data
+local     auditoria_logs
+local     auditoria_loki_data
+local     auditoria_minio_data
+local     auditoria_pg_data
+local     auditoria_prometheus_data
+local     auditoria_redis_data
+local     compose_ollama_data
+local     medsync_medsync_mysql
+local     teamspeak_bot-db
+local     teamspeak_sinusbot-data
+local     teamspeak_sinusbot-scripts
+local     teamspeak_ts3-data
