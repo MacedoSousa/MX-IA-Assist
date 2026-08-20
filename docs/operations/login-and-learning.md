@@ -4,7 +4,7 @@
 
 O cliente web do MX deve chamar a API pelo mesmo domínio que entregou a aplicação quando `EXPO_PUBLIC_MX_API_URL` não estiver configurada. Essa escolha é necessária para acesso remoto pelo Tailscale: em um celular, `localhost` representa o próprio celular, não o computador que executa o MX.
 
-O Nginx do `mx-web` encaminha as rotas `/api/` para `mx-core:8080` e mantém o streaming SSE sem buffering. Assim, o navegador pode abrir `https://mx-ai.taila61bd3.ts.net/` e usar a mesma origem para login, sessão, chat, aprovações e consultas de execução. Para integrações específicas, `EXPO_PUBLIC_MX_API_URL` ainda pode ser definido explicitamente durante o build.
+O Nginx do `mx-web` encaminha as rotas `/api/` para `mx-core:8080` e mantém o streaming SSE sem buffering. Assim, o navegador pode abrir `https://mx-ai.taila61bd3.ts.net/` e usar a mesma origem para login, sessão, chat, aprovações e consultas de execução. O perfil `dev` do MX Core também autoriza explicitamente `https://mx-ai.taila61bd3.ts.net` no CORS; sem essa origem, navegadores enviam `Origin` e o Spring Security pode responder `403`. Para integrações específicas, `EXPO_PUBLIC_MX_API_URL` ainda pode ser definido explicitamente durante o build.
 
 ## Conhecimento importado
 

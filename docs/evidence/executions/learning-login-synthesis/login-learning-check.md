@@ -4,13 +4,13 @@
 
 ## Resultado do diagnóstico
 
-A conta `pedro@mx.local` existe no ambiente PostgreSQL do MX, está ativa e possui a função `owner`. O teste direto no backend retornou `HTTP 200`. A causa da falha no navegador remoto era o fallback do cliente web: a aplicação podia construir a API com `localhost:8080`, endereço que aponta para o dispositivo que abriu o navegador, e não para o computador que executa o MX.
+A conta `pedro@mx.local` existe no ambiente PostgreSQL do MX, está ativa e possui a função `owner`. O teste direto no backend retornou `HTTP 200`. A causa inicial da falha no navegador remoto era o fallback do cliente web: a aplicação podia construir a API com `localhost:8080`, endereço que aponta para o dispositivo que abriu o navegador, e não para o computador que executa o MX. Depois desse ajuste, o navegador passou a alcançar o MX, mas recebeu `403` porque o Spring Security ainda não permitia a origem HTTPS do Tailscale. A origem `https://mx-ai.taila61bd3.ts.net` foi adicionada explicitamente à configuração CORS do perfil `dev`.
 
 ## Correção aplicada
 
 O cliente web agora usa o mesmo origin no navegador quando `EXPO_PUBLIC_MX_API_URL` não é fornecida. O Nginx do `mx-web` encaminha `/api/` para `mx-core:8080`, mantém buffering desativado para SSE e preserva os cabeçalhos de encaminhamento. O Compose deixou de embutir `http://localhost:8080` como configuração padrão do bundle.
 
-O login foi validado pelo endpoint do cliente web em `http://localhost:8082/api/auth/login` com `HTTP 200` e payload autenticado. O mesmo fluxo foi validado pelo endpoint privado `https://mx-ai.taila61bd3.ts.net/api/auth/login` com `HTTP 200`. Tokens não foram registrados nesta evidência.
+O login foi validado pelo endpoint do cliente web em `http://localhost:8082/api/auth/login` com `HTTP 200` e payload autenticado. O mesmo fluxo foi validado pelo endpoint privado `https://mx-ai.taila61bd3.ts.net/api/auth/login` com `HTTP 200`. A reprodução incluiu `Origin: https://mx-ai.taila61bd3.ts.net` e retornou `Access-Control-Allow-Origin` correspondente. Tokens não foram registrados nesta evidência.
 
 ## Síntese documental
 
