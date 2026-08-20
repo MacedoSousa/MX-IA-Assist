@@ -271,7 +271,7 @@ export class MxApiClient {
     const dispatch = (rawEvent: string) => {
       let eventName = "message";
       const dataLines: string[] = [];
-      for (const line of rawEvent.split(/\\r?\\n/)) {
+      for (const line of rawEvent.split(/\r?\n/)) {
         if (line.startsWith("event:")) {
           eventName = line.slice("event:".length).trim();
         } else if (line.startsWith("data:")) {
@@ -282,7 +282,7 @@ export class MxApiClient {
         return;
       }
 
-      const payload = JSON.parse(dataLines.join("\\n")) as unknown;
+      const payload = JSON.parse(dataLines.join("\n")) as unknown;
       switch (eventName) {
         case "started":
           handlers.onStarted?.(payload as ChatV1StreamStarted);
@@ -306,7 +306,7 @@ export class MxApiClient {
 
     const consume = (text: string) => {
       buffer += text;
-      const events = buffer.split(/\\r?\\n\\r?\\n/);
+      const events = buffer.split(/\r?\n\r?\n/);
       buffer = events.pop() ?? "";
       for (const event of events) {
         dispatch(event);

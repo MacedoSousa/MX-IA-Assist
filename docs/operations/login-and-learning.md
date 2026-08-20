@@ -13,3 +13,9 @@ O pacote em `knowledge/estudos/`, `skills/estudos/ai-assistant/` e `evaluation/e
 A síntese não deve ser copiada como resposta automática. O MX deve selecionar o trecho pertinente, combinar a orientação com a pergunta e com evidências do projeto, diferenciar fato de hipótese e recomendação, declarar incerteza e preferir a skill especialista quando o assunto exigir profundidade. Um documento recuperado nunca autoriza ignorar autenticação, allowlist, sandbox, PolicyEngine, aprovação humana ou qualquer política do núcleo.
 
 O ciclo recomendado é **ler, interpretar, aplicar, testar, avaliar e registrar**. A evolução permanente depende de alterações versionadas, casos de avaliação, revisão humana e auditoria; a simples leitura dos arquivos não treina os pesos do Ollama.
+
+## Diagnóstico de chat offline
+
+Se o login funcionar, mas uma mensagem simples fizer o cliente mostrar `Offline`, verificar o streaming SSE antes de trocar credenciais. O cliente deve interpretar quebras de linha reais nos eventos `started`, `token` e `completed`. O MX Core também permite o `DispatcherType.ASYNC` do `SseEmitter` depois da autenticação inicial; sem essa permissão, o Spring Security pode registrar `AuthorizationDeniedException` após a resposta já ter sido iniciada.
+
+A validação mínima é executar uma mensagem curta pelo Core local e pelo endpoint Tailscale, confirmando `HTTP 200`, um evento `started`, pelo menos um evento `token`, um evento `completed` e zero eventos `error`. A evidência correspondente está em `docs/evidence/executions/learning-login-synthesis/chat-stream-check.md`.
