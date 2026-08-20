@@ -1,0 +1,67 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
+
+const ACCESS_TOKEN_KEY = "mx.access-token";
+const REFRESH_TOKEN_KEY = "mx.refresh-token";
+
+async function readValue(key: string): Promise<string | null> {
+  if (Platform.OS === "web") {
+    return globalThis.localStorage?.getItem(key) ?? null;
+  }
+
+  return SecureStore.getItemAsync(key);
+}
+
+async function writeValue(key: string, value: string): Promise<void> {
+  if (Platform.OS === "web") {
+    globalThis.localStorage?.setItem(key, value);
+    return;
+  }
+
+  await SecureStore.setItemAsync(key, value, {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  });
+}
+
+async function clearValue(key: string): Promise<void> {
+  if (Platform.OS === "web") {
+    globalThis.localStorage?.removeItem(key);
+    return;
+  }
+
+  await SecureStore.deleteItemAsync(key);
+}
+
+export async function readAccessToken(): Promise<string | null> {
+  return readValue(ACCESS_TOKEN_KEY);
+}
+
+export async function readRefreshToken(): Promise<string | null> {
+  return readValue(REFRESH_TOKEN_KEY);
+}
+
+export async function writeAccessToken(token: string): Promise<void> {
+  await writeValue(ACCESS_TOKEN_KEY, token);
+}
+
+export async function writeSession(accessToken: string, refreshToken: string): Promise<void> {
+  await writeValue(ACCESS_TOKEN_KEY, accessToken);
+  await writeValue(REFRESH_TOKEN_KEY, refreshToken);
+}
+
+export async function clearAccessToken(): Promise<void> {
+  await clearValue(ACCESS_TOKEN_KEY);
+}
+
+export async function clearSession(): Promise<void> {
+  await Promise.all([clearValue(ACCESS_TOKEN_KEY), clearValue(REFRESH_TOKEN_KEY)]);
+}
+
+export async function readDraftPrompt(): Promise<string> {
+  return (await AsyncStorage.getItem("mx.draft-prompt")) ?? "";
+}
+
+export async function writeDraftPrompt(prompt: string): Promise<void> {
+  await AsyncStorage.setItem("mx.draft-prompt", prompt);
+}

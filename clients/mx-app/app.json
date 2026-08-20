@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "MX",
+    "slug": "mx-app",
+    "version": "0.1.0",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "scheme": "mx",
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.macedxs.mx"
+    },
+    "android": {
+      "package": "com.macedxs.mx"
+    }
+  }
+}

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MX - Assistente de IA Pessoal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            max-height: 600px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            padding: 16px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .sidebar.active {
+            display: block;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-section h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #6c757d;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .sidebar-item {
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-item:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #fafafa;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e9ecef;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.system .message-content {
+            background: #e7f3ff;
+            color: #0066cc;
+            text-align: center;
+            font-size: 13px;
+            max-width: 100%;
+        }
+
+        .input-area {
+            padding: 16px;
+            border-top: 1px solid #e9ecef;
+            background: white;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-group input {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .input-group button:hover {
+            transform: translateY(-2px);
+        }
+
+        .input-group button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .auth-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .auth-form {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-form h2 {
+            margin-bottom: 24px;
+            text-align: center;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .auth-button {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: transform 0.2s;
+        }
+
+        .auth-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .auth-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .toggle-auth {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 13px;
+        }
+
+        .toggle-auth a {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .toggle-auth a:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            border: 1px solid #fdd;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            border: 1px solid #dfd;
+        }
+
+        .loading {
+            display: inline-block;
+            animation: spin 1s rotate linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                max-height: none;
+                height: 100vh;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Auth View -->
+        <div id="authView" class="auth-container">
+            <div class="auth-form">
+                <h2>MX - Assistente de IA</h2>
+                <div id="authError"></div>
+
+                <div id="loginForm">
+                    <h3 style="text-align: center; margin-bottom: 20px; font-size: 16px;">Entrar</h3>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="loginEmail" placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha</label>
+                        <input type="password" id="loginPassword" placeholder="Sua senha">
+                    </div>
+                    <button class="auth-button" onclick="handleLogin()">Entrar</button>
+                    <div class="toggle-auth">
+                        Sem conta? <a onclick="toggleAuthForm()">Cadastre-se</a>
+                    </div>
+                </div>
+
+                <div id="registerForm" style="display: none;">
+                    <h3 style="text-align: center; margin-bottom: 20px; font-size: 16px;">Cadastro</h3>
+                    <div class="form-group">
+                        <label>Nome</label>
+                        <input type="text" id="registerName" placeholder="Seu nome">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="registerEmail" placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha (mínimo 8 caracteres)</label>
+                        <input type="password" id="registerPassword" placeholder="Sua senha">
+                    </div>
+                    <button class="auth-button" onclick="handleRegister()">Cadastrar</button>
+                    <div class="toggle-auth">
+                        Já tem conta? <a onclick="toggleAuthForm()">Entre aqui</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat View -->
+        <div id="chatView" style="display: none; flex-direction: column; flex: 1;">
+            <div class="header">
+                <h1>MX</h1>
+                <p id="userDisplay"></p>
+            </div>
+            <div class="main-content">
+                <div class="chat-area">
+                    <div class="messages" id="messagesContainer"></div>
+                    <div class="input-area">
+                        <div class="input-group">
+                            <input type="text" id="promptInput" placeholder="Digite sua pergunta..." onkeypress="handleKeyPress(event)">
+                            <button onclick="sendMessage()" id="sendButton">Enviar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080/api';
+        let token = localStorage.getItem('mx_token');
+        let userEmail = localStorage.getItem('mx_email');
+        let conversationId = null;
+
+        // Check if user is already logged in
+        if (token && userEmail) {
+            showChatView();
+        }
+
+        function toggleAuthForm() {
+            document.getElementById('loginForm').style.display =
+                document.getElementById('loginForm').style.display === 'none' ? 'block' : 'none';
+            document.getElementById('registerForm').style.display =
+                document.getElementById('registerForm').style.display === 'none' ? 'block' : 'none';
+            document.getElementById('authError').innerHTML = '';
+        }
+
+        async function handleRegister() {
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+
+            if (!name || !email || !password) {
+                showAuthError('Todos os campos são obrigatórios');
+                return;
+            }
+
+            if (password.length < 8) {
+                showAuthError('A senha deve ter no mínimo 8 caracteres');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                if (response.ok) {
+                    showAuthError('Cadastro realizado! Faça login agora.', true);
+                    toggleAuthForm();
+                    document.getElementById('registerName').value = '';
+                    document.getElementById('registerEmail').value = '';
+                    document.getElementById('registerPassword').value = '';
+                } else {
+                    const error = await response.json();
+                    showAuthError(error.message || 'Erro ao cadastrar');
+                }
+            } catch (error) {
+                showAuthError('Erro de conexão: ' + error.message);
+            }
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showAuthError('Email e senha são obrigatórios');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    token = data.token;
+                    userEmail = data.email;
+                    localStorage.setItem('mx_token', token);
+                    localStorage.setItem('mx_email', userEmail);
+                    document.getElementById('authError').innerHTML = '';
+                    showChatView();
+                } else {
+                    showAuthError('Email ou senha inválidos');
+                }
+            } catch (error) {
+                showAuthError('Erro de conexão: ' + error.message);
+            }
+        }
+
+        function showAuthError(message, isSuccess = false) {
+            const errorDiv = document.getElementById('authError');
+            errorDiv.innerHTML = `<div class="${isSuccess ? 'success' : 'error'}">${message}</div>`;
+        }
+
+        function showChatView() {
+            document.getElementById('authView').style.display = 'none';
+            document.getElementById('chatView').style.display = 'flex';
+            document.getElementById('userDisplay').textContent = `Bem-vindo, ${userEmail}`;
+        }
+
+        async function sendMessage() {
+            const prompt = document.getElementById('promptInput').value.trim();
+
+            if (!prompt) return;
+
+            // Add user message to UI
+            addMessageToUI('user', prompt);
+            document.getElementById('promptInput').value = '';
+            document.getElementById('sendButton').disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    conversationId = data.conversationId;
+                    addMessageToUI('assistant', data.answer);
+                } else if (response.status === 401) {
+                    logout();
+                } else {
+                    addMessageToUI('system', 'Erro ao processar mensagem');
+                }
+            } catch (error) {
+                addMessageToUI('system', 'Erro de conexão: ' + error.message);
+            } finally {
+                document.getElementById('sendButton').disabled = false;
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function addMessageToUI(role, content) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function logout() {
+            token = null;
+            userEmail = null;
+            localStorage.removeItem('mx_token');
+            localStorage.removeItem('mx_email');
+            document.getElementById('chatView').style.display = 'none';
+            document.getElementById('authView').style.display = 'flex';
+            document.getElementById('messagesContainer').innerHTML = '';
+            document.getElementById('promptInput').value = '';
+        }
+    </script>
+</body>
+</html>

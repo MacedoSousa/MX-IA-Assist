@@ -1,92 +1,92 @@
 services:
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: mx-ollama
-    restart: unless-stopped
-
-    ports:
-      - "11434:11434"
-
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities:
-                - gpu
-
-    volumes:
-      - ollama_data:/root/.ollama
-
-
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:main
-    container_name: mx-open-webui
-    restart: unless-stopped
-
-    depends_on:
-      - ollama
-
-    ports:
-      - "3000:8080"
-
-    environment:
-      OLLAMA_BASE_URL: http://ollama:11434
-
-    volumes:
-      - ../../../data/open-webui:/app/backend/data
-
-
   postgres:
     image: postgres:16
     container_name: mx-postgres
     restart: unless-stopped
-
     env_file:
       - ../env/.env
-
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mx}
+      POSTGRES_USER: ${POSTGRES_USER:-mx}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mx_dev_password}
     ports:
       - "5432:5432"
-
     volumes:
       - ../../../data/postgres:/var/lib/postgresql/data
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mx}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7
     container_name: mx-redis
     restart: unless-stopped
-
     ports:
       - "6379:6379"
-
     volumes:
       - ../../../data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: mx-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ../../../data/ollama:/root/.ollama
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: mx-open-webui
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    ports:
+      - "3000:8080"
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+    volumes:
+      - ../../../data/open-webui:/app/backend/data
 
   mx-core:
+    build:
+      context: ../../../core-service
+      dockerfile: Dockerfile
     image: mx-core:latest
     container_name: mx-core
     restart: unless-stopped
     depends_on:
-      - postgres
-      - redis
-      - ollama
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
     ports:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: mx
-      DB_USER: mx
-      DB_PASSWORD: mx_dev_password
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mx
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-mx}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-mx_dev_password}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
       OLLAMA_URL: http://ollama:11434
-
+    volumes:
+      - ../../../logs:/app/logs
 
 volumes:
-
+  postgres_data:
+  redis_data:
   ollama_data:
+  open-webui_data:

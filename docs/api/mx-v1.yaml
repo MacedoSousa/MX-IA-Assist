@@ -1,0 +1,315 @@
+openapi: 3.0.3
+info:
+  title: MX Core API
+  version: 0.3.0
+  description: API central do MX para clientes web, Android e iOS.
+servers:
+  - url: http://localhost:8080
+    description: Desenvolvimento local
+paths:
+  /api/v1/conversations/messages:
+    post:
+      summary: Envia uma mensagem ao MX Core
+      operationId: sendConversationMessage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatV1Request'
+      responses:
+        '200':
+          description: Mensagem processada pelo MX Core
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatV1Response'
+        '400':
+          description: Payload inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Sessão ausente ou inválida
+        '404':
+          description: Usuário ou conversa não encontrada
+        '502':
+          description: Modelo local indisponível ou resposta inválida
+  /api/v1/conversations/messages/stream:
+    post:
+      summary: Envia uma mensagem e recebe a resposta incrementalmente via SSE
+      operationId: streamConversationMessage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatV1Request'
+      responses:
+        '200':
+          description: Fluxo SSE com eventos started, token, completed ou error
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Cada evento contém uma linha event e uma ou mais linhas data com JSON.
+              examples:
+                started:
+                  summary: Run iniciado
+                  value: "event: started\\ndata: {\\\"runId\\\":\\\"00000000-0000-0000-0000-000000000001\\\",\\\"correlationId\\\":\\\"00000000-0000-0000-0000-000000000002\\\"}\\n\\n"
+                token:
+                  summary: Fragmento de resposta
+                  value: "event: token\\ndata: {\\\"delta\\\":\\\"Olá\\\"}\\n\\n"
+                completed:
+                  summary: Resposta final
+                  value: "event: completed\\ndata: {\\\"status\\\":\\\"COMPLETED\\\",\\\"runId\\\":\\\"00000000-0000-0000-0000-000000000001\\\"}\\n\\n"
+                error:
+                  summary: Falha de streaming
+                  value: "event: error\\ndata: {\\\"code\\\":\\\"STREAM_FAILED\\\",\\\"message\\\":\\\"Falha no modelo local\\\"}\\n\\n"
+        '400':
+          description: Payload inválido
+        '401':
+          description: Sessão ausente ou inválida
+        '502':
+          description: Modelo local indisponível ou resposta inválida
+  /api/v1/runs/{runId}:
+    get:
+      summary: Consulta o status de uma execução do MX Core
+      operationId: getExecutionRun
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Estado atual da execução pertencente ao usuário autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionRunV1Response'
+        '401':
+          description: Sessão ausente ou inválida
+        '404':
+          description: Execução não encontrada para o usuário autenticado
+  /api/v1/runs/{runId}/approve:
+    post:
+      summary: Aprova a continuação de uma execução pendente
+      operationId: approveExecutionRun
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execução retomada em estado EXECUTING
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionRunV1Response'
+        '401':
+          description: Sessão ausente ou inválida
+        '404':
+          description: Execução não encontrada para o usuário autenticado
+        '409':
+          description: Execução não está aguardando aprovação
+  /api/v1/runs/{runId}/reject:
+    post:
+      summary: Rejeita uma execução pendente
+      operationId: rejectExecutionRun
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRejectionV1Request'
+      responses:
+        '200':
+          description: Execução cancelada por rejeição humana
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionRunV1Response'
+        '400':
+          description: Motivo da rejeição ausente ou inválido
+        '401':
+          description: Sessão ausente ou inválida
+        '404':
+          description: Execução não encontrada para o usuário autenticado
+        '409':
+          description: Execução não está aguardando aprovação
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ChatV1Request:
+      type: object
+      required:
+        - prompt
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+          nullable: true
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 12000
+        idempotencyKey:
+          type: string
+          maxLength: 120
+          nullable: true
+    ChatV1Response:
+      type: object
+      required:
+        - status
+        - conversationId
+        - userMessageId
+        - assistantMessageId
+        - answer
+        - runId
+      properties:
+        status:
+          type: string
+          enum: [COMPLETED]
+        correlationId:
+          type: string
+          format: uuid
+          nullable: true
+        conversationId:
+          type: string
+          format: uuid
+        userMessageId:
+          type: string
+          format: uuid
+        assistantMessageId:
+          type: string
+          format: uuid
+        skillName:
+          type: string
+          nullable: true
+        answer:
+          type: string
+        model:
+          type: string
+          nullable: true
+        durationMs:
+          type: integer
+          format: int64
+        runId:
+          type: string
+          format: uuid
+    ChatV1StreamStarted:
+      type: object
+      required:
+        - runId
+        - correlationId
+      properties:
+        runId:
+          type: string
+          format: uuid
+        correlationId:
+          type: string
+          format: uuid
+    ChatV1StreamToken:
+      type: object
+      required:
+        - delta
+      properties:
+        delta:
+          type: string
+    ChatV1StreamError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    ApprovalRejectionV1Request:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+    ExecutionRunV1Response:
+      type: object
+      required:
+        - runId
+        - correlationId
+        - status
+        - receivedAt
+      properties:
+        runId:
+          type: string
+          format: uuid
+        correlationId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [RECEIVED, ROUTED, EXECUTING, VERIFYING, AWAITING_APPROVAL, COMPLETED, FAILED, CANCELLED]
+        skillName:
+          type: string
+          nullable: true
+        pendingApproval:
+          type: string
+          nullable: true
+        output:
+          type: string
+          nullable: true
+        errorCode:
+          type: string
+          nullable: true
+        receivedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+          nullable: true

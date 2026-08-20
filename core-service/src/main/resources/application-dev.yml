@@ -1,22 +1,56 @@
 spring:
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mx}
-    username: ${DB_USER:mx}
-    password: ${DB_PASSWORD:mx_dev_password}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mx}
+    username: ${SPRING_DATASOURCE_USERNAME:mx}
+    password: ${SPRING_DATASOURCE_PASSWORD:mx_dev_password}
     driver-class-name: org.postgresql.Driver
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
 
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
 
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
 
+  sql:
+    init:
+      mode: never
+
+auth:
+  refresh-expiration-ms: ${AUTH_REFRESH_EXPIRATION_MS:2592000000}
+
+security:
+  cors:
+    allowed-origins: ${SECURITY_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8081,http://localhost:19006}
 
 mx:
   ollama:
+
     url: ${OLLAMA_URL:http://localhost:11434}
+  workspace:
+    root: ${MX_WORKSPACE_ROOT:.}
+    max-entries: ${MX_WORKSPACE_MAX_ENTRIES:500}
+    max-depth: ${MX_WORKSPACE_MAX_DEPTH:4}
+    max-write-bytes: ${MX_WORKSPACE_MAX_WRITE_BYTES:1048576}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

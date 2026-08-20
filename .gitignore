@@ -1,19 +1,60 @@
-# Data
-data/
+# Dados, modelos e estado local
+/data/
+/models/
+/logs/
+/backups/
+*.db
+*.sqlite
+*.sqlite3
 
-# Models
-models/
-
-# Logs
-logs/
-
-# Secrets
-*.env
+# Segredos e variáveis de ambiente
+.env
+.env.*
 !.env.example
+**/env/.env
+**/env/*.local
 
-# Backups
-backups/
+# Builds Java/Maven
+**/target/
+*.jar
+*.war
+*.class
+.mvn/timing.properties
 
-# OS
-Thumbs.db
+# Builds e dependências JavaScript/Expo
+**/node_modules/
+**/dist/
+**/.expo/
+**/.expo-shared/
+**/coverage/
+clients/mx-app/dist/
+
+# Artefatos compactados e distribuições locais
+*.zip
+*.tar
+*.tar.gz
+/tools/
+
+# Auditorias e relatórios temporários da máquina
+.audit/
+.audit/
+*.audit.md
+
+# Configurações locais de IDE e sistema operacional
+.vscode/
+.idea/
+*.iml
 .DS_Store
+Thumbs.db
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Cache de ferramentas
+.npm/
+.pnpm-store/
+.yarn/

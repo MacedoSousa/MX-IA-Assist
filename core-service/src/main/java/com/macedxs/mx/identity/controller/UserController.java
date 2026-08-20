@@ -2,6 +2,7 @@ package com.macedxs.mx.identity.controller;
 
 import com.macedxs.mx.identity.entity.UserEntity;
 import com.macedxs.mx.identity.service.UserService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public class UserController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public List<UserEntity> findAll() {
         return service.findAll();
     }
