@@ -13,7 +13,7 @@ public final class ChatV1ResponseMapper {
         }
 
         return new ChatV1Response(
-                "COMPLETED",
+                result.status(),
                 result.correlationId(),
                 result.conversationId(),
                 result.userMessageId(),
@@ -22,7 +22,10 @@ public final class ChatV1ResponseMapper {
                 result.answer(),
                 result.model(),
                 result.durationMs(),
-                result.runId()
+                result.runId(),
+                result.approvalRunId(),
+                result.approvalNonce(),
+                result.approvalExpiresAt()
         );
     }
 }

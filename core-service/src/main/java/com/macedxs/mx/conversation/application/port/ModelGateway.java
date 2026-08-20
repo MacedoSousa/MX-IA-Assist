@@ -1,5 +1,6 @@
 package com.macedxs.mx.conversation.application.port;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public interface ModelGateway {
@@ -34,10 +35,15 @@ public interface ModelGateway {
             long durationMs,
             UUID correlationId,
             String skillName,
-            UUID runId
+            UUID runId,
+            String status,
+            UUID approvalRunId,
+            String approvalNonce,
+            Instant approvalExpiresAt
     ) {
         public ModelResponse(String answer, String model, long durationMs) {
-            this(answer, model, durationMs, null, null, null);
+            this(answer, model, durationMs, null, null, null,
+                    "COMPLETED", null, null, null);
         }
 
         public ModelResponse(
@@ -47,7 +53,29 @@ public interface ModelGateway {
                 UUID correlationId,
                 String skillName
         ) {
-            this(answer, model, durationMs, correlationId, skillName, null);
+            this(answer, model, durationMs, correlationId, skillName, null,
+                    "COMPLETED", null, null, null);
+        }
+
+        public ModelResponse(
+                String answer,
+                String model,
+                long durationMs,
+                UUID correlationId,
+                String skillName,
+                UUID runId
+        ) {
+            this(answer, model, durationMs, correlationId, skillName, runId,
+                    "COMPLETED", null, null, null);
+        }
+
+        public ModelResponse {
+            if (status == null || status.isBlank()) {
+                throw new IllegalArgumentException("Model status is required");
+            }
+            if (approvalRunId == null && (approvalNonce != null || approvalExpiresAt != null)) {
+                throw new IllegalArgumentException("Approval metadata requires an approval run");
+            }
         }
     }
 }

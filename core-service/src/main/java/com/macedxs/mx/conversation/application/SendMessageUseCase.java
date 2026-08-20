@@ -109,7 +109,11 @@ public class SendMessageUseCase {
                 response.durationMs(),
                 response.correlationId(),
                 response.skillName(),
-                response.runId()
+                response.runId(),
+                response.status(),
+                response.approvalRunId(),
+                response.approvalNonce(),
+                response.approvalExpiresAt()
         );
     }
 

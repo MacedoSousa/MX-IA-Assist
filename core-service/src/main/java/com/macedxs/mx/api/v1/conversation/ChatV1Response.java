@@ -1,5 +1,6 @@
 package com.macedxs.mx.api.v1.conversation;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public record ChatV1Response(
@@ -12,6 +13,9 @@ public record ChatV1Response(
         String answer,
         String model,
         long durationMs,
-        UUID runId
+        UUID runId,
+        UUID approvalRunId,
+        String approvalNonce,
+        Instant approvalExpiresAt
 ) {
 }

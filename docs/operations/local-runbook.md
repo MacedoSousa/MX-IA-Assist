@@ -101,6 +101,14 @@ curl.exe -i -X POST http://localhost:8080/api/v1/conversations/messages `
 
 Não coloque tokens em histórico de terminal compartilhado. Em diagnóstico, redija o valor antes de anexar saída.
 
+### Tools internas e aprovação humana
+
+A comunicação externa continua centralizada no MX Core. A DevelopmentSkill pode solicitar apenas uma chamada estruturada no protocolo `[MX_TOOL_CALL]...[/MX_TOOL_CALL]`; texto livre, JSON sem marcador, nome fora da allowlist ou argumento ausente são rejeitados. O ToolExecutor aplica a policy independentemente da instrução do modelo. Tools de leitura autorizadas podem ser executadas diretamente quando a autonomia declarada permitir.
+
+Operações sensíveis nunca são executadas automaticamente. Quando uma tool exigir intervenção humana, a resposta HTTP do chat retorna `status=AWAITING_APPROVAL`, `approvalRunId`, `approvalNonce` e `approvalExpiresAt`; o nonce é usado somente no endpoint de aprovação autenticado e expira conforme a configuração do ambiente. No SSE, o evento final é `approval_required` em vez de `completed`. O cliente deve sincronizar os runs e usar o painel de aprovação, sem tentar contornar a policy ou reenviar a tool por conta própria.
+
+Após a aprovação, o estado do run é retomado pelo caso de uso de aprovação. A reexecução automática da operação original ainda é uma evolução separada do backlog; até ela ser implementada, a aprovação representa a autorização registrada e não deve ser interpretada como execução concluída.
+
 ## Diagnóstico por sintoma
 
 | Sintoma | Verificações iniciais | Ação segura |

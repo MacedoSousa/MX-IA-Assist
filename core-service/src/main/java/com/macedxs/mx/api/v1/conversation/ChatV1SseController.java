@@ -72,7 +72,10 @@ public class ChatV1SseController {
                         }
                 );
 
-                send(emitter, "completed", ChatV1ResponseMapper.completed(result));
+                String finalEvent = "AWAITING_APPROVAL".equals(result.status())
+                        ? "approval_required"
+                        : "completed";
+                send(emitter, finalEvent, ChatV1ResponseMapper.completed(result));
                 emitter.complete();
             } catch (RuntimeException failure) {
                 send(emitter, "error", new ChatV1StreamError("STREAM_FAILED", safeMessage(failure)));

@@ -40,8 +40,11 @@ public class ConversationConfiguration {
     }
 
     @Bean
-    DevelopmentSkill developmentSkill(@Qualifier("ollamaModelGateway") ModelGateway modelGateway) {
-        return new DevelopmentSkill(modelGateway);
+    DevelopmentSkill developmentSkill(
+            @Qualifier("ollamaModelGateway") ModelGateway modelGateway,
+            ToolExecutor toolExecutor
+    ) {
+        return new DevelopmentSkill(modelGateway, toolExecutor);
     }
 
     @Bean

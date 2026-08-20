@@ -11,6 +11,8 @@ import com.macedxs.mx.core.application.run.ExecutionRun;
 import com.macedxs.mx.core.application.run.ExecutionRunStore;
 import com.macedxs.mx.core.application.run.NoopExecutionRunStore;
 
+import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import java.util.Objects;
 import java.util.Optional;
@@ -78,7 +80,7 @@ public class MxCoreService {
             persist(run);
             SkillResult result = decision.skill().execute(
                     new SkillRequest(prompt),
-                    new SkillExecutionContext(userId, correlationId, AutonomyLevel.RESPOND)
+                    new SkillExecutionContext(userId, correlationId, decision.skill().definition().maximumAutonomy())
             );
 
             run.beginVerification();
@@ -90,14 +92,7 @@ public class MxCoreService {
             persist(run);
             safely(() -> telemetry.completed(selectedSkillName));
 
-            return new MxCoreResponse(
-                    correlationId,
-                    skillName,
-                    decision.confidence(),
-                    decision.requiresClarification(),
-                    result.answer(),
-                    run.runId()
-            );
+            return toResponse(correlationId, skillName, decision, result, run.runId());
         } catch (RuntimeException failure) {
             if (run.status() != com.macedxs.mx.core.application.run.RunStatus.COMPLETED
                     && run.status() != com.macedxs.mx.core.application.run.RunStatus.FAILED
@@ -162,7 +157,7 @@ public class MxCoreService {
             persist(run);
             SkillResult result = decision.skill().stream(
                     new SkillRequest(prompt),
-                    new SkillExecutionContext(userId, correlationId, AutonomyLevel.RESPOND),
+                    new SkillExecutionContext(userId, correlationId, decision.skill().definition().maximumAutonomy()),
                     observer::onChunk
             );
 
@@ -175,14 +170,7 @@ public class MxCoreService {
             persist(run);
             safely(() -> telemetry.completed(selectedSkillName));
 
-            return new MxCoreResponse(
-                    correlationId,
-                    skillName,
-                    decision.confidence(),
-                    decision.requiresClarification(),
-                    result.answer(),
-                    run.runId()
-            );
+            return toResponse(correlationId, skillName, decision, result, run.runId());
         } catch (RuntimeException failure) {
             if (run.status() != com.macedxs.mx.core.application.run.RunStatus.COMPLETED
                     && run.status() != com.macedxs.mx.core.application.run.RunStatus.FAILED
@@ -193,6 +181,58 @@ public class MxCoreService {
             String failedSkill = skillName == null ? "unknown" : skillName;
             safely(() -> telemetry.failed(failedSkill, failure));
             throw failure;
+        }
+    }
+
+    private MxCoreResponse toResponse(
+            UUID correlationId,
+            String skillName,
+            RouteDecision decision,
+            SkillResult result,
+            UUID runId
+    ) {
+        Map<String, Object> metadata = result.metadata();
+        UUID approvalRunId = parseUuid(metadata.get("approvalRunId"));
+        String approvalNonce = metadata.get("approvalNonce") == null
+                ? null
+                : String.valueOf(metadata.get("approvalNonce"));
+        Instant approvalExpiresAt = parseInstant(metadata.get("approvalExpiresAt"));
+        String status = Boolean.TRUE.equals(metadata.get("approvalRequired"))
+                ? "AWAITING_APPROVAL"
+                : "COMPLETED";
+        return new MxCoreResponse(
+                correlationId,
+                skillName,
+                decision.confidence(),
+                decision.requiresClarification(),
+                result.answer(),
+                runId,
+                status,
+                approvalRunId,
+                approvalNonce,
+                approvalExpiresAt
+        );
+    }
+
+    private UUID parseUuid(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return UUID.fromString(String.valueOf(value));
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private Instant parseInstant(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Instant.parse(String.valueOf(value));
+        } catch (RuntimeException ignored) {
+            return null;
         }
     }
 

@@ -3,11 +3,11 @@ package com.macedxs.mx.core.infrastructure;
 import com.macedxs.mx.conversation.application.port.ModelGateway;
 import com.macedxs.mx.conversation.application.port.ModelStreamObserver;
 import com.macedxs.mx.conversation.application.port.StreamingModelGateway;
-
-import java.util.function.Consumer;
 import com.macedxs.mx.core.application.MxCoreResponse;
 import com.macedxs.mx.core.application.MxCoreService;
 import org.springframework.stereotype.Component;
+
+import java.util.function.Consumer;
 
 @Component
 public class MxCoreModelGateway implements StreamingModelGateway {
@@ -20,54 +20,45 @@ public class MxCoreModelGateway implements StreamingModelGateway {
 
     @Override
     public ModelResponse complete(ModelRequest request) {
-        MxCoreResponse response = mxCoreService.handle(
+        return toModelResponse(mxCoreService.handle(
                 request.userId(),
                 request.prompt(),
                 request.idempotencyKey()
-        );
-        return new ModelResponse(
-                response.answer(),
-                response.skillName(),
-                0L,
-                response.correlationId(),
-                response.skillName(),
-                response.runId()
-        );
+        ));
     }
 
     @Override
     public ModelResponse stream(ModelRequest request, Consumer<String> chunkConsumer) {
-        MxCoreResponse response = mxCoreService.handleStreaming(
+        return toModelResponse(mxCoreService.handleStreaming(
                 request.userId(),
                 request.prompt(),
                 request.idempotencyKey(),
                 chunkConsumer
-        );
-        return new ModelResponse(
-                response.answer(),
-                response.skillName(),
-                0L,
-                response.correlationId(),
-                response.skillName(),
-                response.runId()
-        );
+        ));
     }
 
     @Override
     public ModelResponse streamWithObserver(ModelRequest request, ModelStreamObserver observer) {
-        MxCoreResponse response = mxCoreService.handleStreamingWithObserver(
+        return toModelResponse(mxCoreService.handleStreamingWithObserver(
                 request.userId(),
                 request.prompt(),
                 request.idempotencyKey(),
                 observer
-        );
+        ));
+    }
+
+    private ModelResponse toModelResponse(MxCoreResponse response) {
         return new ModelResponse(
                 response.answer(),
                 response.skillName(),
                 0L,
                 response.correlationId(),
                 response.skillName(),
-                response.runId()
+                response.runId(),
+                response.status(),
+                response.approvalRunId(),
+                response.approvalNonce(),
+                response.approvalExpiresAt()
         );
     }
 }
