@@ -20,7 +20,11 @@ public class MxCoreModelGateway implements StreamingModelGateway {
 
     @Override
     public ModelResponse complete(ModelRequest request) {
-        MxCoreResponse response = mxCoreService.handle(request.userId(), request.prompt());
+        MxCoreResponse response = mxCoreService.handle(
+                request.userId(),
+                request.prompt(),
+                request.idempotencyKey()
+        );
         return new ModelResponse(
                 response.answer(),
                 response.skillName(),
@@ -36,6 +40,7 @@ public class MxCoreModelGateway implements StreamingModelGateway {
         MxCoreResponse response = mxCoreService.handleStreaming(
                 request.userId(),
                 request.prompt(),
+                request.idempotencyKey(),
                 chunkConsumer
         );
         return new ModelResponse(
@@ -53,6 +58,7 @@ public class MxCoreModelGateway implements StreamingModelGateway {
         MxCoreResponse response = mxCoreService.handleStreamingWithObserver(
                 request.userId(),
                 request.prompt(),
+                request.idempotencyKey(),
                 observer
         );
         return new ModelResponse(

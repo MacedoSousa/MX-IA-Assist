@@ -26,26 +26,35 @@ public class OllamaService {
     private final ObjectMapper objectMapper;
     private final String baseUrl;
     private final Duration requestTimeout;
+    private final String model;
 
     public OllamaService() {
-        this("http://localhost:11434", DEFAULT_REQUEST_TIMEOUT);
+        this("http://localhost:11434", DEFAULT_REQUEST_TIMEOUT, "qwen3:8b");
     }
 
     public OllamaService(String baseUrl) {
-        this(baseUrl, DEFAULT_REQUEST_TIMEOUT);
+        this(baseUrl, DEFAULT_REQUEST_TIMEOUT, "qwen3:8b");
     }
 
     @Autowired
     public OllamaService(
             @Value("${mx.ollama.url:http://localhost:11434}") String baseUrl,
-            @Value("${mx.ollama.timeout-ms:120000}") long timeoutMs
+            @Value("${mx.ollama.timeout-ms:120000}") long timeoutMs,
+            @Value("${mx.ollama.model:qwen3:8b}") String model
     ) {
-        this(baseUrl, Duration.ofMillis(timeoutMs));
+        this(baseUrl, Duration.ofMillis(timeoutMs), model);
     }
 
     public OllamaService(String baseUrl, Duration requestTimeout) {
+        this(baseUrl, requestTimeout, "qwen3:8b");
+    }
+
+    public OllamaService(String baseUrl, Duration requestTimeout, String model) {
         if (requestTimeout == null || requestTimeout.isZero() || requestTimeout.isNegative()) {
             throw new IllegalArgumentException("Ollama request timeout must be positive");
+        }
+        if (model == null || model.isBlank()) {
+            throw new IllegalArgumentException("Ollama model is required");
         }
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(requestTimeout)
@@ -55,6 +64,7 @@ public class OllamaService {
                 ? baseUrl.replaceAll("/+$", "")
                 : "http://localhost:11434";
         this.requestTimeout = requestTimeout;
+        this.model = model.trim();
     }
 
     public String generateText(String prompt) {
@@ -62,7 +72,7 @@ public class OllamaService {
             throw new IllegalArgumentException("Prompt is required");
         }
 
-        String body = "{\"model\":\"qwen3\",\"prompt\":\"" + escapeJson(prompt) + "\",\"stream\":false}";
+        String body = "{\"model\":\"" + escapeJson(model) + "\",\"prompt\":\"" + escapeJson(prompt) + "\",\"stream\":false}";
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/generate"))
@@ -90,7 +100,7 @@ public class OllamaService {
         }
         Objects.requireNonNull(chunkConsumer, "Chunk consumer is required");
 
-        String body = "{\"model\":\"qwen3\",\"prompt\":\"" + escapeJson(prompt) + "\",\"stream\":true}";
+        String body = "{\"model\":\"" + escapeJson(model) + "\",\"prompt\":\"" + escapeJson(prompt) + "\",\"stream\":true}";
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/generate"))
                 .timeout(requestTimeout)

@@ -13,6 +13,7 @@ import com.macedxs.mx.core.application.run.NoopExecutionRunStore;
 
 import java.util.UUID;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class MxCoreService {
@@ -49,15 +50,19 @@ public class MxCoreService {
     }
 
     public MxCoreResponse handle(UUID userId, String prompt) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User is required");
+        return handle(userId, prompt, null);
+    }
+
+    public MxCoreResponse handle(UUID userId, String prompt, String idempotencyKey) {
+        validateInput(userId, prompt);
+        Optional<MxCoreResponse> previous = findCompletedIdempotentResponse(userId, idempotencyKey);
+        if (previous.isPresent()) {
+            return previous.get();
         }
-        if (prompt == null || prompt.isBlank()) {
-            throw new IllegalArgumentException("Prompt is required");
-        }
+        rejectInProgressDuplicate(userId, idempotencyKey);
 
         UUID correlationId = UUID.randomUUID();
-        ExecutionRun run = ExecutionRun.receive(UUID.randomUUID(), userId, correlationId, prompt);
+        ExecutionRun run = ExecutionRun.receive(UUID.randomUUID(), userId, correlationId, prompt, idempotencyKey);
         persist(run);
         String skillName = null;
 
@@ -107,8 +112,12 @@ public class MxCoreService {
     }
 
     public MxCoreResponse handleStreaming(UUID userId, String prompt, Consumer<String> chunkConsumer) {
+        return handleStreaming(userId, prompt, null, chunkConsumer);
+    }
+
+    public MxCoreResponse handleStreaming(UUID userId, String prompt, String idempotencyKey, Consumer<String> chunkConsumer) {
         Objects.requireNonNull(chunkConsumer, "Chunk consumer is required");
-        return handleStreamingWithObserver(userId, prompt, ModelStreamObserver.from(chunkConsumer));
+        return handleStreamingWithObserver(userId, prompt, idempotencyKey, ModelStreamObserver.from(chunkConsumer));
     }
 
     public MxCoreResponse handleStreamingWithObserver(
@@ -116,16 +125,27 @@ public class MxCoreService {
             String prompt,
             ModelStreamObserver observer
     ) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User is required");
+        return handleStreamingWithObserver(userId, prompt, null, observer);
+    }
+
+    public MxCoreResponse handleStreamingWithObserver(
+            UUID userId,
+            String prompt,
+            String idempotencyKey,
+            ModelStreamObserver observer
+    ) {
+        validateInput(userId, prompt);
+        Optional<MxCoreResponse> previous = findCompletedIdempotentResponse(userId, idempotencyKey);
+        if (previous.isPresent()) {
+            observer.onStarted(previous.get().runId(), previous.get().correlationId());
+            observer.onChunk(previous.get().answer());
+            return previous.get();
         }
-        if (prompt == null || prompt.isBlank()) {
-            throw new IllegalArgumentException("Prompt is required");
-        }
+        rejectInProgressDuplicate(userId, idempotencyKey);
         Objects.requireNonNull(observer, "Stream observer is required");
 
         UUID correlationId = UUID.randomUUID();
-        ExecutionRun run = ExecutionRun.receive(UUID.randomUUID(), userId, correlationId, prompt);
+        ExecutionRun run = ExecutionRun.receive(UUID.randomUUID(), userId, correlationId, prompt, idempotencyKey);
         persist(run);
         observer.onStarted(run.runId(), correlationId);
         String skillName = null;
@@ -174,6 +194,42 @@ public class MxCoreService {
             safely(() -> telemetry.failed(failedSkill, failure));
             throw failure;
         }
+    }
+
+    private void validateInput(UUID userId, String prompt) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User is required");
+        }
+        if (prompt == null || prompt.isBlank()) {
+            throw new IllegalArgumentException("Prompt is required");
+        }
+    }
+
+    private Optional<MxCoreResponse> findCompletedIdempotentResponse(UUID userId, String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Optional.empty();
+        }
+        return runStore.findByIdempotencyKey(userId, idempotencyKey)
+                .filter(snapshot -> snapshot.status() == com.macedxs.mx.core.application.run.RunStatus.COMPLETED)
+                .map(snapshot -> new MxCoreResponse(
+                        snapshot.correlationId(),
+                        snapshot.skillName() == null ? "unknown" : snapshot.skillName(),
+                        1.0,
+                        false,
+                        snapshot.output(),
+                        snapshot.runId()
+                ));
+    }
+
+    private void rejectInProgressDuplicate(UUID userId, String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return;
+        }
+        runStore.findByIdempotencyKey(userId, idempotencyKey)
+                .filter(snapshot -> snapshot.status() != com.macedxs.mx.core.application.run.RunStatus.COMPLETED)
+                .ifPresent(snapshot -> {
+                    throw new IllegalStateException("Idempotent request is already in progress: " + snapshot.runId());
+                });
     }
 
     private void persist(ExecutionRun run) {

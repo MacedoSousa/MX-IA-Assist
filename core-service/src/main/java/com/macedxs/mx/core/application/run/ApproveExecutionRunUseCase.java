@@ -15,6 +15,10 @@ public class ApproveExecutionRunUseCase {
     }
 
     public Optional<ExecutionRunSnapshot> execute(UUID userId, UUID runId) {
+        return execute(userId, runId, null);
+    }
+
+    public Optional<ExecutionRunSnapshot> execute(UUID userId, UUID runId, String approvalNonce) {
         require(userId, "User id");
         require(runId, "Run id");
 
@@ -23,7 +27,7 @@ public class ApproveExecutionRunUseCase {
                 throw new ExecutionRunApprovalException("Execution run is not awaiting approval: " + snapshot.status());
             }
             ExecutionRun run = ExecutionRun.restore(snapshot);
-            run.resumeAfterApproval();
+            run.resumeAfterApproval(approvalNonce);
             return runStore.save(run);
         });
     }

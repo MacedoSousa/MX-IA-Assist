@@ -8,11 +8,10 @@ Este runbook descreve como iniciar, verificar, diagnosticar e parar o MX em uma 
 
 | Dependência | Uso |
 |---|---|
-| Java 21 | Compilar e executar o backend. |
-| Maven ou Maven Wrapper | Build e testes Java. |
-| Docker Desktop + Compose v2 | PostgreSQL, Redis, Ollama, Open WebUI e MX Core. |
-| Node.js + npm | Cliente Expo e exportação web. |
-| Ollama | Modelo local conversacional. |
+| Docker Desktop + Compose | PostgreSQL, Redis, Ollama, Open WebUI, MX Core e mx-web. |
+| PowerShell | Launcher Windows e diagnóstico operacional. |
+| Java 21 + Maven Wrapper | Opcionais para build/testes do backend fora do Docker. |
+| Node.js + npm | Opcionais para desenvolvimento direto do cliente Expo. |
 | Git | Versionamento e revisão. |
 
 Confirme versões antes de investigar a aplicação:
@@ -29,44 +28,39 @@ ollama --version
 
 ## Configuração
 
-A configuração de desenvolvimento fica em `core-service/src/main/resources/application-dev.yml` e no Compose. Segredos devem ser fornecidos pelo ambiente ou por arquivo local ignorado. O repositório contém apenas `.env.example` com placeholders. `OLLAMA_TIMEOUT_MS` controla o timeout de cada requisição ao modelo e assume 120000 ms por padrão.
+A configuração de desenvolvimento fica em `core-service/src/main/resources/application-dev.yml` e no Compose. Segredos devem ser fornecidos pelo ambiente ou por arquivo local ignorado. O repositório contém apenas `.env.example` com placeholders. `OLLAMA_TIMEOUT_MS` controla o timeout de cada requisição ao modelo e assume 120000 ms por padrão; `OLLAMA_MODEL` permite substituir o modelo local e assume `qwen3:8b`, que é o modelo validado no stack atual.
 
-O cliente Expo usa:
+Quando o `start.bat` é usado, o bundle Expo é construído com `EXPO_PUBLIC_MX_API_URL=http://<IP-LAN>:8080`, e o CORS é configurado para a origem web correspondente. Para desenvolvimento direto do cliente no host, use:
 
 ```powershell
 $env:EXPO_PUBLIC_MX_API_URL = "http://localhost:8080"
 ```
 
-Para acessar pelo navegador do celular, substitua `localhost` pelo IPv4 privado da máquina Windows, por exemplo `http://192.168.0.10:8080`. O computador e o celular precisam estar na mesma rede privada, e o firewall do Windows deve permitir as portas escolhidas. Não exponha o serviço diretamente à internet.
+Para acessar pelo navegador do celular, o computador e o celular precisam estar na mesma rede privada, o firewall do Windows deve permitir as portas escolhidas e o serviço web deve ser aberto em `http://<IP-LAN>:8082`. Não exponha o serviço diretamente à internet.
 
 Dentro do Compose, o backend usa o hostname do serviço Ollama definido no arquivo de composição. No cliente executado no host, `localhost` deve apontar para a porta publicada pelo backend; em um dispositivo físico, use o IP LAN da máquina.
 
 ## Iniciar
 
-O caminho recomendado para desenvolvimento no Windows é executar `start.bat` na raiz do projeto. O script valida Docker, Java, Node.js, npm e PowerShell; sobe PostgreSQL, Redis, Ollama e Open WebUI pelo Compose; inicia o MX Core diretamente com o Maven Wrapper; aguarda o Actuator; e abre o Expo Web em uma nova janela usando o IP LAN detectado.
+O caminho recomendado para desenvolvimento no Windows é executar `start.bat` na raiz do projeto. O script valida Docker e PowerShell; constrói e sobe todo o stack pelo Compose, incluindo PostgreSQL, Redis, Ollama, Open WebUI, MX Core e mx-web; aguarda os healthchecks; injeta a URL da API e a origem CORS da LAN no bundle Expo; e informa os endereços local e LAN. Java, Maven, Node.js e Ollama instalados no host não são necessários para esse fluxo Docker-only.
 
 ```powershell
 cd D:\MX
 .\start.bat
 ```
 
-Ao final, o script informa os endereços local e LAN. No navegador do celular, conectado à mesma rede Wi-Fi, abra `http://<IP-LAN>:8081`. Se o Windows tiver mais de uma interface de rede, confirme o IP exibido e ajuste o firewall somente para a rede privada.
+Ao final, o script informa os endereços local e LAN. No navegador do celular, conectado à mesma rede Wi-Fi, abra `http://<IP-LAN>:8082`. Se o Windows tiver mais de uma interface de rede, confirme o IP exibido e ajuste o firewall somente para a rede privada. A porta pode ser alterada com `MX_WEB_PORT` no ambiente do Compose; o launcher padrão usa 8082 porque 8081 já pode estar ocupada por outro serviço local.
 
-Para executar as etapas manualmente, inicie as dependências:
+Para executar o stack manualmente, use:
 
 ```powershell
 cd D:\MX\infrastructure\docker\compose
-docker compose up -d postgres redis ollama open-webui
+$env:MX_WEB_PORT = "8082"
+$env:EXPO_PUBLIC_MX_API_URL = "http://localhost:8080"
+docker compose up -d --build
 ```
 
-Em seguida, execute o backend com o launcher equivalente ao usado pelo script:
-
-```powershell
-cd D:\MX
-.\scripts\run-backend.bat
-```
-
-O cliente universal pode ser iniciado separadamente, apontando a API para o host ou para o IP LAN:
+O cliente universal também pode ser executado diretamente no host, apontando a API para o host ou para o IP LAN:
 
 ```powershell
 cd D:\MX\clients\mx-app
@@ -75,19 +69,20 @@ $env:EXPO_PUBLIC_MX_API_URL = "http://localhost:8080"
 npm run web
 ```
 
-Para executar diretamente pela LAN, use `D:\MX\scripts\run-expo-web.bat <IP-LAN>`.
+Para executar diretamente pela LAN fora do Docker, use `D:\MX\scripts\run-expo-web.bat <IP-LAN>`; nesse caso, a porta depende do Expo e não deve ser confundida com o mx-web Docker publicado em 8082.
 
 Verifique os serviços:
 
 ```powershell
 cd D:\MX\infrastructure\docker\compose
 docker compose ps
+docker compose logs --tail=100 mx-core
 docker compose logs --tail=100 mx-ollama
 ```
 
 ## Health e smoke test
 
-O Actuator expõe `GET /actuator/health` no perfil de desenvolvimento. O `start.bat` aguarda essa rota antes de iniciar o cliente; um status HTTP de resposta confirma que o processo está atendendo, mas a autenticação e o smoke test do contrato ainda precisam ser executados separadamente.
+O Actuator expõe `GET /actuator/health` no perfil de desenvolvimento, e o Compose usa essa rota pública no healthcheck do `mx-core`. O cliente Nginx expõe `GET http://localhost:8082/health`. O `start.bat` aguarda ambas as rotas antes de concluir; a autenticação e o smoke test do contrato ainda precisam ser executados separadamente.
 
 Depois de autenticar, faça um smoke test do contrato atual:
 
@@ -133,6 +128,7 @@ O MX Core registra métricas Micrometer para o ciclo das skills. Os contadores a
 ```powershell
 curl.exe -s http://localhost:8080/actuator/metrics/mx.skill.execution
 curl.exe -s http://localhost:8080/actuator/metrics/mx.skill.route
+curl.exe -s http://localhost:8082/health
 ```
 
 Use `runId` e `correlationId` para correlacionar uma ocorrência. Não inclua prompt completo, resposta completa, access token, refresh token, senha, chave de API ou conteúdo privado em logs operacionais. Falhas de telemetria não devem interromper a execução principal. Métricas são indicadores operacionais: não devem ser apresentadas como cobertura, conformidade ou confiabilidade estatística sem período, denominador e método de medição.

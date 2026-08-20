@@ -3,8 +3,11 @@ package com.macedxs.mx.core.infrastructure.persistence;
 import com.macedxs.mx.core.application.run.ExecutionRun;
 import com.macedxs.mx.core.application.run.ExecutionRunSnapshot;
 import com.macedxs.mx.core.application.run.ExecutionRunStore;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,5 +34,30 @@ public class JpaExecutionRunStore implements ExecutionRunStore {
             return Optional.empty();
         }
         return repository.findByIdAndUserId(runId, userId).map(ExecutionRunEntity::toSnapshot);
+    }
+
+    @Override
+    public Optional<ExecutionRunSnapshot> findByIdempotencyKey(UUID userId, String idempotencyKey) {
+        if (userId == null || idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Optional.empty();
+        }
+        return repository.findByUserIdAndIdempotencyKey(userId, idempotencyKey.trim())
+                .map(ExecutionRunEntity::toSnapshot);
+    }
+
+    @Override
+    public List<ExecutionRunSnapshot> findUpdatedSince(UUID userId, Instant updatedSince, int limit) {
+        if (userId == null || updatedSince == null || limit <= 0) {
+            return List.of();
+        }
+        int boundedLimit = Math.min(limit, 200);
+        return repository.findByUserIdAndUpdatedAtGreaterThanOrderByUpdatedAtAscIdAsc(
+                        userId,
+                        updatedSince,
+                        PageRequest.of(0, boundedLimit)
+                )
+                .stream()
+                .map(ExecutionRunEntity::toSnapshot)
+                .toList();
     }
 }

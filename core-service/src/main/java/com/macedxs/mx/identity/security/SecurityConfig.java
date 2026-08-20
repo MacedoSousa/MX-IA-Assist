@@ -26,6 +26,9 @@ public class SecurityConfig {
     @Value("${security.cors.allowed-origins:http://localhost:3000,http://localhost:8081,http://localhost:19006}")
     private String allowedOrigins;
 
+    @Value("${security.cors.allowed-origin-patterns:}")
+    private String allowedOriginPatterns;
+
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
@@ -69,6 +72,13 @@ public class SecurityConfig {
                 .map(String::trim)
                 .filter(origin -> !origin.isBlank())
                 .toList());
+        List<String> originPatterns = Arrays.stream(allowedOriginPatterns.split(","))
+                .map(String::trim)
+                .filter(pattern -> !pattern.isBlank())
+                .toList();
+        if (!originPatterns.isEmpty()) {
+            configuration.setAllowedOriginPatterns(originPatterns);
+        }
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Correlation-Id", "Idempotency-Key"));
         configuration.setExposedHeaders(List.of("X-Correlation-Id"));

@@ -49,7 +49,7 @@ A regra central é que dependências apontam para dentro: o domínio e os casos 
 
 ## Requisitos locais
 
-O desenvolvimento principal ocorre em Windows, com Java 21, Docker Desktop com Compose, Node.js, npm, Git e Ollama. PostgreSQL, Redis, Ollama e Open WebUI podem ser iniciados pelo Compose; o MX Core é executado como serviço Spring Boot no mesmo stack.
+O desenvolvimento principal ocorre em Windows com Docker Desktop, Compose, PowerShell e Git. O fluxo recomendado é Docker-only: PostgreSQL, Redis, Ollama, Open WebUI, MX Core e mx-web são construídos e executados pelo Compose. Java 21, Maven, Node.js, npm e Ollama instalados no host permanecem opcionais para desenvolvimento direto e depuração avançada.
 
 Os modelos Ollama não são armazenados no Git. O arquivo `infrastructure/docker/env/.env.example` documenta somente valores de exemplo. Credenciais reais, bancos locais, logs, modelos, builds e distribuições de ferramentas devem permanecer fora do versionamento.
 
@@ -57,14 +57,14 @@ Os modelos Ollama não são armazenados no Git. O arquivo `infrastructure/docker
 
 ### Infraestrutura
 
-A partir da raiz do projeto, inicie o stack local:
+A partir da raiz do projeto, o caminho recomendado é executar o launcher Docker-only:
 
 ```powershell
-cd D:\MX\infrastructure\docker\compose
-docker compose up -d --build
+cd D:\MX
+.\start.bat
 ```
 
-O Compose atual inclui PostgreSQL, Redis, Ollama, Open WebUI e o container do MX Core. As portas e mounts devem ser confirmados em `infrastructure/docker/compose/docker-compose.yml`. Para desenvolvimento no Windows, `start.bat` sobe as dependências, inicia o backend direto com o Maven Wrapper e abre o cliente Expo Web pela LAN; os launchers em `scripts/` também podem ser executados separadamente. A pasta `frontend/` permanece legada.
+O Compose atual inclui PostgreSQL, Redis, Ollama, Open WebUI, MX Core e mx-web. O launcher detecta o IP LAN, constrói o bundle Expo com a URL correta da API, configura CORS para a origem web da LAN, aguarda os healthchecks e informa os endereços finais. A interface web oficial fica em `http://localhost:8082` ou `http://<IP-LAN>:8082`; a API fica em `http://localhost:8080` ou `http://<IP-LAN>:8080`. A porta `MX_WEB_PORT` é configurável; 8082 é o padrão atual porque 8081 já estava ocupada por outro serviço local. As portas e mounts devem ser confirmados em `infrastructure/docker/compose/docker-compose.yml`. A pasta `frontend/` permanece legada.
 
 ### Backend
 
@@ -137,9 +137,11 @@ As validações executadas no ambiente de desenvolvimento foram:
 
 | Validação | Resultado conhecido |
 |---|---|
-| Suíte Maven do backend | 75 testes, 0 falhas, com diretórios temporários em `C:\Windows\Temp\mx-target` e `C:\Windows\Temp\mx-m2`. |
+| Suíte TDD do backend | 75 testes, 0 falhas na validação anterior; a compilação da imagem `mx-core` também foi concluída com sucesso após a correção do modelo Ollama. |
 | TypeScript do cliente | `npm run typecheck` aprovado. |
-| Exportação web Expo | `npx expo export --platform web` aprovado. |
+| Exportação web Expo | `npx expo export --platform web` aprovado e servido pelo Nginx em `mx-web`. |
+| Stack Docker | `mx-core` healthy, `mx-web` ativo em 8082, Ollama respondendo com `qwen3:8b` disponível. |
+| E2E local | Registro, login com access/refresh token e chat síncrono concluídos; resposta validada como `OK.`. |
 |
 
 Execute novamente os comandos após qualquer alteração. O sucesso dessas verificações não substitui os testes E2E, adversariais e operacionais ainda planejados.

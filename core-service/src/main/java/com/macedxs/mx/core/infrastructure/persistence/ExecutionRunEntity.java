@@ -37,6 +37,15 @@ public class ExecutionRunEntity {
     @Column(name = "pending_approval", length = 160)
     private String pendingApproval;
 
+    @Column(name = "pending_approval_arguments", columnDefinition = "TEXT")
+    private String pendingApprovalArguments;
+
+    @Column(name = "approval_nonce_hash", length = 128)
+    private String approvalNonceHash;
+
+    @Column(name = "approval_expires_at")
+    private Instant approvalExpiresAt;
+
     @Column(columnDefinition = "TEXT")
     private String output;
 
@@ -48,6 +57,12 @@ public class ExecutionRunEntity {
 
     @Column(name = "finished_at")
     private Instant finishedAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    @Column(name = "idempotency_key", length = 120)
+    private String idempotencyKey;
 
     protected ExecutionRunEntity() {
     }
@@ -61,10 +76,15 @@ public class ExecutionRunEntity {
         entity.status = snapshot.status();
         entity.skillName = snapshot.skillName();
         entity.pendingApproval = snapshot.pendingApproval();
+        entity.pendingApprovalArguments = snapshot.pendingApprovalArguments();
+        entity.approvalNonceHash = snapshot.approvalNonceHash();
+        entity.approvalExpiresAt = snapshot.approvalExpiresAt();
         entity.output = snapshot.output();
         entity.errorCode = snapshot.errorCode();
         entity.receivedAt = snapshot.receivedAt();
         entity.finishedAt = snapshot.finishedAt();
+        entity.updatedAt = snapshot.effectiveUpdatedAt();
+        entity.idempotencyKey = snapshot.idempotencyKey();
         return entity;
     }
 
@@ -80,51 +100,29 @@ public class ExecutionRunEntity {
                 output,
                 errorCode,
                 receivedAt,
-                finishedAt
+                finishedAt,
+                pendingApprovalArguments,
+                approvalNonceHash,
+                approvalExpiresAt,
+                updatedAt,
+                idempotencyKey
         );
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public UUID getCorrelationId() {
-        return correlationId;
-    }
-
-    public String getInput() {
-        return input;
-    }
-
-    public RunStatus getStatus() {
-        return status;
-    }
-
-    public String getSkillName() {
-        return skillName;
-    }
-
-    public String getPendingApproval() {
-        return pendingApproval;
-    }
-
-    public String getOutput() {
-        return output;
-    }
-
-    public String getErrorCode() {
-        return errorCode;
-    }
-
-    public Instant getReceivedAt() {
-        return receivedAt;
-    }
-
-    public Instant getFinishedAt() {
-        return finishedAt;
-    }
+    public UUID getId() { return id; }
+    public UUID getUserId() { return userId; }
+    public UUID getCorrelationId() { return correlationId; }
+    public String getInput() { return input; }
+    public RunStatus getStatus() { return status; }
+    public String getSkillName() { return skillName; }
+    public String getPendingApproval() { return pendingApproval; }
+    public String getPendingApprovalArguments() { return pendingApprovalArguments; }
+    public String getApprovalNonceHash() { return approvalNonceHash; }
+    public Instant getApprovalExpiresAt() { return approvalExpiresAt; }
+    public String getOutput() { return output; }
+    public String getErrorCode() { return errorCode; }
+    public Instant getReceivedAt() { return receivedAt; }
+    public Instant getFinishedAt() { return finishedAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
+    public String getIdempotencyKey() { return idempotencyKey; }
 }

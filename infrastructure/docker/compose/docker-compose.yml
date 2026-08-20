@@ -82,8 +82,29 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       OLLAMA_URL: http://ollama:11434
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     volumes:
       - ../../../logs:/app/logs
+
+  mx-web:
+    build:
+      context: ../../../clients/mx-app
+      dockerfile: Dockerfile
+      args:
+        EXPO_PUBLIC_MX_API_URL: ${EXPO_PUBLIC_MX_API_URL:-http://localhost:8080}
+    image: mx-web:latest
+    container_name: mx-web
+    restart: unless-stopped
+    depends_on:
+      mx-core:
+        condition: service_healthy
+    ports:
+      - "${MX_WEB_PORT:-8082}:80"
 
 volumes:
   postgres_data:
