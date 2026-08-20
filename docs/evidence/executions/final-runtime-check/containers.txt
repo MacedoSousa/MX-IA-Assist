@@ -1,0 +1,15 @@
+mx-core|Up 22 minutes (healthy)|0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+mx-redis|Up 29 minutes (healthy)|0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp
+mx-web|Up 2 hours|0.0.0.0:8082->80/tcp, [::]:8082->80/tcp
+medsync-web-1|Up 2 hours|0.0.0.0:8081->80/tcp, [::]:8081->80/tcp
+medsync-api-1|Up 2 hours|0.0.0.0:3001->3000/tcp, [::]:3001->3000/tcp
+medsync-mysql-1|Up 2 hours (healthy)|3306/tcp
+mx-postgres|Up 3 hours (healthy)|0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+mx-ollama|Up 3 hours|0.0.0.0:11434->11434/tcp, [::]:11434->11434/tcp
+deceasedcraft-server|Up 14 hours|0.0.0.0:25565->25565/tcp, [::]:25565->25565/tcp
+core-service-spring-init-1|Exited (0) 2 weeks ago|
+mx-open-webui|Up 3 hours (healthy)|0.0.0.0:3000->8080/tcp, [::]:3000->8080/tcp
+minecraft|Exited (137) 12 days ago|
+ts3-sinusbot|Exited (137) 2 weeks ago|
+ts3-server|Exited (0) 2 weeks ago|
+carpg-server|Exited (137) 7 weeks ago|

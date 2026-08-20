@@ -1,0 +1,6 @@
+medsync-web-1
+medsync-api-1
+medsync-mysql-1
+deceasedcraft-server
+core-service-spring-init-1
+minecraft
