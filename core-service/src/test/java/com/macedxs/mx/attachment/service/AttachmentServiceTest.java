@@ -58,6 +58,49 @@ class AttachmentServiceTest {
     }
 
     @Test
+    void shouldStorePdfAttachmentWithPdfContentType(@TempDir Path tempDir) throws Exception {
+        UUID userId = UUID.randomUUID();
+        UserEntity user = mock(UserEntity.class);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(repository.save(any(AttachmentEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        AttachmentService service = new AttachmentService(repository, userRepository, tempDir, 4096, 4096, 4096);
+        byte[] pdfHeader = "%PDF-1.7\\n".getBytes(StandardCharsets.US_ASCII);
+
+        AttachmentEntity stored = service.store(
+                userId,
+                "documento.pdf",
+                "application/pdf",
+                pdfHeader.length,
+                new ByteArrayInputStream(pdfHeader)
+        );
+
+        assertThat(stored.getOriginalFilename()).isEqualTo("documento.pdf");
+        assertThat(stored.getContentType()).isEqualTo("application/pdf");
+        assertThat(Files.readAllBytes(tempDir.resolve(stored.getStoredFilename())))
+                .isEqualTo(pdfHeader);
+    }
+
+    @Test
+    void shouldStorePdfWhenBrowserSendsGenericMime(@TempDir Path tempDir) throws Exception {
+        UUID userId = UUID.randomUUID();
+        UserEntity user = mock(UserEntity.class);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(repository.save(any(AttachmentEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        AttachmentService service = new AttachmentService(repository, userRepository, tempDir, 4096, 4096, 4096);
+        byte[] pdfHeader = "%PDF-1.7\\n".getBytes(StandardCharsets.US_ASCII);
+
+        AttachmentEntity stored = service.store(
+                userId,
+                "documento.pdf",
+                "application/octet-stream",
+                pdfHeader.length,
+                new ByteArrayInputStream(pdfHeader)
+        );
+
+        assertThat(stored.getContentType()).isEqualTo("application/pdf");
+    }
+
+    @Test
     void shouldRejectUnsupportedMimeAndOversizedFiles(@TempDir Path tempDir) {
         AttachmentService service = new AttachmentService(repository, userRepository, tempDir, 4, 4, 4);
 

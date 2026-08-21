@@ -81,6 +81,35 @@ services:
     volumes:
       - ../../../data/open-webui:/app/backend/data
 
+  image-engine:
+    image: ghcr.io/ai-dock/stable-diffusion-webui-forge:cuda-12.1.1-base-22.04
+    container_name: mx-image-engine
+    restart: unless-stopped
+    ports:
+      - "${MX_IMAGE_ENGINE_PORT:-7860}:7860"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      WORKSPACE: /workspace
+      FORGE_PORT_HOST: 7860
+      FORGE_PORT_LOCAL: 7860
+      FORGE_ARGS: ${MX_IMAGE_ENGINE_ARGS:---api --listen --port 7860 --medvram-sdxl}
+      WEB_ENABLE_AUTH: ${MX_IMAGE_ENGINE_WEB_AUTH:-false}
+      AUTO_UPDATE: ${MX_IMAGE_ENGINE_AUTO_UPDATE:-false}
+    volumes:
+      - ../../../data/image-engine:/workspace
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7860/sdapi/v1/sd-models >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 180s
+
   mx-core:
     build:
       context: ../../../core-service
@@ -116,10 +145,10 @@ services:
       MX_ATTACHMENTS_MAX_BYTES: ${MX_ATTACHMENTS_MAX_BYTES:-26214400}
       MX_ATTACHMENTS_MAX_TEXT_BYTES: ${MX_ATTACHMENTS_MAX_TEXT_BYTES:-262144}
       MX_ATTACHMENTS_MAX_VISION_BYTES: ${MX_ATTACHMENTS_MAX_VISION_BYTES:-5242880}
-      MX_IMAGE_GENERATION_ENABLED: ${MX_IMAGE_GENERATION_ENABLED:-false}
-      MX_IMAGE_GENERATION_URL: ${MX_IMAGE_GENERATION_URL:-http://host.docker.internal:7860}
-      MX_IMAGE_GENERATION_MAX_PIXELS: ${MX_IMAGE_GENERATION_MAX_PIXELS:-1048576}
-      MX_IMAGE_GENERATION_STEPS: ${MX_IMAGE_GENERATION_STEPS:-24}
+      MX_MEDIA_IMAGEGENERATION_ENABLED: ${MX_MEDIA_IMAGEGENERATION_ENABLED:-true}
+      MX_MEDIA_IMAGEGENERATION_URL: ${MX_MEDIA_IMAGEGENERATION_URL:-http://image-engine:7860}
+      MX_MEDIA_IMAGEGENERATION_MAXPIXELS: ${MX_MEDIA_IMAGEGENERATION_MAXPIXELS:-1048576}
+      MX_MEDIA_IMAGEGENERATION_STEPS: ${MX_MEDIA_IMAGEGENERATION_STEPS:-24}
       MX_AUDIO_TRANSCRIPTION_ENABLED: ${MX_AUDIO_TRANSCRIPTION_ENABLED:-false}
       MX_AUDIO_TRANSCRIPTION_COMMAND: ${MX_AUDIO_TRANSCRIPTION_COMMAND:-whisper}
       MX_AUDIO_TRANSCRIPTION_MODEL: ${MX_AUDIO_TRANSCRIPTION_MODEL:-base}

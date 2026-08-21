@@ -18,6 +18,32 @@ function configuredApiUrl(): string {
   return process.env.EXPO_PUBLIC_MX_API_URL?.trim() || resolveDefaultApiUrl();
 }
 
+function inferAttachmentContentType(name: string, fallback = "application/octet-stream"): string {
+  const extension = name.split(".").pop()?.toLowerCase();
+  const byExtension: Record<string, string> = {
+    pdf: "application/pdf",
+    txt: "text/plain",
+    md: "text/markdown",
+    csv: "text/csv",
+    json: "application/json",
+    xml: "application/xml",
+    html: "text/html",
+    htm: "text/html",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    mp3: "audio/mpeg",
+    wav: "audio/wav",
+    mp4: "video/mp4",
+    webm: "video/webm",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+  };
+  return byExtension[extension ?? ""] || fallback;
+}
+
 export type ChatMessage = {
   role: "USER" | "ASSISTANT";
   content: string;
@@ -280,17 +306,48 @@ export class MxApiClient {
   async uploadAttachment(input: AttachmentUploadInput): Promise<UploadedAttachment> {
     const body = new FormData();
     if ("uri" in input) {
-      if (input.file instanceof Blob) {
-        body.append("file", input.file, input.name);
+      const filename = input.name?.trim() || "attachment";
+      const declaredType = input.type?.trim() || inferAttachmentContentType(filename);
+      const hasBlob = typeof Blob !== "undefined" && input.file instanceof Blob;
+      if (hasBlob) {
+        const source = input.file as Blob;
+        const file = new Blob([source], { type: source.type || declaredType });
+        body.append("file", file, filename);
+      } else if (typeof window !== "undefined") {
+        try {
+          const response = await fetch(input.uri);
+          if (!response.ok) {
+            throw new MxApiError(response.status, "MX_ATTACHMENT_READ_FAILED", `Não foi possível ler o arquivo selecionado (${response.status}).`);
+          }
+          const downloaded = await response.blob();
+          if (!downloaded.size) {
+            throw new MxApiError(422, "MX_ATTACHMENT_EMPTY", "O navegador retornou um arquivo vazio para o anexo.");
+          }
+          const contentType = downloaded.type && downloaded.type !== "application/octet-stream"
+            ? downloaded.type
+            : declaredType;
+          const file = new Blob([downloaded], { type: contentType });
+          body.append("file", file, filename);
+        } catch (cause) {
+          if (cause instanceof MxApiError) throw cause;
+          const detail = cause instanceof Error && cause.message ? `: ${cause.message}` : "";
+          throw new MxApiError(422, "MX_ATTACHMENT_READ_FAILED", `Não foi possível preparar o arquivo para envio${detail}.`);
+        }
       } else {
+        // React Native expects the native URI descriptor instead of a browser Blob.
         body.append("file", {
           uri: input.uri,
-          name: input.name,
-          type: input.type,
+          name: filename,
+          type: declaredType,
         } as unknown as Blob);
       }
     } else {
-      body.append("file", input, input.name || "attachment");
+      const filename = input.name?.trim() || "attachment";
+      const contentType = input.type || inferAttachmentContentType(filename);
+      const file = typeof Blob !== "undefined" && input instanceof Blob && !input.type
+        ? new Blob([input], { type: contentType })
+        : input;
+      body.append("file", file, filename);
     }
     return this.requestMultipart<UploadedAttachment>("/api/v1/attachments", body);
   }
@@ -601,11 +658,18 @@ export class MxApiClient {
       }
     }
     if (!response.ok) {
-      const payload = await response.json().catch(() => null);
+      const raw = await response.text().catch(() => "");
+      let payload: { code?: string; message?: string; correlationId?: string } | null = null;
+      try {
+        payload = raw ? JSON.parse(raw) : null;
+      } catch {
+        payload = null;
+      }
+      const fallbackDetail = raw.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 240);
       throw new MxApiError(
         response.status,
         payload?.code ?? "MX_API_ERROR",
-        payload?.message ?? "Não foi possível enviar o anexo.",
+        payload?.message ?? (fallbackDetail || "Não foi possível enviar o anexo."),
         payload?.correlationId,
       );
     }

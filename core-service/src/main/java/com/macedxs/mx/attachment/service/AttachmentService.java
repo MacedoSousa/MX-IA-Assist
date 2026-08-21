@@ -317,7 +317,8 @@ public class AttachmentService {
             case ".mp3" -> "audio/mpeg";
             case ".wav" -> "audio/wav";
             case ".ogg" -> "audio/ogg";
-            case ".m4a", ".mp4" -> "audio/mp4";
+            case ".m4a" -> "audio/mp4";
+            case ".mp4" -> "video/mp4";
             case ".webm" -> "video/webm";
             case ".mov" -> "video/quicktime";
             default -> normalized;

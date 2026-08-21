@@ -663,107 +663,50 @@ export default function App() {
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <StatusBar style="light" />
-      <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Text style={styles.eyebrow}>MX CORE</Text>
-          <Text style={styles.headerTitle}>Olá. Como posso ajudar?</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable onPress={() => setShowHistory((current) => !current)} style={({ pressed }) => [styles.historyButton, pressed && styles.pressed]}><Text style={styles.historyButtonText}>{showHistory ? "Fechar" : "Histórico"}</Text></Pressable>
-          <Pressable onPress={() => setShowProjects((current) => !current)} style={({ pressed }) => [styles.projectButton, pressed && styles.pressed]}><Text style={styles.projectButtonText}>{showProjects ? "Fechar projetos" : "Projetos"}</Text></Pressable>
-          <Pressable onPress={handleLogout} style={({ pressed }) => [styles.logout, pressed && styles.pressed]}><Text style={styles.logoutText}>Sair</Text></Pressable>
-        </View>
-      </View>
-
-      {showHistory ? <View style={styles.historyPanel}>
-        <View style={styles.historyHeaderRow}>
-          <View>
-            <Text style={styles.panelTitle}>Conversas</Text>
-            <Text style={styles.muted}>Gerencie, retome ou remova seu histórico.</Text>
+      <View style={styles.appShell}>
+        <View style={styles.topBar}>
+          <View style={styles.brandBlock}>
+            <View style={styles.brandMark}><Text style={styles.brandMarkText}>MX</Text></View>
+            <View style={styles.brandCopy}>
+              <Text style={styles.eyebrow}>ASSISTENTE LOCAL</Text>
+              <Text style={styles.headerTitle}>Olá. Como posso ajudar?</Text>
+              <Text style={styles.subtitle}>{subtitle}</Text>
+            </View>
           </View>
-          <View style={styles.historyHeaderActions}>
-            <Pressable onPress={() => void handleCreateConversation()} style={({ pressed }) => [styles.primaryButton, styles.compactButton, pressed && styles.pressed]}><Text style={styles.primaryButtonText}>+ Nova</Text></Pressable>
-            <Pressable onPress={() => setShowTrash((current) => !current)} style={({ pressed }) => [styles.secondaryButton, styles.compactButton, pressed && styles.pressed]}><Text style={styles.logoutText}>{showTrash ? "Conversas" : "Lixeira"}</Text></Pressable>
+          <View style={styles.topBarActions}>
+            <View style={[styles.statusPill, online ? styles.statusPillOnline : styles.statusPillOffline]}><View style={[styles.statusDot, online ? styles.statusDotOnline : styles.statusDotOffline]} /><Text style={styles.statusText}>{online ? "Online" : "Offline"}</Text></View>
+            <Pressable onPress={handleLogout} style={({ pressed }) => [styles.logout, pressed && styles.pressed]}><Text style={styles.logoutText}>Sair</Text></Pressable>
           </View>
         </View>
-        {!showTrash ? <>
-          <View style={styles.historyFilters}>
-            <TextInput onChangeText={setHistoryTopic} placeholder="Filtrar tópico" placeholderTextColor="#748198" style={styles.historyInput} value={historyTopic} />
-            <TextInput onChangeText={setHistorySearch} placeholder="Buscar conversa" placeholderTextColor="#748198" style={styles.historyInput} value={historySearch} />
+        {error ? <View style={styles.errorBanner}><Text style={styles.errorBannerText}>{error}</Text></View> : null}
+
+        <View style={styles.workspace}>
+          <View style={styles.sidebar}>
+            <View style={styles.sidebarCard}>
+              <Text style={styles.sidebarKicker}>ESPAÇO DE TRABALHO</Text>
+              <Pressable disabled={busy || !online} onPress={() => void handleCreateConversation()} style={({ pressed }) => [styles.sidebarMainAction, pressed && styles.pressed, (busy || !online) && styles.disabled]}><Text style={styles.sidebarMainActionText}>+ Nova conversa</Text></Pressable>
+              <Pressable onPress={() => setShowHistory((current) => !current)} style={({ pressed }) => [styles.sidebarAction, showHistory && styles.sidebarActionActive, pressed && styles.pressed]}><Text style={styles.sidebarActionText}>Histórico e lixeira</Text><Text style={styles.sidebarActionMeta}>{conversationIndex.length} conversas</Text></Pressable>
+              <Pressable onPress={() => setShowProjects((current) => !current)} style={({ pressed }) => [styles.sidebarAction, showProjects && styles.sidebarActionActive, pressed && styles.pressed]}><Text style={styles.sidebarActionText}>Projetos e arquivos</Text><Text style={styles.sidebarActionMeta}>{projects.length} projetos locais</Text></Pressable>
+              <Text style={styles.sidebarHint}>Enter envia. Shift + Enter cria uma nova linha.</Text>
+            </View>
+
+            {showHistory ? <View style={[styles.historyPanel, styles.sidebarPanel]}>
+              <View style={styles.historyHeaderRow}><View><Text style={styles.panelTitle}>{showTrash ? "Lixeira" : "Conversas"}</Text><Text style={styles.muted}>{showTrash ? "Restaure conversas removidas." : "Retome ou organize seu histórico."}</Text></View><View style={styles.historyHeaderActions}><Pressable onPress={() => void handleCreateConversation()} style={({ pressed }) => [styles.primaryButton, styles.compactButton, pressed && styles.pressed]}><Text style={styles.primaryButtonText}>+ Nova</Text></Pressable><Pressable onPress={() => setShowTrash((current) => !current)} style={({ pressed }) => [styles.secondaryButton, styles.compactButton, pressed && styles.pressed]}><Text style={styles.logoutText}>{showTrash ? "Voltar" : "Lixeira"}</Text></Pressable></View></View>
+              {!showTrash ? <><View style={styles.historyFilters}><TextInput onChangeText={setHistoryTopic} placeholder="Tópico" placeholderTextColor="#748198" style={styles.historyInput} value={historyTopic} /><TextInput onChangeText={setHistorySearch} placeholder="Buscar" placeholderTextColor="#748198" style={styles.historyInput} value={historySearch} /></View>{conversationIndex.length === 0 ? <Text style={styles.muted}>Nenhuma conversa encontrada.</Text> : <FlatList data={conversationIndex} keyExtractor={(item) => item.id} renderItem={({ item }) => <View style={styles.historyItem}>{editingConversationId === item.id ? <View style={styles.renameRow}><TextInput autoFocus onChangeText={setEditingConversationTitle} onSubmitEditing={() => void handleRenameConversation(item.id)} placeholder="Nome" placeholderTextColor="#748198" style={styles.historyInput} value={editingConversationTitle} /><Pressable onPress={() => void handleRenameConversation(item.id)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Salvar</Text></Pressable></View> : <><Pressable onPress={() => void openConversation(item)} style={({ pressed }) => [styles.historyOpenArea, pressed && styles.pressed]}><Text style={styles.historyItemTitle} numberOfLines={1}>{item.title || "Conversa sem título"}</Text><Text style={styles.historyItemMeta}>{item.topic} · {new Date(item.lastMessageAt).toLocaleDateString()}</Text></Pressable><View style={styles.historyActionRow}><Pressable onPress={() => beginRenameConversation(item)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Renomear</Text></Pressable><Pressable onPress={() => void handleArchiveConversation(item.id)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Arquivar</Text></Pressable><Pressable onPress={() => void handleDeleteConversation(item.id)} style={[styles.historyActionButton, styles.dangerAction]}><Text style={styles.dangerText}>Excluir</Text></Pressable></View></>}</View>} style={styles.historyList} />}</> : <>{deletedConversations.length === 0 ? <Text style={styles.muted}>A lixeira está vazia.</Text> : <FlatList data={deletedConversations} keyExtractor={(item) => item.id} renderItem={({ item }) => <View style={styles.historyItem}><Text style={styles.historyItemTitle} numberOfLines={1}>{item.title || "Conversa sem título"}</Text><Text style={styles.historyItemMeta}>Removida em {item.deletedAt ? new Date(item.deletedAt).toLocaleDateString() : "data desconhecida"}</Text><View style={styles.historyActionRow}><Pressable onPress={() => void handleRestoreConversation(item.id)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Restaurar</Text></Pressable></View></View>} style={styles.historyList} />}</>}</View> : null}
+
+            {showProjects ? <View style={[styles.projectPanel, styles.sidebarPanel]}><Text style={styles.panelTitle}>Projetos locais</Text><Text style={styles.muted}>Use pastas como referência segura para leitura e criação.</Text><View style={styles.projectFormRow}><TextInput onChangeText={setNewProjectName} placeholder="Nome" placeholderTextColor="#748198" style={styles.historyInput} value={newProjectName} /><Pressable onPress={() => void handleChooseProjectFolder()} style={({ pressed }) => [styles.secondaryButton, styles.inlineButton, pressed && styles.pressed]}><Text style={styles.logoutText}>Pasta</Text></Pressable></View><TextInput onChangeText={setNewProjectPath} placeholder="Workspace/projeto" placeholderTextColor="#748198" style={styles.historyInput} value={newProjectPath} /><Pressable onPress={() => void handleCreateProject()} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text style={styles.primaryButtonText}>Criar projeto</Text></Pressable>{projects.length === 0 ? <Text style={styles.muted}>Nenhum projeto cadastrado.</Text> : projects.map((project) => <View key={project.id} style={styles.projectItem}><Text style={styles.historyItemTitle}>{project.name}</Text><Text style={styles.historyItemMeta}>{project.path}</Text></View>)}</View> : null}
           </View>
-          {conversationIndex.length === 0 ? <Text style={styles.muted}>Nenhuma conversa encontrada para esses filtros.</Text> : <FlatList data={conversationIndex} keyExtractor={(item) => item.id} renderItem={({ item }) => <View style={styles.historyItem}>
-            {editingConversationId === item.id ? <View style={styles.renameRow}><TextInput autoFocus onChangeText={setEditingConversationTitle} onSubmitEditing={() => void handleRenameConversation(item.id)} placeholder="Nome da conversa" placeholderTextColor="#748198" style={styles.historyInput} value={editingConversationTitle} /><Pressable onPress={() => void handleRenameConversation(item.id)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Salvar</Text></Pressable><Pressable onPress={() => setEditingConversationId(null)} style={styles.historyActionButton}><Text style={styles.muted}>Cancelar</Text></Pressable></View> : <>
-              <Pressable onPress={() => void openConversation(item)} style={({ pressed }) => [styles.historyOpenArea, pressed && styles.pressed]}><Text style={styles.historyItemTitle} numberOfLines={1}>{item.title || "Conversa sem título"}</Text><Text style={styles.historyItemMeta}>{item.topic} · {item.language} · {new Date(item.lastMessageAt).toLocaleString()}</Text>{item.archivedAt ? <Text style={styles.archivedLabel}>Arquivada</Text> : null}</Pressable>
-              <View style={styles.historyActionRow}><Pressable onPress={() => beginRenameConversation(item)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Renomear</Text></Pressable><Pressable onPress={() => void handleArchiveConversation(item.id)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Arquivar</Text></Pressable><Pressable onPress={() => void handleDeleteConversation(item.id)} style={[styles.historyActionButton, styles.dangerAction]}><Text style={styles.dangerText}>Excluir</Text></Pressable></View>
-            </>}
-          </View>} style={styles.historyList} />}
-        </> : <>
-          {deletedConversations.length === 0 ? <Text style={styles.muted}>A lixeira está vazia.</Text> : <FlatList data={deletedConversations} keyExtractor={(item) => item.id} renderItem={({ item }) => <View style={styles.historyItem}><Text style={styles.historyItemTitle} numberOfLines={1}>{item.title || "Conversa sem título"}</Text><Text style={styles.historyItemMeta}>Removida em {item.deletedAt ? new Date(item.deletedAt).toLocaleString() : "data não informada"}</Text><View style={styles.historyActionRow}><Pressable onPress={() => void handleRestoreConversation(item.id)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Restaurar</Text></Pressable></View></View>} style={styles.historyList} />}
-        </>}
-      </View> : null}
 
-      {showProjects ? <View style={styles.projectPanel}>
-        <Text style={styles.panelTitle}>Pastas de projetos</Text>
-        <Text style={styles.muted}>Organize os arquivos por workspace local. No navegador, a pasta escolhida é usada como referência segura do projeto.</Text>
-        <View style={styles.projectFormRow}>
-          <TextInput onChangeText={setNewProjectName} placeholder="Nome do projeto" placeholderTextColor="#748198" style={styles.historyInput} value={newProjectName} />
-          <Pressable onPress={() => void handleChooseProjectFolder()} style={({ pressed }) => [styles.secondaryButton, styles.inlineButton, pressed && styles.pressed]}><Text style={styles.logoutText}>Escolher pasta</Text></Pressable>
-        </View>
-        <TextInput onChangeText={setNewProjectPath} placeholder="Pasta ou workspace/projeto" placeholderTextColor="#748198" style={styles.historyInput} value={newProjectPath} />
-        <Pressable onPress={() => void handleCreateProject()} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text style={styles.primaryButtonText}>Criar projeto</Text></Pressable>
-        {projects.length === 0 ? <Text style={styles.muted}>Nenhum projeto local cadastrado.</Text> : projects.map((project) => <View key={project.id} style={styles.projectItem}><Text style={styles.historyItemTitle}>{project.name}</Text><Text style={styles.historyItemMeta}>{project.path}</Text></View>)}
-      </View> : null}
+          <View style={styles.chatColumn}>
+            <View style={styles.chatHeader}><View><Text style={styles.chatHeaderKicker}>CONVERSA ATUAL</Text><Text style={styles.chatHeaderTitle}>{conversationIndex.find((item) => item.id === conversationId)?.title || "Nova conversa"}</Text><Text style={styles.chatHeaderMeta}>{messages.length} mensagens · {uploadedAttachments.length} anexos pendentes</Text></View><View style={styles.chatHeaderActions}><Pressable onPress={() => setShowHistory((current) => !current)} style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}><Text style={styles.headerButtonText}>{showHistory ? "Ocultar histórico" : "Histórico"}</Text></Pressable><Pressable onPress={() => setShowProjects((current) => !current)} style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}><Text style={styles.headerButtonText}>{showProjects ? "Ocultar projetos" : "Projetos"}</Text></Pressable></View></View>
 
-      {activeRun?.status === "AWAITING_APPROVAL" ? (
-        <View style={styles.approvalCard}>
-          <Text style={styles.approvalTitle}>Ação aguardando aprovação</Text>
-          <Text style={styles.muted}>Tool: {activeRun.pendingApproval ?? "não informado"}</Text>
-          {activeRun.pendingApprovalArguments ? <Text style={styles.approvalArguments}>{activeRun.pendingApprovalArguments}</Text> : null}
-          {activeRun.approvalExpiresAt ? <Text style={styles.muted}>Expira em: {new Date(activeRun.approvalExpiresAt).toLocaleString()}</Text> : null}
-          {activeRun.approvalNonceRequired ? <TextInput onChangeText={setApprovalNonce} placeholder="Nonce de aprovação" placeholderTextColor="#748198" style={styles.input} value={approvalNonce} /> : null}
-          <View style={styles.approvalActions}>
-            <Pressable disabled={busy} onPress={handleApprove} style={[styles.primaryButton, styles.smallButton, busy && styles.disabled]}><Text style={styles.primaryButtonText}>Aprovar</Text></Pressable>
-            <Pressable disabled={busy} onPress={handleReject} style={[styles.secondaryButton, styles.smallButton, busy && styles.disabled]}><Text style={styles.logoutText}>Rejeitar</Text></Pressable>
+            {activeRun?.status === "AWAITING_APPROVAL" ? <View style={styles.approvalCard}><Text style={styles.approvalTitle}>Ação aguardando aprovação</Text><Text style={styles.muted}>Tool: {activeRun.pendingApproval ?? "não informado"}</Text>{activeRun.pendingApprovalArguments ? <Text style={styles.approvalArguments}>{activeRun.pendingApprovalArguments}</Text> : null}{activeRun.approvalExpiresAt ? <Text style={styles.muted}>Expira em: {new Date(activeRun.approvalExpiresAt).toLocaleString()}</Text> : null}{activeRun.approvalNonceRequired ? <TextInput onChangeText={setApprovalNonce} placeholder="Nonce de aprovação" placeholderTextColor="#748198" style={styles.input} value={approvalNonce} /> : null}<View style={styles.approvalActions}><Pressable disabled={busy} onPress={handleApprove} style={[styles.primaryButton, styles.smallButton, busy && styles.disabled]}><Text style={styles.primaryButtonText}>Aprovar</Text></Pressable><Pressable disabled={busy} onPress={handleReject} style={[styles.secondaryButton, styles.smallButton, busy && styles.disabled]}><Text style={styles.logoutText}>Rejeitar</Text></Pressable></View></View> : null}
+            <View style={styles.runBar}><Text style={styles.muted}>{activeRun ? `Run ${activeRun.status}` : "Nenhuma execução selecionada"}</Text><Pressable onPress={refreshActiveRun} disabled={!activeRunId || syncing}><Text style={styles.refreshText}>{syncing ? "Sincronizando..." : "Atualizar"}</Text></Pressable></View>
+            <FlatList contentContainerStyle={styles.messageList} data={messages} keyExtractor={(item) => item.id} ListEmptyComponent={<View style={styles.emptyState}><Text style={styles.emptyTitle}>O MX está pronto.</Text><Text style={styles.muted}>Converse, anexe arquivos ou descreva uma imagem ou vídeo para começar.</Text></View>} renderItem={({ item }) => <View style={[styles.bubble, item.role === "USER" ? styles.userBubble : styles.assistantBubble]}><Text style={styles.bubbleRole}>{item.role === "USER" ? "Você" : "MX"}</Text><Text style={styles.bubbleText}>{item.content}</Text>{item.attachmentNames?.map((name) => <Text key={name} style={styles.attachmentText}>Anexo: {name}</Text>)}</View>} />
+            {uploadedAttachments.length > 0 ? <View style={styles.attachmentBar}>{uploadedAttachments.map((attachment) => <View key={attachment.id} style={styles.attachmentChip}><Text numberOfLines={1} style={styles.attachmentChipText}>{attachment.contentType.startsWith("video/") ? "Vídeo" : attachment.contentType.startsWith("image/") ? "Imagem" : attachment.contentType.startsWith("audio/") ? "Áudio" : "Arquivo"} · {attachment.filename}</Text>{attachment.contentType.startsWith("audio/") ? <Pressable disabled={busy || !!transcribingAttachmentId} onPress={() => void handleTranscribeAudio(attachment)}><Text style={styles.transcribeText}>{transcribingAttachmentId === attachment.id ? "..." : "Transcrever"}</Text></Pressable> : null}<Pressable disabled={busy} onPress={() => void handleDownloadAttachment(attachment)}><Text style={styles.downloadText}>Baixar</Text></Pressable><Pressable disabled={busy} onPress={() => removeAttachment(attachment.id)}><Text style={styles.removeAttachment}>×</Text></Pressable></View>)}</View> : null}
+            {creatingFile ? <View style={styles.filePanel}><Text style={styles.panelTitle}>Criar arquivo</Text><TextInput onChangeText={setNewFileName} placeholder="nome-do-arquivo.txt" placeholderTextColor="#748198" style={styles.historyInput} value={newFileName} /><TextInput multiline onChangeText={setNewFileContent} placeholder="Conteúdo do arquivo" placeholderTextColor="#748198" style={styles.fileContentInput} value={newFileContent} /><View style={styles.projectFormRow}><Pressable onPress={() => void handleCreateFile()} style={[styles.primaryButton, styles.inlineButton]}><Text style={styles.primaryButtonText}>Criar e anexar</Text></Pressable><Pressable onPress={() => setCreatingFile(false)} style={[styles.secondaryButton, styles.inlineButton]}><Text style={styles.logoutText}>Cancelar</Text></Pressable></View></View> : null}
+            <View style={styles.composer}><View style={styles.composerActions}><Text style={styles.composerLabel}>AÇÕES RÁPIDAS</Text><View style={styles.actionGroup}><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={handlePickAttachment} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>{uploadingAttachment ? "Enviando..." : "Anexar arquivo"}</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={() => setCreatingFile((current) => !current)} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>Novo arquivo</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={() => void handlePasteFromClipboard()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>Colar texto</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()} onPress={() => void handleGenerateImage()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.actionButtonText}>{generatingImage ? "Gerando imagem..." : "Gerar imagem"}</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()} onPress={() => void handleGenerateVideo()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.actionButtonText}>{generatingVideo ? "Gerando vídeo..." : "Gerar vídeo"}</Text></Pressable></View></View><View style={styles.composerInputRow}><TextInput editable={!busy && !uploadingAttachment && !generatingVideo && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onKeyPress={Platform.OS === "web" ? handlePromptKeyPress : undefined} onSubmitEditing={Platform.OS === "web" ? undefined : () => void handleSend()} placeholder={online ? "Escreva uma mensagem ou descreva o que deseja criar..." : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} /><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !!transcribingAttachmentId || !online || (!prompt.trim() && uploadedAttachments.length === 0)} onPress={handleSend} style={({ pressed }) => [styles.sendButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || (!prompt.trim() && uploadedAttachments.length === 0)) && styles.disabled]}>{busy ? <ActivityIndicator color="#08111f" /> : <Text style={styles.sendButtonText}>Enviar</Text>}</Pressable></View></View>
           </View>
-        </View>
-      ) : null}
-
-      <View style={styles.runBar}>
-        <Text style={styles.muted}>{activeRun ? `Run ${activeRun.status}` : "Nenhuma execução selecionada"}</Text>
-        <Pressable onPress={refreshActiveRun} disabled={!activeRunId || syncing}><Text style={styles.refreshText}>Atualizar</Text></Pressable>
-      </View>
-
-      <FlatList
-        contentContainerStyle={styles.messageList}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<View style={styles.emptyState}><Text style={styles.emptyTitle}>O MX está pronto.</Text><Text style={styles.muted}>Comece uma conversa. Os runs ficam sincronizados para acompanhamento em outro canal.</Text></View>}
-        renderItem={({ item }) => <View style={[styles.bubble, item.role === "USER" ? styles.userBubble : styles.assistantBubble]}><Text style={styles.bubbleRole}>{item.role === "USER" ? "Você" : "MX"}</Text><Text style={styles.bubbleText}>{item.content}</Text>{item.attachmentNames?.map((name) => <Text key={name} style={styles.attachmentText}>Anexo: {name}</Text>)}</View>}
-      />
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {uploadedAttachments.length > 0 ? <View style={styles.attachmentBar}>{uploadedAttachments.map((attachment) => <View key={attachment.id} style={styles.attachmentChip}><Text numberOfLines={1} style={styles.attachmentChipText}>{attachment.contentType.startsWith("video/") ? "Vídeo" : attachment.contentType.startsWith("image/") ? "Imagem" : attachment.contentType.startsWith("audio/") ? "Áudio" : "Arquivo"} · {attachment.filename}</Text>{attachment.contentType.startsWith("audio/") ? <Pressable disabled={busy || !!transcribingAttachmentId} onPress={() => void handleTranscribeAudio(attachment)}><Text style={styles.transcribeText}>{transcribingAttachmentId === attachment.id ? "..." : "Transcrever"}</Text></Pressable> : null}<Pressable disabled={busy} onPress={() => void handleDownloadAttachment(attachment)}><Text style={styles.downloadText}>Baixar</Text></Pressable><Pressable disabled={busy} onPress={() => removeAttachment(attachment.id)}><Text style={styles.removeAttachment}>×</Text></Pressable></View>)}</View> : null}
-      {creatingFile ? <View style={styles.filePanel}>
-        <Text style={styles.panelTitle}>Criar arquivo</Text>
-        <TextInput onChangeText={setNewFileName} placeholder="nome-do-arquivo.txt" placeholderTextColor="#748198" style={styles.historyInput} value={newFileName} />
-        <TextInput multiline onChangeText={setNewFileContent} placeholder="Conteúdo do arquivo" placeholderTextColor="#748198" style={styles.fileContentInput} value={newFileContent} />
-        <View style={styles.projectFormRow}><Pressable onPress={() => void handleCreateFile()} style={[styles.primaryButton, styles.inlineButton]}><Text style={styles.primaryButtonText}>Criar e anexar</Text></Pressable><Pressable onPress={() => setCreatingFile(false)} style={[styles.secondaryButton, styles.inlineButton]}><Text style={styles.logoutText}>Cancelar</Text></Pressable></View>
-      </View> : null}
-      <View style={styles.composer}>
-        <View style={styles.composerActions}>
-          <Text style={styles.composerLabel}>Criar e enviar</Text>
-          <View style={styles.actionGroup}>
-            <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={handlePickAttachment} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>{uploadingAttachment ? "Enviando..." : "Anexar arquivo"}</Text></Pressable>
-            <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={() => setCreatingFile((current) => !current)} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>Novo arquivo</Text></Pressable>
-            <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={() => void handlePasteFromClipboard()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>Colar texto</Text></Pressable>
-            <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()} onPress={() => void handleGenerateImage()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.actionButtonText}>{generatingImage ? "Gerando imagem..." : "Gerar imagem"}</Text></Pressable>
-            <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()} onPress={() => void handleGenerateVideo()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.actionButtonText}>{generatingVideo ? "Gerando vídeo..." : "Gerar vídeo"}</Text></Pressable>
-          </View>
-        </View>
-        <View style={styles.composerInputRow}>
-          <TextInput editable={!busy && !uploadingAttachment && !generatingVideo && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onKeyPress={Platform.OS === "web" ? handlePromptKeyPress : undefined} onSubmitEditing={Platform.OS === "web" ? undefined : () => void handleSend()} placeholder={online ? "Escreva uma mensagem ou descreva o que deseja criar..." : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} />
-          <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !!transcribingAttachmentId || !online || (!prompt.trim() && uploadedAttachments.length === 0)} onPress={handleSend} style={({ pressed }) => [styles.sendButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || (!prompt.trim() && uploadedAttachments.length === 0)) && styles.disabled]}>{busy ? <ActivityIndicator color="#08111f" /> : <Text style={styles.sendButtonText}>Enviar</Text>}</Pressable>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -771,7 +714,43 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#08111f", paddingHorizontal: 18, paddingTop: 36 },
+  screen: { flex: 1, backgroundColor: "#07101d", paddingHorizontal: 18, paddingTop: 22 },
+  appShell: { flex: 1, gap: 14, maxWidth: 1480, width: "100%", alignSelf: "center" },
+  topBar: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 4, paddingVertical: 6 },
+  brandBlock: { alignItems: "center", flexDirection: "row", flexShrink: 1, gap: 12 },
+  brandMark: { alignItems: "center", backgroundColor: "#63e6be", borderRadius: 13, height: 42, justifyContent: "center", width: 42 },
+  brandMarkText: { color: "#07101d", fontSize: 14, fontWeight: "900", letterSpacing: 1 },
+  brandCopy: { flexShrink: 1, gap: 2 },
+  topBarActions: { alignItems: "center", flexDirection: "row", gap: 10 },
+  statusPill: { alignItems: "center", borderRadius: 999, flexDirection: "row", gap: 7, paddingHorizontal: 10, paddingVertical: 7 },
+  statusPillOnline: { backgroundColor: "#10362f" },
+  statusPillOffline: { backgroundColor: "#3b2028" },
+  statusDot: { borderRadius: 5, height: 9, width: 9 },
+  statusDotOnline: { backgroundColor: "#63e6be" },
+  statusDotOffline: { backgroundColor: "#ff8b8b" },
+  statusText: { color: "#e3edf6", fontSize: 12, fontWeight: "800" },
+  errorBanner: { backgroundColor: "#3b2028", borderColor: "#8d4652", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 9 },
+  errorBannerText: { color: "#ffd1d1", fontSize: 13, lineHeight: 18 },
+  workspace: { flex: 1, flexDirection: Platform.OS === "web" ? "row" : "column", gap: 14, minHeight: 0 },
+  sidebar: { gap: 12, width: Platform.OS === "web" ? 292 : "100%" },
+  sidebarCard: { backgroundColor: "#0e1b2b", borderColor: "#1d3049", borderRadius: 16, borderWidth: 1, gap: 9, padding: 14 },
+  sidebarKicker: { color: "#718aa6", fontSize: 10, fontWeight: "900", letterSpacing: 1.4 },
+  sidebarMainAction: { alignItems: "center", backgroundColor: "#63e6be", borderRadius: 10, justifyContent: "center", minHeight: 42, paddingHorizontal: 12 },
+  sidebarMainActionText: { color: "#07101d", fontSize: 13, fontWeight: "900" },
+  sidebarAction: { backgroundColor: "#12243a", borderColor: "#223d5a", borderRadius: 10, borderWidth: 1, gap: 2, paddingHorizontal: 11, paddingVertical: 9 },
+  sidebarActionActive: { backgroundColor: "#18394a", borderColor: "#2a6e70" },
+  sidebarActionText: { color: "#d9e9f8", fontSize: 13, fontWeight: "800" },
+  sidebarActionMeta: { color: "#8ca4bd", fontSize: 11 },
+  sidebarHint: { color: "#768da6", fontSize: 11, lineHeight: 16, paddingTop: 4 },
+  sidebarPanel: { marginBottom: 0, maxHeight: 360 },
+  chatColumn: { backgroundColor: "#0b1727", borderColor: "#1b3049", borderRadius: 18, borderWidth: 1, flex: 1, gap: 10, minHeight: 0, minWidth: 0, padding: 14 },
+  chatHeader: { alignItems: "center", borderBottomColor: "#1a3048", borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingBottom: 12 },
+  chatHeaderKicker: { color: "#63e6be", fontSize: 10, fontWeight: "900", letterSpacing: 1.3 },
+  chatHeaderTitle: { color: "#f4f7fb", fontSize: 18, fontWeight: "900", marginTop: 3 },
+  chatHeaderMeta: { color: "#8197ae", fontSize: 11, marginTop: 3 },
+  chatHeaderActions: { alignItems: "center", flexDirection: "row", gap: 6 },
+  headerButton: { borderColor: "#2b4865", borderRadius: 9, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 7 },
+  headerButtonText: { color: "#b9d8f5", fontSize: 11, fontWeight: "800" },
   centered: { alignItems: "center", backgroundColor: "#08111f", flex: 1, gap: 12, justifyContent: "center" },
   loginCard: { alignSelf: "center", backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 24, borderWidth: 1, gap: 14, marginTop: 70, maxWidth: 480, padding: 28, width: "100%" },
   header: { alignItems: "flex-start", flexDirection: "row", justifyContent: "space-between", paddingBottom: 12 },

@@ -4,6 +4,11 @@ server:
 
 spring:
 
+  servlet:
+    multipart:
+      max-file-size: ${MX_ATTACHMENTS_MAX_BYTES:26214400}
+      max-request-size: ${MX_ATTACHMENTS_MAX_BYTES:26214400}
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mx}
     username: ${SPRING_DATASOURCE_USERNAME:mx}
