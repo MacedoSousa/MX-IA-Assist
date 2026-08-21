@@ -12,11 +12,13 @@ public record ConversationDTO(
         LocalDateTime createdAt,
         String topic,
         String language,
-        LocalDateTime lastMessageAt
+        LocalDateTime lastMessageAt,
+        LocalDateTime archivedAt,
+        LocalDateTime deletedAt
 ) {
 
     public ConversationDTO(UUID id, String title, String summary, LocalDateTime createdAt) {
-        this(id, title, summary, createdAt, "geral", "pt-BR", createdAt);
+        this(id, title, summary, createdAt, "geral", "pt-BR", createdAt, null, null);
     }
 
     public static ConversationDTO from(ConversationEntity conversation) {
@@ -27,7 +29,9 @@ public record ConversationDTO(
                 conversation.getCreatedAt(),
                 conversation.getTopic(),
                 conversation.getLanguage(),
-                conversation.getLastMessageAt()
+                conversation.getLastMessageAt(),
+                conversation.getArchivedAt(),
+                conversation.getDeletedAt()
         );
     }
 }

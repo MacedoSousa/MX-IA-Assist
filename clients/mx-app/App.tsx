@@ -67,8 +67,12 @@ export default function App() {
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [conversationIndex, setConversationIndex] = useState<ConversationSummary[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
   const [historyTopic, setHistoryTopic] = useState("");
   const [historySearch, setHistorySearch] = useState("");
+  const [deletedConversations, setDeletedConversations] = useState<ConversationSummary[]>([]);
+  const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
+  const [editingConversationTitle, setEditingConversationTitle] = useState("");
   const [runs, setRuns] = useState<ExecutionRunStatusResponse[]>([]);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [approvalNonce, setApprovalNonce] = useState("");
@@ -116,6 +120,94 @@ export default function App() {
       setConversationIndex(page.content);
     } catch {
       // The conversation remains usable when the index is temporarily unavailable.
+    }
+  }
+
+  async function loadDeletedConversations() {
+    try {
+      setDeletedConversations(await mxApi.listDeletedConversations());
+    } catch {
+      setError("Não foi possível carregar a lixeira de conversas.");
+    }
+  }
+
+  async function handleCreateConversation() {
+    if (busy || !online) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const created = await mxApi.createConversation("Nova conversa");
+      setConversationId(created.id);
+      await writeConversationId(created.id);
+      setMessages([]);
+      setUploadedAttachments([]);
+      setShowTrash(false);
+      setShowHistory(true);
+      await loadConversationIndex();
+    } catch (cause) {
+      setError(cause instanceof MxApiError ? cause.message : "Não foi possível criar a conversa.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function beginRenameConversation(conversation: ConversationSummary) {
+    setEditingConversationId(conversation.id);
+    setEditingConversationTitle(conversation.title || "");
+  }
+
+  async function handleRenameConversation(conversationId: string) {
+    const title = editingConversationTitle.trim();
+    if (!title) {
+      setError("Informe um nome para a conversa.");
+      return;
+    }
+    try {
+      await mxApi.renameConversation(conversationId, title);
+      setEditingConversationId(null);
+      setEditingConversationTitle("");
+      await loadConversationIndex();
+    } catch (cause) {
+      setError(cause instanceof MxApiError ? cause.message : "Não foi possível renomear a conversa.");
+    }
+  }
+
+  async function handleArchiveConversation(conversationIdToArchive: string) {
+    try {
+      await mxApi.archiveConversation(conversationIdToArchive);
+      if (conversationIdToArchive === conversationId) {
+        setConversationId(undefined);
+        await writeConversationId(null);
+        setMessages([]);
+      }
+      await loadConversationIndex();
+    } catch (cause) {
+      setError(cause instanceof MxApiError ? cause.message : "Não foi possível arquivar a conversa.");
+    }
+  }
+
+  async function handleDeleteConversation(conversationIdToDelete: string) {
+    try {
+      await mxApi.deleteConversation(conversationIdToDelete);
+      if (conversationIdToDelete === conversationId) {
+        setConversationId(undefined);
+        await writeConversationId(null);
+        setMessages([]);
+      }
+      await loadConversationIndex();
+      if (showTrash) await loadDeletedConversations();
+    } catch (cause) {
+      setError(cause instanceof MxApiError ? cause.message : "Não foi possível remover a conversa.");
+    }
+  }
+
+  async function handleRestoreConversation(conversationIdToRestore: string) {
+    try {
+      await mxApi.restoreConversation(conversationIdToRestore);
+      await loadDeletedConversations();
+      await loadConversationIndex();
+    } catch (cause) {
+      setError(cause instanceof MxApiError ? cause.message : "Não foi possível restaurar a conversa.");
     }
   }
 
@@ -167,6 +259,11 @@ export default function App() {
     const timer = setTimeout(() => void loadConversationIndex(), 250);
     return () => clearTimeout(timer);
   }, [historySearch, historyTopic, showHistory, viewState]);
+
+  useEffect(() => {
+    if (viewState !== "chat" || !showTrash) return;
+    void loadDeletedConversations();
+  }, [showTrash, viewState]);
 
   useEffect(() => {
     if (viewState !== "chat") return;
@@ -547,11 +644,30 @@ export default function App() {
       </View>
 
       {showHistory ? <View style={styles.historyPanel}>
-        <View style={styles.historyFilters}>
-          <TextInput onChangeText={setHistoryTopic} placeholder="Tópico" placeholderTextColor="#748198" style={styles.historyInput} value={historyTopic} />
-          <TextInput onChangeText={setHistorySearch} placeholder="Buscar conversa" placeholderTextColor="#748198" style={styles.historyInput} value={historySearch} />
+        <View style={styles.historyHeaderRow}>
+          <View>
+            <Text style={styles.panelTitle}>Conversas</Text>
+            <Text style={styles.muted}>Gerencie, retome ou remova seu histórico.</Text>
+          </View>
+          <View style={styles.historyHeaderActions}>
+            <Pressable onPress={() => void handleCreateConversation()} style={({ pressed }) => [styles.primaryButton, styles.compactButton, pressed && styles.pressed]}><Text style={styles.primaryButtonText}>+ Nova</Text></Pressable>
+            <Pressable onPress={() => setShowTrash((current) => !current)} style={({ pressed }) => [styles.secondaryButton, styles.compactButton, pressed && styles.pressed]}><Text style={styles.logoutText}>{showTrash ? "Conversas" : "Lixeira"}</Text></Pressable>
+          </View>
         </View>
-        {conversationIndex.length === 0 ? <Text style={styles.muted}>Nenhuma conversa encontrada para esses filtros.</Text> : <FlatList data={conversationIndex} keyExtractor={(item) => item.id} renderItem={({ item }) => <Pressable onPress={() => void openConversation(item)} style={({ pressed }) => [styles.historyItem, pressed && styles.pressed]}><Text style={styles.historyItemTitle} numberOfLines={1}>{item.title || "Conversa sem título"}</Text><Text style={styles.historyItemMeta}>{item.topic} · {item.language} · {new Date(item.lastMessageAt).toLocaleString()}</Text></Pressable>} style={styles.historyList} />}
+        {!showTrash ? <>
+          <View style={styles.historyFilters}>
+            <TextInput onChangeText={setHistoryTopic} placeholder="Filtrar tópico" placeholderTextColor="#748198" style={styles.historyInput} value={historyTopic} />
+            <TextInput onChangeText={setHistorySearch} placeholder="Buscar conversa" placeholderTextColor="#748198" style={styles.historyInput} value={historySearch} />
+          </View>
+          {conversationIndex.length === 0 ? <Text style={styles.muted}>Nenhuma conversa encontrada para esses filtros.</Text> : <FlatList data={conversationIndex} keyExtractor={(item) => item.id} renderItem={({ item }) => <View style={styles.historyItem}>
+            {editingConversationId === item.id ? <View style={styles.renameRow}><TextInput autoFocus onChangeText={setEditingConversationTitle} onSubmitEditing={() => void handleRenameConversation(item.id)} placeholder="Nome da conversa" placeholderTextColor="#748198" style={styles.historyInput} value={editingConversationTitle} /><Pressable onPress={() => void handleRenameConversation(item.id)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Salvar</Text></Pressable><Pressable onPress={() => setEditingConversationId(null)} style={styles.historyActionButton}><Text style={styles.muted}>Cancelar</Text></Pressable></View> : <>
+              <Pressable onPress={() => void openConversation(item)} style={({ pressed }) => [styles.historyOpenArea, pressed && styles.pressed]}><Text style={styles.historyItemTitle} numberOfLines={1}>{item.title || "Conversa sem título"}</Text><Text style={styles.historyItemMeta}>{item.topic} · {item.language} · {new Date(item.lastMessageAt).toLocaleString()}</Text>{item.archivedAt ? <Text style={styles.archivedLabel}>Arquivada</Text> : null}</Pressable>
+              <View style={styles.historyActionRow}><Pressable onPress={() => beginRenameConversation(item)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Renomear</Text></Pressable><Pressable onPress={() => void handleArchiveConversation(item.id)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Arquivar</Text></Pressable><Pressable onPress={() => void handleDeleteConversation(item.id)} style={[styles.historyActionButton, styles.dangerAction]}><Text style={styles.dangerText}>Excluir</Text></Pressable></View>
+            </>}
+          </View>} style={styles.historyList} />}
+        </> : <>
+          {deletedConversations.length === 0 ? <Text style={styles.muted}>A lixeira está vazia.</Text> : <FlatList data={deletedConversations} keyExtractor={(item) => item.id} renderItem={({ item }) => <View style={styles.historyItem}><Text style={styles.historyItemTitle} numberOfLines={1}>{item.title || "Conversa sem título"}</Text><Text style={styles.historyItemMeta}>Removida em {item.deletedAt ? new Date(item.deletedAt).toLocaleString() : "data não informada"}</Text><View style={styles.historyActionRow}><Pressable onPress={() => void handleRestoreConversation(item.id)} style={styles.historyActionButton}><Text style={styles.historyActionText}>Restaurar</Text></Pressable></View></View>} style={styles.historyList} />}
+        </>}
       </View> : null}
 
       {showProjects ? <View style={styles.projectPanel}>
@@ -640,6 +756,17 @@ const styles = StyleSheet.create({
   logout: { borderColor: "#29405d", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
   logoutText: { color: "#c4d1e3", fontWeight: "700" },
   historyPanel: { backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 10 },
+  historyHeaderRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 8 },
+  historyHeaderActions: { alignItems: "center", flexDirection: "row", gap: 6 },
+  compactButton: { minHeight: 36, paddingHorizontal: 10, paddingVertical: 6 },
+  renameRow: { alignItems: "center", flexDirection: "row", gap: 6, paddingVertical: 4 },
+  historyOpenArea: { flex: 1, minWidth: 0, paddingRight: 6 },
+  archivedLabel: { color: "#f2c879", fontSize: 11, fontWeight: "800", marginTop: 3 },
+  historyActionRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 7 },
+  historyActionButton: { borderColor: "#365779", borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 5 },
+  historyActionText: { color: "#b9d8ff", fontSize: 11, fontWeight: "800" },
+  dangerAction: { borderColor: "#8d4652" },
+  dangerText: { color: "#ff9b9b", fontSize: 11, fontWeight: "800" },
   projectPanel: { backgroundColor: "#101c2d", borderColor: "#30456b", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 12 },
   filePanel: { backgroundColor: "#101c2d", borderColor: "#2a6e70", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 12 },
   panelTitle: { color: "#f4f7fb", fontSize: 15, fontWeight: "800" },

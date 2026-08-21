@@ -43,7 +43,6 @@ services:
       - "127.0.0.1:11434:11434"
     cpus: ${OLLAMA_CPUS:-8.0}
     mem_limit: ${OLLAMA_MEM_LIMIT:-12g}
-    mem_reservation: ${OLLAMA_MEM_RESERVATION:-6g}
     shm_size: "1g"
     # Use the single NVIDIA GPU when Docker Desktop exposes WSL2 GPU-PV.
     # The service remains CPU-capable if the host is started without GPU support.

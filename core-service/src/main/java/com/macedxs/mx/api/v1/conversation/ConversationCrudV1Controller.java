@@ -1,4 +1,4 @@
-package com.macedxs.mx.conversation.controller;
+package com.macedxs.mx.api.v1.conversation;
 
 import com.macedxs.mx.conversation.dto.ConversationCreateRequest;
 import com.macedxs.mx.conversation.dto.ConversationDTO;
@@ -21,73 +21,58 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/conversations")
-public class ConversationController {
+@RequestMapping("/api/v1/conversations")
+public class ConversationCrudV1Controller {
 
     private final ConversationService conversationService;
     private final UserRepository userRepository;
 
-    public ConversationController(ConversationService conversationService, UserRepository userRepository) {
+    public ConversationCrudV1Controller(ConversationService conversationService, UserRepository userRepository) {
         this.conversationService = conversationService;
         this.userRepository = userRepository;
     }
 
-    @GetMapping
-    public ResponseEntity<List<ConversationDTO>> findMyConversations() {
-        UserEntity user = currentUser();
-        return ResponseEntity.ok(conversationService.findByUser(user.getId()).stream().map(ConversationDTO::from).toList());
-    }
-
     @PostMapping
-    public ResponseEntity<ConversationDTO> createConversation(@RequestBody(required = false) ConversationCreateRequest request) {
+    public ResponseEntity<ConversationDTO> create(@RequestBody(required = false) ConversationCreateRequest request) {
         UserEntity user = currentUser();
-        String title = request == null ? null : request.title();
-        ConversationEntity created = conversationService.createConversation(user, title);
+        ConversationEntity created = conversationService.createConversation(user, request == null ? null : request.title());
         return ResponseEntity.status(HttpStatus.CREATED).body(ConversationDTO.from(created));
     }
 
     @GetMapping("/trash")
-    public ResponseEntity<List<ConversationDTO>> listTrash() {
+    public ResponseEntity<List<ConversationDTO>> trash() {
         UserEntity user = currentUser();
         return ResponseEntity.ok(conversationService.findDeletedByUser(user.getId()).stream().map(ConversationDTO::from).toList());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ConversationDTO> getConversation(@PathVariable UUID id) {
-        UserEntity user = currentUser();
-        return conversationService.findOwnedActive(user.getId(), id)
-                .map(conversation -> ResponseEntity.ok(ConversationDTO.from(conversation)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
     @PatchMapping("/{id}")
-    public ResponseEntity<ConversationDTO> renameConversation(
+    public ResponseEntity<ConversationDTO> rename(
             @PathVariable UUID id,
             @RequestBody ConversationRenameRequest request
     ) {
         UserEntity user = currentUser();
-        ConversationEntity renamed = conversationService.renameConversation(user.getId(), id, request == null ? null : request.title());
-        return ResponseEntity.ok(ConversationDTO.from(renamed));
+        return ResponseEntity.ok(ConversationDTO.from(
+                conversationService.renameConversation(user.getId(), id, request == null ? null : request.title())
+        ));
     }
 
     @PostMapping("/{id}/archive")
-    public ResponseEntity<ConversationDTO> archiveConversation(@PathVariable UUID id) {
+    public ResponseEntity<ConversationDTO> archive(@PathVariable UUID id) {
         UserEntity user = currentUser();
         return ResponseEntity.ok(ConversationDTO.from(conversationService.archiveConversation(user.getId(), id)));
     }
 
     @PostMapping("/{id}/restore")
-    public ResponseEntity<ConversationDTO> restoreConversation(@PathVariable UUID id) {
+    public ResponseEntity<ConversationDTO> restore(@PathVariable UUID id) {
         UserEntity user = currentUser();
         return ResponseEntity.ok(ConversationDTO.from(conversationService.restoreConversation(user.getId(), id)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteConversation(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         UserEntity user = currentUser();
         conversationService.softDeleteConversation(user.getId(), id);
         return ResponseEntity.noContent().build();

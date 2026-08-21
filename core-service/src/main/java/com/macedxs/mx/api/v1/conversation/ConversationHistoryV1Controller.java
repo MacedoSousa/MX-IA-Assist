@@ -53,7 +53,7 @@ public class ConversationHistoryV1Controller {
         }
         int boundedSize = size <= 0 ? DEFAULT_PAGE_SIZE : Math.min(size, MAX_PAGE_SIZE);
         UserEntity user = currentUser();
-        ConversationEntity conversation = conversationService.findById(conversationId)
+        ConversationEntity conversation = conversationService.findActiveById(conversationId)
                 .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
 
         if (conversation.getUser() == null

@@ -19,6 +19,8 @@ import java.util.UUID;
 @Service
 public class ConversationService {
 
+    private static final int MAX_TITLE_LENGTH = 200;
+
     private final ConversationRepository conversationRepository;
     private final OllamaService ollamaService;
     private final ConversationTopicClassifier topicClassifier;
@@ -40,13 +42,10 @@ public class ConversationService {
 
     @Transactional
     public ConversationEntity createConversation(UserEntity user, String title) {
-        if (user == null || user.getId() == null) {
-            throw new IllegalArgumentException("User is required");
-        }
-
+        requireUser(user);
         ConversationEntity conversation = new ConversationEntity();
         conversation.setUser(user);
-        conversation.setTitle(title == null || title.isBlank() ? "Nova conversa" : title.trim());
+        conversation.setTitle(normalizeTitle(title));
         conversation.setTopic("geral");
         conversation.setLanguage("pt-BR");
         conversation.setLastMessageAt(LocalDateTime.now());
@@ -55,12 +54,34 @@ public class ConversationService {
 
     @Transactional(readOnly = true)
     public Optional<ConversationEntity> findById(UUID conversationId) {
+        requireConversationId(conversationId);
         return conversationRepository.findById(conversationId);
     }
 
     @Transactional(readOnly = true)
+    public Optional<ConversationEntity> findActiveById(UUID conversationId) {
+        requireConversationId(conversationId);
+        return conversationRepository.findById(conversationId)
+                .filter(conversation -> conversation.getDeletedAt() == null);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<ConversationEntity> findOwnedActive(UUID userId, UUID conversationId) {
+        requireUserId(userId);
+        requireConversationId(conversationId);
+        return conversationRepository.findActiveByIdAndUserId(conversationId, userId);
+    }
+
+    @Transactional(readOnly = true)
     public List<ConversationEntity> findByUser(UUID userId) {
-        return conversationRepository.findByUserId(userId);
+        requireUserId(userId);
+        return conversationRepository.findActiveByUserId(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ConversationEntity> findDeletedByUser(UUID userId) {
+        requireUserId(userId);
+        return conversationRepository.findDeletedByUserId(userId);
     }
 
     @Transactional(readOnly = true)
@@ -70,46 +91,71 @@ public class ConversationService {
             String query,
             Pageable pageable
     ) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User is required");
+        requireUserId(userId);
+        if (pageable == null) {
+            throw new IllegalArgumentException("Pageable is required");
         }
         String normalizedTopic = normalizeFilter(topic);
         String normalizedQuery = normalizeFilter(query);
         if (normalizedTopic.isBlank() && normalizedQuery.isBlank()) {
-            return conversationRepository.findByUserIdOrderByLastMessageAtDesc(userId, pageable);
+            return conversationRepository.findActiveByUserIdOrderByLastMessageAtDesc(userId, pageable);
         }
         if (normalizedQuery.isBlank()) {
-            return conversationRepository.findByUserIdAndTopicIgnoreCaseOrderByLastMessageAtDesc(
+            return conversationRepository.findActiveByUserIdAndTopicOrderByLastMessageAtDesc(
                     userId,
                     normalizedTopic,
                     pageable
             );
         }
         if (normalizedTopic.isBlank()) {
-            return conversationRepository
-                    .findByUserIdAndTitleContainingIgnoreCaseOrUserIdAndSummaryContainingIgnoreCaseOrderByLastMessageAtDesc(
-                            userId,
-                            normalizedQuery,
-                            userId,
-                            normalizedQuery,
-                            pageable
-                    );
+            return conversationRepository.findActiveByUserIdAndQueryOrderByLastMessageAtDesc(
+                    userId,
+                    normalizedQuery,
+                    pageable
+            );
         }
-        return conversationRepository
-                .findByUserIdAndTopicIgnoreCaseAndTitleContainingIgnoreCaseOrUserIdAndTopicIgnoreCaseAndSummaryContainingIgnoreCaseOrderByLastMessageAtDesc(
-                        userId,
-                        normalizedTopic,
-                        normalizedQuery,
-                        userId,
-                        normalizedTopic,
-                        normalizedQuery,
-                        pageable
-                );
+        return conversationRepository.findActiveByUserIdAndTopicAndQueryOrderByLastMessageAtDesc(
+                userId,
+                normalizedTopic,
+                normalizedQuery,
+                pageable
+        );
+    }
+
+    @Transactional
+    public ConversationEntity renameConversation(UUID userId, UUID conversationId, String title) {
+        ConversationEntity conversation = ownedConversation(userId, conversationId, true);
+        conversation.setTitle(normalizeTitle(title));
+        return conversationRepository.save(conversation);
+    }
+
+    @Transactional
+    public ConversationEntity archiveConversation(UUID userId, UUID conversationId) {
+        ConversationEntity conversation = ownedConversation(userId, conversationId, true);
+        if (conversation.getArchivedAt() == null) {
+            conversation.setArchivedAt(LocalDateTime.now());
+        }
+        return conversationRepository.save(conversation);
+    }
+
+    @Transactional
+    public ConversationEntity restoreConversation(UUID userId, UUID conversationId) {
+        ConversationEntity conversation = ownedConversation(userId, conversationId, false);
+        conversation.setDeletedAt(null);
+        conversation.setArchivedAt(null);
+        return conversationRepository.save(conversation);
+    }
+
+    @Transactional
+    public ConversationEntity softDeleteConversation(UUID userId, UUID conversationId) {
+        ConversationEntity conversation = ownedConversation(userId, conversationId, true);
+        conversation.setDeletedAt(LocalDateTime.now());
+        return conversationRepository.save(conversation);
     }
 
     @Transactional
     public ConversationEntity updateMetadata(UUID conversationId, String prompt) {
-        ConversationEntity conversation = conversationRepository.findById(conversationId)
+        ConversationEntity conversation = findActiveById(conversationId)
                 .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
         ConversationTopicClassifier.Classification classification = topicClassifier.classify(prompt);
         if (classification.topic() != null && !classification.topic().equals("geral")) {
@@ -126,10 +172,27 @@ public class ConversationService {
     }
 
     public String ask(UserEntity user, String prompt) {
-        if (user == null || user.getId() == null) {
-            throw new IllegalArgumentException("User is required");
-        }
+        requireUser(user);
         return ollamaService.generateText(prompt);
+    }
+
+    private ConversationEntity ownedConversation(UUID userId, UUID conversationId, boolean activeOnly) {
+        requireUserId(userId);
+        requireConversationId(conversationId);
+        Optional<ConversationEntity> result = activeOnly
+                ? conversationRepository.findActiveByIdAndUserId(conversationId, userId)
+                : conversationRepository.findOwnedById(conversationId, userId);
+        return result.orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+    }
+
+    private String normalizeTitle(String title) {
+        String normalized = title == null ? "" : title.trim().replaceAll("\\s+", " ");
+        if (normalized.isBlank()) {
+            return "Nova conversa";
+        }
+        return normalized.length() <= MAX_TITLE_LENGTH
+                ? normalized
+                : normalized.substring(0, MAX_TITLE_LENGTH - 3) + "...";
     }
 
     private boolean isDefaultTitle(String title) {
@@ -137,14 +200,28 @@ public class ConversationService {
     }
 
     private String buildTitle(String prompt) {
-        String compact = prompt.trim().replaceAll("\\s+", " ");
-        if (compact.length() <= 80) {
-            return compact;
-        }
-        return compact.substring(0, 77) + "...";
+        return normalizeTitle(prompt);
     }
 
     private String normalizeFilter(String value) {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private void requireUser(UserEntity user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User is required");
+        }
+    }
+
+    private void requireUserId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User is required");
+        }
+    }
+
+    private void requireConversationId(UUID conversationId) {
+        if (conversationId == null) {
+            throw new IllegalArgumentException("Conversation is required");
+        }
     }
 }

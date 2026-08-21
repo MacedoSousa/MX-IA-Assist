@@ -132,6 +132,12 @@ export type ConversationSummary = {
   topic: string;
   language: string;
   lastMessageAt: string;
+  archivedAt: string | null;
+  deletedAt: string | null;
+};
+
+export type ConversationMutation = {
+  title?: string;
 };
 
 export type ConversationPage = {
@@ -285,6 +291,44 @@ export class MxApiClient {
     if (topic?.trim()) params.set("topic", topic.trim());
     if (query?.trim()) params.set("query", query.trim());
     return this.request<ConversationPage>(`/api/v1/conversations?${params.toString()}`, { method: "GET" });
+  }
+
+  async createConversation(title?: string): Promise<ConversationSummary> {
+    return this.request<ConversationSummary>("/api/v1/conversations", {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    });
+  }
+
+  async renameConversation(conversationId: string, title: string): Promise<ConversationSummary> {
+    return this.request<ConversationSummary>(`/api/v1/conversations/${encodeURIComponent(conversationId)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ title }),
+    });
+  }
+
+  async archiveConversation(conversationId: string): Promise<ConversationSummary> {
+    return this.request<ConversationSummary>(
+      `/api/v1/conversations/${encodeURIComponent(conversationId)}/archive`,
+      { method: "POST" },
+    );
+  }
+
+  async deleteConversation(conversationId: string): Promise<void> {
+    await this.request<void>(`/api/v1/conversations/${encodeURIComponent(conversationId)}`, {
+      method: "DELETE",
+    });
+  }
+
+  async listDeletedConversations(): Promise<ConversationSummary[]> {
+    return this.request<ConversationSummary[]>("/api/v1/conversations/trash", { method: "GET" });
+  }
+
+  async restoreConversation(conversationId: string): Promise<ConversationSummary> {
+    return this.request<ConversationSummary>(
+      `/api/v1/conversations/${encodeURIComponent(conversationId)}/restore`,
+      { method: "POST" },
+    );
   }
 
   async getPreferences(): Promise<UserPreference> {

@@ -39,7 +39,7 @@ public class JpaConversationStore implements ConversationStore {
             return new ConversationRef(created.getId());
         }
 
-        ConversationEntity existing = conversationService.findById(requestedConversationId)
+        ConversationEntity existing = conversationService.findActiveById(requestedConversationId)
                 .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
 
         if (existing.getUser() == null || !ownerId.equals(existing.getUser().getId())) {
@@ -61,7 +61,7 @@ public class JpaConversationStore implements ConversationStore {
 
     @Override
     public UUID appendMessage(UUID conversationId, MessageRole role, String content) {
-        ConversationEntity conversation = conversationService.findById(conversationId)
+        ConversationEntity conversation = conversationService.findActiveById(conversationId)
                 .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
 
         ConversationMessageEntity.MessageRole persistenceRole = ConversationMessageEntity.MessageRole
