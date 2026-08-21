@@ -53,9 +53,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/error",
                                 "/actuator/health",
-                                "/actuator/info",
-                                "/actuator/metrics/**",
-                                "/actuator/prometheus"
+                                "/actuator/info"
                         ).permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/users/**").hasRole("ADMIN")

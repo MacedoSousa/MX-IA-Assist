@@ -3,6 +3,7 @@ package com.macedxs.mx.tool.application;
 import com.macedxs.mx.agent.application.AutonomyLevel;
 
 import java.util.Map;
+import java.util.Set;
 
 public class PolicyEngine {
 
@@ -11,6 +12,16 @@ public class PolicyEngine {
             ToolRequest request,
             AutonomyLevel grantedAutonomy,
             boolean approved
+    ) {
+        return evaluate(definition, request, grantedAutonomy, approved, null);
+    }
+
+    public PolicyDecision evaluate(
+            ToolDefinition definition,
+            ToolRequest request,
+            AutonomyLevel grantedAutonomy,
+            boolean approved,
+            Set<String> allowedTools
     ) {
         if (definition == null) {
             return PolicyDecision.deny("Tool definition is required");
@@ -23,6 +34,9 @@ public class PolicyEngine {
         }
         if (grantedAutonomy == null) {
             return PolicyDecision.deny("No autonomy was granted");
+        }
+        if (allowedTools != null && allowedTools.stream().noneMatch(tool -> tool.equalsIgnoreCase(request.toolName()))) {
+            return PolicyDecision.deny("Tool is not allowed for the selected skill");
         }
         if (!hasRequiredArguments(definition, request.arguments())) {
             return PolicyDecision.deny("Required tool arguments are missing");

@@ -38,7 +38,7 @@ public abstract class StudySpecialistSkill implements Skill {
     public SkillResult execute(SkillRequest request, SkillExecutionContext context) {
         long startedAt = System.nanoTime();
         ModelGateway.ModelResponse response = modelGateway.complete(
-                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt()))
+                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt()), null, request.images())
         );
         return result(response, context, startedAt);
     }
@@ -56,7 +56,7 @@ public abstract class StudySpecialistSkill implements Skill {
 
         long startedAt = System.nanoTime();
         ModelGateway.ModelResponse response = streamingModelGateway.stream(
-                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt())),
+                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt()), null, request.images()),
                 chunkConsumer
         );
         return result(response, context, startedAt);

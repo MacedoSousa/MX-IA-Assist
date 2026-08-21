@@ -61,10 +61,10 @@ public class DevelopmentSkill implements Skill {
     public SkillDefinition definition() {
         return new SkillDefinition(
                 "development",
-                "1.1.0",
+                "1.2.0",
                 "Desenvolvimento fullstack, arquitetura, debugging e testes",
                 Set.of("código", "codigo", "bug", "erro", "java", "spring", "maven", "teste", "arquitetura", "programar"),
-                Set.of("workspace.read_file", "workspace.list", "git.status"),
+                Set.of("workspace.read_file", "workspace.list", "workspace.write_file"),
                 AutonomyLevel.EXECUTE_READ_ONLY,
                 Duration.ofSeconds(90)
         );
@@ -73,9 +73,9 @@ public class DevelopmentSkill implements Skill {
     @Override
     public SkillResult execute(SkillRequest request, SkillExecutionContext context) {
         ModelGateway.ModelResponse response = modelGateway.complete(
-                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt()))
+                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt()), null, request.images())
         );
-        return resolveResponse(request.prompt(), context, response);
+        return resolveResponse(request.prompt(), request.images(), context, response);
     }
 
     @Override
@@ -90,10 +90,10 @@ public class DevelopmentSkill implements Skill {
 
         List<String> bufferedChunks = new ArrayList<>();
         ModelGateway.ModelResponse response = streamingModelGateway.stream(
-                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt())),
+                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt()), null, request.images()),
                 bufferedChunks::add
         );
-        SkillResult result = resolveResponse(request.prompt(), context, response);
+        SkillResult result = resolveResponse(request.prompt(), request.images(), context, response);
 
         if (toolCallParser.parse(response == null ? null : response.answer()).isPresent()) {
             chunkConsumer.accept(result.answer());
@@ -105,17 +105,19 @@ public class DevelopmentSkill implements Skill {
 
     private SkillResult resolveResponse(
             String originalPrompt,
+            List<ModelGateway.ModelImage> images,
             SkillExecutionContext context,
             ModelGateway.ModelResponse response
     ) {
         validateResponse(response);
         return toolCallParser.parse(response.answer())
-                .map(call -> executeToolCall(originalPrompt, context, response, call))
+                .map(call -> executeToolCall(originalPrompt, images, context, response, call))
                 .orElseGet(() -> normalResult(response, context, Map.of()));
     }
 
     private SkillResult executeToolCall(
             String originalPrompt,
+            List<ModelGateway.ModelImage> images,
             SkillExecutionContext context,
             ModelGateway.ModelResponse response,
             ToolCallParser.ParsedToolCall call
@@ -130,7 +132,8 @@ public class DevelopmentSkill implements Skill {
                         context.userId(),
                         context.correlationId(),
                         definition().name(),
-                        context.grantedAutonomy()
+                        context.grantedAutonomy(),
+                        definition().allowedTools()
                 ),
                 false
         );
@@ -174,7 +177,9 @@ public class DevelopmentSkill implements Skill {
         ModelGateway.ModelResponse finalResponse = modelGateway.complete(
                 new ModelGateway.ModelRequest(
                         context.userId(),
-                        buildToolResultPrompt(originalPrompt, toolResult)
+                        buildToolResultPrompt(originalPrompt, toolResult),
+                        null,
+                        images
                 )
         );
         validateResponse(finalResponse);

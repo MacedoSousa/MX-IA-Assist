@@ -8,6 +8,8 @@ import com.macedxs.mx.agent.application.SkillRegistry;
 import com.macedxs.mx.agent.application.SkillRequest;
 import com.macedxs.mx.agent.application.SkillResult;
 import com.macedxs.mx.agent.application.SkillRouter;
+import com.macedxs.mx.conversation.application.port.ModelGateway.ModelImage;
+import com.macedxs.mx.core.application.run.ExecutionRun;
 import com.macedxs.mx.core.application.run.ExecutionRunSnapshot;
 import com.macedxs.mx.core.application.run.ExecutionRunStore;
 import com.macedxs.mx.core.application.run.RunStatus;
@@ -19,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -113,6 +116,83 @@ class MxCoreServiceTest {
         assertThat(response.answer()).isEqualTo("Posso ajudar a organizar isso.");
     }
 
+    @Test
+    void shouldAllowIdempotentRetryAfterFailedOrCancelledRuns() {
+        for (RunStatus terminalStatus : List.of(RunStatus.FAILED, RunStatus.CANCELLED)) {
+            UUID userId = UUID.randomUUID();
+            String idempotencyKey = "retry-" + terminalStatus;
+            ExecutionRun previousRun = ExecutionRun.receive(
+                    UUID.randomUUID(), userId, UUID.randomUUID(), "Solicitação anterior", idempotencyKey
+            );
+            if (terminalStatus == RunStatus.FAILED) {
+                previousRun.fail("TEMPORARY_FAILURE");
+            } else {
+                previousRun.cancel();
+            }
+            List<ExecutionRunSnapshot> snapshots = new ArrayList<>();
+            SkillRegistry registry = new SkillRegistry();
+            registry.register(skill("general", Set.of(), "Nova resposta"));
+
+            MxCoreResponse response = new MxCoreService(
+                    new SkillRouter(registry), SkillTelemetry.noop(), terminalRunStore(previousRun.snapshot(), snapshots)
+            ).handle(userId, "Tente novamente", idempotencyKey);
+
+            assertThat(response.answer()).isEqualTo("Nova resposta");
+            assertThat(snapshots).isNotEmpty();
+            assertThat(snapshots.get(0).runId()).isNotEqualTo(previousRun.runId());
+        }
+    }
+
+    @Test
+    void shouldBlockIdempotentRetryWhileAnExecutionIsStillActive() {
+        UUID userId = UUID.randomUUID();
+        String idempotencyKey = "active-run";
+        ExecutionRun activeRun = ExecutionRun.receive(
+                UUID.randomUUID(), userId, UUID.randomUUID(), "Solicitação em processamento", idempotencyKey
+        );
+        activeRun.route("general");
+        SkillRegistry registry = new SkillRegistry();
+        registry.register(skill("general", Set.of(), "Não deve executar"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                new MxCoreService(
+                        new SkillRouter(registry),
+                        SkillTelemetry.noop(),
+                        terminalRunStore(activeRun.snapshot(), new ArrayList<>())
+                ).handle(userId, "Tentativa repetida", idempotencyKey)
+        ).isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already in progress");
+    }
+
+    @Test
+    void shouldPreserveVisualAttachmentsUntilTheSelectedSkill() {
+        AtomicReference<List<ModelImage>> receivedImages = new AtomicReference<>();
+        Skill visualAwareSkill = new Skill() {
+            @Override
+            public SkillDefinition definition() {
+                return new SkillDefinition(
+                        "general", "1.0.0", "Fallback visual", Set.of(), Set.of(),
+                        AutonomyLevel.RESPOND, Duration.ofSeconds(30)
+                );
+            }
+
+            @Override
+            public SkillResult execute(SkillRequest request, SkillExecutionContext context) {
+                receivedImages.set(request.images());
+                return SkillResult.completed("general", "Imagem analisada", context.correlationId());
+            }
+        };
+        SkillRegistry registry = new SkillRegistry();
+        registry.register(visualAwareSkill);
+        List<ModelImage> images = List.of(new ModelImage("image/png", "aGVsbG8="));
+
+        MxCoreResponse response = new MxCoreService(new SkillRouter(registry))
+                .handle(UUID.randomUUID(), "O que aparece aqui?", "visual", images);
+
+        assertThat(response.skillName()).isEqualTo("general");
+        assertThat(receivedImages.get()).containsExactlyElementsOf(images);
+    }
+
     private static Skill streamingSkill(String name, Set<String> triggers, String answer) {
         return new Skill() {
             @Override
@@ -186,6 +266,32 @@ class MxCoreServiceTest {
             @Override
             public SkillResult execute(SkillRequest request, SkillExecutionContext context) {
                 return SkillResult.completed(name, answer, context.correlationId());
+            }
+        };
+    }
+
+    private static ExecutionRunStore terminalRunStore(
+            ExecutionRunSnapshot terminalSnapshot,
+            List<ExecutionRunSnapshot> snapshots
+    ) {
+        return new ExecutionRunStore() {
+            @Override
+            public ExecutionRunSnapshot save(ExecutionRun run) {
+                ExecutionRunSnapshot snapshot = run.snapshot();
+                snapshots.add(snapshot);
+                return snapshot;
+            }
+
+            @Override
+            public Optional<ExecutionRunSnapshot> findById(UUID userId, UUID runId) {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<ExecutionRunSnapshot> findByIdempotencyKey(UUID userId, String idempotencyKey) {
+                return Optional.of(terminalSnapshot)
+                        .filter(snapshot -> snapshot.userId().equals(userId))
+                        .filter(snapshot -> idempotencyKey.equals(snapshot.idempotencyKey()));
             }
         };
     }

@@ -1,21 +1,23 @@
 package com.macedxs.mx.core.application;
 
-import com.macedxs.mx.agent.application.AutonomyLevel;
 import com.macedxs.mx.agent.application.RouteDecision;
 import com.macedxs.mx.agent.application.SkillExecutionContext;
 import com.macedxs.mx.agent.application.SkillRequest;
 import com.macedxs.mx.agent.application.SkillResult;
 import com.macedxs.mx.agent.application.SkillRouter;
+import com.macedxs.mx.conversation.application.port.ModelGateway.ModelImage;
 import com.macedxs.mx.conversation.application.port.ModelStreamObserver;
 import com.macedxs.mx.core.application.run.ExecutionRun;
 import com.macedxs.mx.core.application.run.ExecutionRunStore;
 import com.macedxs.mx.core.application.run.NoopExecutionRunStore;
+import com.macedxs.mx.core.application.run.RunStatus;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public class MxCoreService {
@@ -52,10 +54,19 @@ public class MxCoreService {
     }
 
     public MxCoreResponse handle(UUID userId, String prompt) {
-        return handle(userId, prompt, null);
+        return handle(userId, prompt, null, List.of());
     }
 
     public MxCoreResponse handle(UUID userId, String prompt, String idempotencyKey) {
+        return handle(userId, prompt, idempotencyKey, List.of());
+    }
+
+    public MxCoreResponse handle(
+            UUID userId,
+            String prompt,
+            String idempotencyKey,
+            List<ModelImage> images
+    ) {
         validateInput(userId, prompt);
         Optional<MxCoreResponse> previous = findCompletedIdempotentResponse(userId, idempotencyKey);
         if (previous.isPresent()) {
@@ -69,7 +80,8 @@ public class MxCoreService {
         String skillName = null;
 
         try {
-            RouteDecision decision = skillRouter.route(prompt);
+            SkillRequest skillRequest = new SkillRequest(prompt, images);
+            RouteDecision decision = skillRouter.route(skillRequest);
             skillName = decision.skill().definition().name();
             final String selectedSkillName = skillName;
             run.route(selectedSkillName);
@@ -79,7 +91,7 @@ public class MxCoreService {
             run.startExecution();
             persist(run);
             SkillResult result = decision.skill().execute(
-                    new SkillRequest(prompt),
+                    skillRequest,
                     new SkillExecutionContext(userId, correlationId, decision.skill().definition().maximumAutonomy())
             );
 
@@ -94,12 +106,7 @@ public class MxCoreService {
 
             return toResponse(correlationId, skillName, decision, result, run.runId());
         } catch (RuntimeException failure) {
-            if (run.status() != com.macedxs.mx.core.application.run.RunStatus.COMPLETED
-                    && run.status() != com.macedxs.mx.core.application.run.RunStatus.FAILED
-                    && run.status() != com.macedxs.mx.core.application.run.RunStatus.CANCELLED) {
-                run.fail("SKILL_EXECUTION_FAILED");
-                persist(run);
-            }
+            failIfActive(run);
             String failedSkill = skillName == null ? "unknown" : skillName;
             safely(() -> telemetry.failed(failedSkill, failure));
             throw failure;
@@ -107,12 +114,28 @@ public class MxCoreService {
     }
 
     public MxCoreResponse handleStreaming(UUID userId, String prompt, Consumer<String> chunkConsumer) {
-        return handleStreaming(userId, prompt, null, chunkConsumer);
+        return handleStreaming(userId, prompt, null, List.of(), chunkConsumer);
     }
 
     public MxCoreResponse handleStreaming(UUID userId, String prompt, String idempotencyKey, Consumer<String> chunkConsumer) {
+        return handleStreaming(userId, prompt, idempotencyKey, List.of(), chunkConsumer);
+    }
+
+    public MxCoreResponse handleStreaming(
+            UUID userId,
+            String prompt,
+            String idempotencyKey,
+            List<ModelImage> images,
+            Consumer<String> chunkConsumer
+    ) {
         Objects.requireNonNull(chunkConsumer, "Chunk consumer is required");
-        return handleStreamingWithObserver(userId, prompt, idempotencyKey, ModelStreamObserver.from(chunkConsumer));
+        return handleStreamingWithObserver(
+                userId,
+                prompt,
+                idempotencyKey,
+                images,
+                ModelStreamObserver.from(chunkConsumer)
+        );
     }
 
     public MxCoreResponse handleStreamingWithObserver(
@@ -120,7 +143,7 @@ public class MxCoreService {
             String prompt,
             ModelStreamObserver observer
     ) {
-        return handleStreamingWithObserver(userId, prompt, null, observer);
+        return handleStreamingWithObserver(userId, prompt, null, List.of(), observer);
     }
 
     public MxCoreResponse handleStreamingWithObserver(
@@ -129,7 +152,18 @@ public class MxCoreService {
             String idempotencyKey,
             ModelStreamObserver observer
     ) {
+        return handleStreamingWithObserver(userId, prompt, idempotencyKey, List.of(), observer);
+    }
+
+    public MxCoreResponse handleStreamingWithObserver(
+            UUID userId,
+            String prompt,
+            String idempotencyKey,
+            List<ModelImage> images,
+            ModelStreamObserver observer
+    ) {
         validateInput(userId, prompt);
+        Objects.requireNonNull(observer, "Stream observer is required");
         Optional<MxCoreResponse> previous = findCompletedIdempotentResponse(userId, idempotencyKey);
         if (previous.isPresent()) {
             observer.onStarted(previous.get().runId(), previous.get().correlationId());
@@ -137,7 +171,6 @@ public class MxCoreService {
             return previous.get();
         }
         rejectInProgressDuplicate(userId, idempotencyKey);
-        Objects.requireNonNull(observer, "Stream observer is required");
 
         UUID correlationId = UUID.randomUUID();
         ExecutionRun run = ExecutionRun.receive(UUID.randomUUID(), userId, correlationId, prompt, idempotencyKey);
@@ -146,7 +179,8 @@ public class MxCoreService {
         String skillName = null;
 
         try {
-            RouteDecision decision = skillRouter.route(prompt);
+            SkillRequest skillRequest = new SkillRequest(prompt, images);
+            RouteDecision decision = skillRouter.route(skillRequest);
             skillName = decision.skill().definition().name();
             final String selectedSkillName = skillName;
             run.route(selectedSkillName);
@@ -156,7 +190,7 @@ public class MxCoreService {
             run.startExecution();
             persist(run);
             SkillResult result = decision.skill().stream(
-                    new SkillRequest(prompt),
+                    skillRequest,
                     new SkillExecutionContext(userId, correlationId, decision.skill().definition().maximumAutonomy()),
                     observer::onChunk
             );
@@ -172,12 +206,7 @@ public class MxCoreService {
 
             return toResponse(correlationId, skillName, decision, result, run.runId());
         } catch (RuntimeException failure) {
-            if (run.status() != com.macedxs.mx.core.application.run.RunStatus.COMPLETED
-                    && run.status() != com.macedxs.mx.core.application.run.RunStatus.FAILED
-                    && run.status() != com.macedxs.mx.core.application.run.RunStatus.CANCELLED) {
-                run.fail("SKILL_EXECUTION_FAILED");
-                persist(run);
-            }
+            failIfActive(run);
             String failedSkill = skillName == null ? "unknown" : skillName;
             safely(() -> telemetry.failed(failedSkill, failure));
             throw failure;
@@ -250,7 +279,7 @@ public class MxCoreService {
             return Optional.empty();
         }
         return runStore.findByIdempotencyKey(userId, idempotencyKey)
-                .filter(snapshot -> snapshot.status() == com.macedxs.mx.core.application.run.RunStatus.COMPLETED)
+                .filter(snapshot -> snapshot.status() == RunStatus.COMPLETED)
                 .map(snapshot -> new MxCoreResponse(
                         snapshot.correlationId(),
                         snapshot.skillName() == null ? "unknown" : snapshot.skillName(),
@@ -266,10 +295,22 @@ public class MxCoreService {
             return;
         }
         runStore.findByIdempotencyKey(userId, idempotencyKey)
-                .filter(snapshot -> snapshot.status() != com.macedxs.mx.core.application.run.RunStatus.COMPLETED)
+                .filter(snapshot -> switch (snapshot.status()) {
+                    case RECEIVED, ROUTED, EXECUTING, AWAITING_APPROVAL, VERIFYING -> true;
+                    case COMPLETED, FAILED, CANCELLED -> false;
+                })
                 .ifPresent(snapshot -> {
                     throw new IllegalStateException("Idempotent request is already in progress: " + snapshot.runId());
                 });
+    }
+
+    private void failIfActive(ExecutionRun run) {
+        if (run.status() != RunStatus.COMPLETED
+                && run.status() != RunStatus.FAILED
+                && run.status() != RunStatus.CANCELLED) {
+            run.fail("SKILL_EXECUTION_FAILED");
+            persist(run);
+        }
     }
 
     private void persist(ExecutionRun run) {

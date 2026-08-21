@@ -46,3 +46,9 @@
 - [x] Preservar imagens anexadas até o gateway visual, sem descartá-las no roteador de skills.
 - [x] Validar PDF, texto e imagem em uma resposta fundamentada do MX.
 - [x] Publicar a correção sem versionar anexos nem dados pessoais.
+
+## Auditoria sistêmica de fluxo
+
+- [x] Mapear contratos e regras que descartam contexto, impedem ferramentas ou criam estados inconsistentes.
+- [x] Corrigir desconexões de baixo risco entre chat, skills, IA, anexos, tarefas e execução de ferramentas.
+- [ ] Validar os fluxos críticos e publicar o diagnóstico de regras que exigem evolução arquitetural.

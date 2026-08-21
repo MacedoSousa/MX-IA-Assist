@@ -119,6 +119,30 @@ class ToolExecutorTest {
         assertThat(executed).isFalse();
     }
 
+    @Test
+    void shouldDenyAToolOutsideTheSelectedSkillAllowlist() {
+        AtomicBoolean executed = new AtomicBoolean(false);
+        ToolRegistry registry = new ToolRegistry();
+        registry.register(tool("workspace.write_file", ToolEffect.WRITE, AutonomyLevel.EXECUTE_WITH_APPROVAL, executed));
+        ToolExecutionContext context = new ToolExecutionContext(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                "development",
+                AutonomyLevel.EXECUTE_WITH_APPROVAL,
+                Set.of("workspace.read_file")
+        );
+
+        ToolExecutionResult result = new ToolExecutor(registry, new PolicyEngine()).execute(
+                new ToolRequest("workspace.write_file", Map.of("path", "notes.txt")),
+                context,
+                true
+        );
+
+        assertThat(result.policyDecision().outcome()).isEqualTo(PolicyOutcome.DENY);
+        assertThat(result.policyDecision().reason()).contains("not allowed for the selected skill");
+        assertThat(executed).isFalse();
+    }
+
     private static Tool tool(
             String name,
             ToolEffect effect,

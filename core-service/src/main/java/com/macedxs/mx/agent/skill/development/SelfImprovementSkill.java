@@ -73,7 +73,12 @@ public final class SelfImprovementSkill implements Skill {
     @Override
     public SkillResult execute(SkillRequest request, SkillExecutionContext context) {
         ModelGateway.ModelResponse response = modelGateway.complete(
-                new ModelGateway.ModelRequest(context.userId(), SYSTEM_PROMPT + "Solicitação:\n" + request.prompt())
+                new ModelGateway.ModelRequest(
+                        context.userId(),
+                        SYSTEM_PROMPT + "Solicitação:\n" + request.prompt(),
+                        null,
+                        request.images()
+                )
         );
         return resolve(context, response);
     }
@@ -103,7 +108,8 @@ public final class SelfImprovementSkill implements Skill {
                         context.userId(),
                         context.correlationId(),
                         definition().name(),
-                        context.grantedAutonomy()
+                        context.grantedAutonomy(),
+                        definition().allowedTools()
                 ),
                 false
         );

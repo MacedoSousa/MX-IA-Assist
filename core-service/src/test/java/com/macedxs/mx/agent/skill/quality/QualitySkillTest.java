@@ -27,7 +27,7 @@ class QualitySkillTest {
         assertThat(skill.definition().description()).contains("Qualidade de software");
         assertThat(skill.definition().triggers()).contains("qualidade", "testes", "métricas", "cmmi");
         assertThat(skill.definition().allowedTools())
-                .containsExactlyInAnyOrder("workspace.read_file", "workspace.list", "git.status");
+                .containsExactlyInAnyOrder("workspace.read_file", "workspace.list");
         assertThat(skill.definition().maximumAutonomy()).isEqualTo(AutonomyLevel.EXECUTE_READ_ONLY);
         assertThat(skill.definition().timeout()).isEqualTo(Duration.ofSeconds(90));
     }

@@ -15,11 +15,15 @@ public class SkillRouter {
     }
 
     public RouteDecision route(String prompt) {
-        if (prompt == null || prompt.isBlank()) {
-            throw new IllegalArgumentException("Prompt is required");
+        return route(new SkillRequest(prompt));
+    }
+
+    public RouteDecision route(SkillRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Skill request is required");
         }
 
-        String normalizedPrompt = normalize(prompt);
+        String normalizedPrompt = normalize(request.prompt());
         Skill selected = null;
         int selectedMatches = 0;
         double selectedScore = 0.0d;
@@ -54,6 +58,14 @@ public class SkillRouter {
         }
 
         Skill fallback = registry.getRequired("general");
+        if (!request.images().isEmpty()) {
+            return new RouteDecision(
+                    fallback,
+                    1.0d,
+                    "Vision attachment routed through the central general skill",
+                    false
+            );
+        }
         return new RouteDecision(fallback, 0.0d, "No specialist trigger matched", false);
     }
 

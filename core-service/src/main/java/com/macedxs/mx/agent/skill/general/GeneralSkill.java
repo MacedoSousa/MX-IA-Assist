@@ -79,7 +79,12 @@ public class GeneralSkill implements Skill {
         long startedAt = System.nanoTime();
         SelfAnalysisService.AnalysisResult analysis = analyze(request.prompt());
         ModelGateway.ModelResponse response = modelGateway.complete(
-                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt(), context.userId()))
+                new ModelGateway.ModelRequest(
+                        context.userId(),
+                        buildPrompt(request.prompt(), context.userId()),
+                        null,
+                        request.images()
+                )
         );
 
         if (response == null || response.answer() == null || response.answer().isBlank()) {
@@ -114,7 +119,12 @@ public class GeneralSkill implements Skill {
         long startedAt = System.nanoTime();
         SelfAnalysisService.AnalysisResult analysis = analyze(request.prompt());
         ModelGateway.ModelResponse response = streamingModelGateway.stream(
-                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt(), context.userId())),
+                new ModelGateway.ModelRequest(
+                        context.userId(),
+                        buildPrompt(request.prompt(), context.userId()),
+                        null,
+                        request.images()
+                ),
                 chunkConsumer
         );
         if (response == null || response.answer() == null || response.answer().isBlank()) {

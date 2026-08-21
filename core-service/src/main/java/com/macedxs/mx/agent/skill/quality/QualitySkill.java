@@ -50,14 +50,14 @@ public class QualitySkill implements Skill {
     public SkillDefinition definition() {
         return new SkillDefinition(
                 "quality",
-                "1.0.0",
+                "1.1.0",
                 "Qualidade de software, testes, métricas, processos e confiabilidade",
                 Set.of(
                         "qualidade", "qualidade de software", "quality", "qa", "sqa", "teste", "testes",
                         "tdd", "métrica", "métricas", "cobertura", "defeito", "defeitos", "falha", "confiabilidade",
                         "iso", "cmmi", "cmm", "mccall", "auditoria", "processo de software", "revisão técnica"
                 ),
-                Set.of("workspace.read_file", "workspace.list", "git.status"),
+                Set.of("workspace.read_file", "workspace.list"),
                 AutonomyLevel.EXECUTE_READ_ONLY,
                 Duration.ofSeconds(90)
         );
@@ -67,7 +67,7 @@ public class QualitySkill implements Skill {
     public SkillResult execute(SkillRequest request, SkillExecutionContext context) {
         long startedAt = System.nanoTime();
         ModelGateway.ModelResponse response = modelGateway.complete(
-                new ModelGateway.ModelRequest(buildPrompt(request.prompt()))
+                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt()), null, request.images())
         );
         validateResponse(response);
 
@@ -96,7 +96,7 @@ public class QualitySkill implements Skill {
         }
 
         ModelGateway.ModelResponse response = streamingModelGateway.stream(
-                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt())),
+                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt()), null, request.images()),
                 chunkConsumer
         );
         validateResponse(response);

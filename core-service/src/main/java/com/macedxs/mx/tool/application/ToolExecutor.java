@@ -61,7 +61,8 @@ public class ToolExecutor {
                 tool.definition(),
                 request,
                 context.grantedAutonomy(),
-                approved
+                approved,
+                context.allowedTools()
         );
 
         if (decision.outcome() == PolicyOutcome.REQUIRE_APPROVAL) {
