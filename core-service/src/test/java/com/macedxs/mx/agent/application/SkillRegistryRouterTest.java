@@ -53,6 +53,30 @@ class SkillRegistryRouterTest {
     }
 
     @Test
+    void shouldRouteExplicitImageGenerationRequestToMediaSkill() {
+        SkillRegistry registry = new SkillRegistry();
+        registry.register(skill("general", Set.of()));
+        registry.register(skill("media", Set.of("imagem", "video", "documento")));
+
+        RouteDecision decision = new SkillRouter(registry).route("Gere um hamster em um carro, imagem");
+
+        assertThat(decision.skill().definition().name()).isEqualTo("media");
+        assertThat(decision.confidence()).isEqualTo(1.0d);
+        assertThat(decision.requiresClarification()).isFalse();
+    }
+
+    @Test
+    void shouldNotRouteInternalDocumentRenderPromptBackToMediaSkill() {
+        SkillRegistry registry = new SkillRegistry();
+        registry.register(skill("general", Set.of()));
+        registry.register(skill("media", Set.of("imagem", "video", "documento")));
+
+        RouteDecision decision = new SkillRouter(registry).route("[MX_DOCUMENT_OUTPUT] Gere o corpo do documento");
+
+        assertThat(decision.skill().definition().name()).isEqualTo("general");
+    }
+
+    @Test
     void shouldRejectDuplicateSkillNames() {
         SkillRegistry registry = new SkillRegistry();
         registry.register(skill("development", Set.of("java")));

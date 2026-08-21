@@ -60,3 +60,10 @@
 - [x] Implementar as lacunas priorizadas com limites, validação de entrada, rastreabilidade e mensagens de erro úteis.
 - [x] Executar smoke tests locais para cada modalidade sem versionar mídia ou dados pessoais.
 - [x] Publicar a documentação de capacidades, restrições técnicas e fluxo de uso no MX.
+
+## Roteamento conversacional de skills e mídia
+
+- [x] Reproduzir a divergência entre o pedido no chat e os botões de geração de mídia.
+- [x] Corrigir a identificação de intenção e a delegação segura do chat para as capacidades de imagem, vídeo e documento.
+- [ ] Validar respostas, políticas e artefatos pelos dois caminhos de interação.
+- [ ] Publicar o diagnóstico e a correção sem alterar memórias ou anexos existentes.

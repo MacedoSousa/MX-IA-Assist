@@ -15,6 +15,7 @@ import com.macedxs.mx.agent.skill.general.ExternalSearchClient;
 import com.macedxs.mx.agent.skill.general.GeneralSkill;
 import com.macedxs.mx.agent.skill.general.SelfAnalysisService;
 import com.macedxs.mx.agent.skill.general.StudyKnowledgeContext;
+import com.macedxs.mx.agent.skill.media.MediaSkill;
 import com.macedxs.mx.agent.skill.quality.QualitySkill;
 import com.macedxs.mx.agent.skill.infrastructure.InfrastructureSkill;
 import com.macedxs.mx.agent.skill.data.DataSkill;
@@ -35,8 +36,12 @@ import com.macedxs.mx.tool.application.ToolExecutor;
 import com.macedxs.mx.tool.application.ToolRegistry;
 import com.macedxs.mx.tool.workspace.WorkspaceListTool;
 import com.macedxs.mx.tool.workspace.WorkspaceReadFileTool;
+import com.macedxs.mx.media.service.DocumentGenerationService;
+import com.macedxs.mx.media.service.ImageGenerationService;
+import com.macedxs.mx.media.service.VideoGenerationService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -167,6 +172,15 @@ public class ConversationConfiguration {
     }
 
     @Bean
+    MediaSkill mediaSkill(
+            ImageGenerationService imageGenerationService,
+            VideoGenerationService videoGenerationService,
+            ObjectProvider<DocumentGenerationService> documentGenerationService
+    ) {
+        return new MediaSkill(imageGenerationService, videoGenerationService, documentGenerationService::getObject);
+    }
+
+    @Bean
     SkillRegistry skillRegistry(
             GeneralSkill generalSkill,
             DevelopmentSkill developmentSkill,
@@ -174,7 +188,8 @@ public class ConversationConfiguration {
             InfrastructureSkill infrastructureSkill,
             DataSkill dataSkill,
             TeachingSkill teachingSkill,
-            SelfImprovementSkill selfImprovementSkill
+            SelfImprovementSkill selfImprovementSkill,
+            MediaSkill mediaSkill
     ) {
         SkillRegistry registry = new SkillRegistry();
         registry.register(generalSkill);
@@ -184,6 +199,7 @@ public class ConversationConfiguration {
         registry.register(dataSkill);
         registry.register(teachingSkill);
         registry.register(selfImprovementSkill);
+        registry.register(mediaSkill);
         return registry;
     }
 

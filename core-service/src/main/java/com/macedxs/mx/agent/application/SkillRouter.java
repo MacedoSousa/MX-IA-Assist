@@ -24,6 +24,25 @@ public class SkillRouter {
         }
 
         String normalizedPrompt = normalize(request.prompt());
+        if (normalizedPrompt.contains("[mx_document_output]")) {
+            return new RouteDecision(
+                    registry.getRequired("general"),
+                    1.0d,
+                    "Internal document rendering prompt routed to the central general skill",
+                    false
+            );
+        }
+
+        var mediaIntent = MediaIntentDetector.detect(request.prompt());
+        if (mediaIntent.isPresent()) {
+            return new RouteDecision(
+                    registry.getRequired("media"),
+                    1.0d,
+                    "Explicit " + mediaIntent.get().name().toLowerCase(Locale.ROOT) + " generation request",
+                    false
+            );
+        }
+
         Skill selected = null;
         int selectedMatches = 0;
         double selectedScore = 0.0d;
