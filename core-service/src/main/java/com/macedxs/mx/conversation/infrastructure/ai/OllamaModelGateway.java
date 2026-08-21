@@ -17,19 +17,19 @@ public class OllamaModelGateway implements StreamingModelGateway {
     private final String visionModel;
 
     public OllamaModelGateway(OllamaService ollamaService) {
-        this(ollamaService, "llava:7b");
+        this(ollamaService, "gemma4:e4b");
     }
 
     @Autowired
     public OllamaModelGateway(
             OllamaService ollamaService,
-            @Value("${mx.ollama.vision-model:llava:7b}") String visionModel
+            @Value("${mx.ollama.vision-model:gemma4:e4b}") String visionModel
     ) {
         if (ollamaService == null) {
             throw new IllegalArgumentException("Ollama service is required");
         }
         this.ollamaService = ollamaService;
-        this.visionModel = visionModel == null || visionModel.isBlank() ? "llava:7b" : visionModel.trim();
+        this.visionModel = visionModel == null || visionModel.isBlank() ? "gemma4:e4b" : visionModel.trim();
     }
 
     @Override
