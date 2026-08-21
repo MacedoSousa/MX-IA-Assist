@@ -238,7 +238,7 @@ public class OllamaService {
 
     private boolean shouldThink(String prompt, List<ModelImage> images) {
         if (!fastCasual || (images != null && !images.isEmpty())) return true;
-        if (prompt.startsWith(DOCUMENT_OUTPUT_MARKER)) return false;
+        if (prompt.contains(DOCUMENT_OUTPUT_MARKER)) return false;
         String normalized = prompt.trim().toLowerCase(Locale.ROOT).replaceAll("[!,.?]+$", "");
         return switch (normalized) {
             case "oi", "olá", "ola", "oi mx", "olá mx", "ola mx", "hello", "hello mx", "hi", "hey", "bom dia", "boa tarde", "boa noite" -> false;

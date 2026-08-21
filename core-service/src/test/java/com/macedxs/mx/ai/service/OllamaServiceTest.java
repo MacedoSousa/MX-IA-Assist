@@ -132,7 +132,7 @@ class OllamaServiceTest {
 
         try {
             String reply = new OllamaService("http://localhost:" + server.getAddress().getPort())
-                    .generateText("[MX_DOCUMENT_OUTPUT]\nCrie um documento profissional.");
+                    .generateText("Contexto do MX.\n\nSolicitação do usuário:\n[MX_DOCUMENT_OUTPUT]\nCrie um documento profissional.");
             assertThat(reply).isEqualTo("Documento pronto");
         } finally {
             server.stop(0);
