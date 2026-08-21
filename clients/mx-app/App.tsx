@@ -1,4 +1,9 @@
 import { StatusBar } from "expo-status-bar";
+/**
+ * Design: Ateliê de Inteligência — azul-ink como moldura, marfim em superfícies
+ * de leitura e verde-mar/cobre como sinais. O MX continua sendo um espaço de
+ * trabalho completo, não uma tela de chat isolada.
+ */
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as Clipboard from "expo-clipboard";
 import * as DocumentPicker from "expo-document-picker";
@@ -691,16 +696,16 @@ export default function App() {
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <StatusBar style="light" />
       <View style={styles.appShell}>
-          <View style={styles.topBar}>
+        <View style={styles.topBar}>
           <View style={styles.brandBlock}>
-            <View style={styles.brandMark}><Text style={styles.brandMarkText}>MX</Text></View>
+            <View style={styles.brandMark}><Text style={styles.brandMarkText}>✦</Text></View>
             <View style={styles.brandCopy}>
-              <Text style={styles.eyebrow}>MX CORE · LOCAL-FIRST</Text>
-              <Text style={styles.headerTitle}>Seu espaço de comando</Text>
-              <Text style={styles.subtitle}>{subtitle}</Text>
+              <Text style={styles.eyebrow}>ESTÚDIO PESSOAL · LOCAL-FIRST</Text>
+              <Text style={styles.headerTitle}>MX · espaço de inteligência</Text>
+              <Text style={styles.subtitle}>Trabalho, memória e criação no mesmo contexto.</Text>
             </View>
           </View>
-          <View style={styles.topBarMeta}><Text style={styles.topBarMetaLabel}>MODELO ATIVO</Text><Text style={styles.topBarMetaValue}>deepseek-r1:14b</Text><Text style={styles.topBarMetaHint}>{responseStage}</Text></View>
+          <View style={styles.topBarMeta}><Text style={styles.topBarMetaLabel}>MX CORE  ›  CONVERSAS</Text><Text style={styles.topBarMetaValue}>deepseek-r1:14b</Text><Text style={styles.topBarMetaHint}>{responseStage}</Text></View>
           <View style={styles.topBarActions}>
             <View style={[styles.statusPill, online ? styles.statusPillOnline : styles.statusPillOffline]}><View style={[styles.statusDot, online ? styles.statusDotOnline : styles.statusDotOffline]} /><Text style={styles.statusText}>{online ? "Online" : "Offline"}</Text></View>
             <Pressable onPress={handleLogout} style={({ pressed }) => [styles.logout, pressed && styles.pressed]}><Text style={styles.logoutText}>Sair</Text></Pressable>
@@ -711,14 +716,15 @@ export default function App() {
         <View style={styles.workspace}>
           <View style={styles.sidebar}>
             <View style={styles.sidebarCard}>
-              <Text style={styles.sidebarKicker}>ESPAÇO DE TRABALHO</Text>
-              <Text style={styles.sidebarTitle}>Tudo começa aqui.</Text>
-              <Text style={styles.sidebarDescription}>Converse com o MX, organize projetos e use suas ferramentas locais com privacidade.</Text>
+              <Text style={styles.sidebarKicker}>ÍNDICE DO SISTEMA</Text>
+              <Text style={styles.sidebarTitle}>Tudo em um só contexto.</Text>
+              <Text style={styles.sidebarDescription}>Converse, organize projetos e use suas ferramentas locais com privacidade e continuidade.</Text>
               <View style={styles.sidebarSignal}><View style={styles.sidebarSignalDot} /><Text style={styles.sidebarSignalText}>{online ? "Sistema operacional" : "Modo offline"}</Text></View>
               <Pressable disabled={busy || !online} onPress={() => void handleCreateConversation()} style={({ pressed }) => [styles.sidebarMainAction, pressed && styles.pressed, (busy || !online) && styles.disabled]}><Text style={styles.sidebarMainActionText}>+ Nova conversa</Text></Pressable>
-              <Pressable onPress={() => setShowHistory((current) => !current)} style={({ pressed }) => [styles.sidebarAction, showHistory && styles.sidebarActionActive, pressed && styles.pressed]}><Text style={styles.sidebarActionText}>Histórico e lixeira</Text><Text style={styles.sidebarActionMeta}>{conversationIndex.length} conversas</Text></Pressable>
-              <Pressable onPress={() => setShowProjects((current) => !current)} style={({ pressed }) => [styles.sidebarAction, showProjects && styles.sidebarActionActive, pressed && styles.pressed]}><Text style={styles.sidebarActionText}>Projetos e arquivos</Text><Text style={styles.sidebarActionMeta}>{projects.length} projetos locais</Text></Pressable>
-              <Text style={styles.sidebarHint}>Enter envia. Shift + Enter cria uma nova linha.</Text>
+              <Pressable onPress={() => { setShowHistory(false); setShowProjects(false); }} style={({ pressed }) => [styles.sidebarAction, !showHistory && !showProjects && styles.sidebarActionActive, pressed && styles.pressed]}><Text style={styles.sidebarActionText}>Visão geral</Text><Text style={styles.sidebarActionMeta}>Contexto e atividade</Text></Pressable>
+              <Pressable onPress={() => { setShowHistory((current) => !current); setShowProjects(false); }} style={({ pressed }) => [styles.sidebarAction, showHistory && styles.sidebarActionActive, pressed && styles.pressed]}><Text style={styles.sidebarActionText}>Conversas</Text><Text style={styles.sidebarActionMeta}>{conversationIndex.length} contextos salvos</Text></Pressable>
+              <Pressable onPress={() => { setShowProjects((current) => !current); setShowHistory(false); }} style={({ pressed }) => [styles.sidebarAction, showProjects && styles.sidebarActionActive, pressed && styles.pressed]}><Text style={styles.sidebarActionText}>Projetos</Text><Text style={styles.sidebarActionMeta}>{projects.length} workspaces locais</Text></Pressable>
+              <Text style={styles.sidebarHint}>CONHECIMENTO · AGENTS · MÍDIA vivem nas conversas e projetos. Enter envia; Shift + Enter cria uma nova linha.</Text>
             </View>
 
             {showHistory ? <View style={[styles.historyPanel, styles.sidebarPanel]}>
@@ -745,16 +751,16 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#050a13", paddingHorizontal: 28, paddingTop: 26 },
-  appShell: { flex: 1, gap: 18, maxWidth: 1560, width: "100%", alignSelf: "center" },
-  topBar: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 2, paddingVertical: 4 },
+  screen: { flex: 1, backgroundColor: "#07111d", paddingHorizontal: Platform.OS === "web" ? 22 : 14, paddingTop: Platform.OS === "web" ? 18 : 12 },
+  appShell: { flex: 1, gap: 14, maxWidth: 1680, width: "100%", alignSelf: "center" },
+  topBar: { alignItems: "center", backgroundColor: "#091622", borderBottomColor: "#203343", borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 18, paddingVertical: 13 },
   brandBlock: { alignItems: "center", flexDirection: "row", flexShrink: 1, gap: 12 },
-  brandMark: { alignItems: "center", backgroundColor: "#7ce7c5", borderRadius: 15, height: 48, justifyContent: "center", shadowColor: "#48c7a0", shadowOpacity: 0.24, shadowRadius: 14, width: 48 },
-  brandMarkText: { color: "#041017", fontSize: 15, fontWeight: "900", letterSpacing: 1 },
+  brandMark: { alignItems: "center", backgroundColor: "#11283a", borderColor: "#2a6470", borderRadius: 17, borderWidth: 1, height: 48, justifyContent: "center", shadowColor: "#020711", shadowOpacity: 0.32, shadowRadius: 16, width: 48 },
+  brandMarkText: { color: "#62dab5", fontSize: 19, fontWeight: "900", letterSpacing: 1 },
   brandCopy: { flexShrink: 1, gap: 3 },
-  topBarMeta: { alignItems: "flex-end", flex: 1, gap: 2, marginHorizontal: 24 },
+  topBarMeta: { alignItems: "flex-end", flex: 1, gap: 2, marginHorizontal: 28 },
   topBarMetaLabel: { color: "#60758e", fontSize: 9, fontWeight: "900", letterSpacing: 1.5 },
-  topBarMetaValue: { color: "#dbe8f4", fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", fontSize: 12, fontWeight: "800" },
+  topBarMetaValue: { color: "#e7e2d7", fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", fontSize: 12, fontWeight: "800" },
   topBarMetaHint: { color: "#7f95aa", fontSize: 10 },
   topBarActions: { alignItems: "center", flexDirection: "row", gap: 10 },
   statusPill: { alignItems: "center", borderRadius: 999, flexDirection: "row", gap: 7, paddingHorizontal: 10, paddingVertical: 7 },
@@ -766,36 +772,36 @@ const styles = StyleSheet.create({
   statusText: { color: "#e3edf6", fontSize: 12, fontWeight: "800" },
   errorBanner: { backgroundColor: "#3b2028", borderColor: "#8d4652", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 9 },
   errorBannerText: { color: "#ffd1d1", fontSize: 13, lineHeight: 18 },
-  workspace: { flex: 1, flexDirection: Platform.OS === "web" ? "row" : "column", gap: 18, minHeight: 0 },
-  sidebar: { gap: 12, width: Platform.OS === "web" ? 304 : "100%" },
-  sidebarCard: { backgroundColor: "#0c1522", borderColor: "#1a2b40", borderRadius: 20, borderWidth: 1, gap: 10, padding: 18 },
-  sidebarTitle: { color: "#f4f8fc", fontSize: 19, fontWeight: "900", letterSpacing: -0.3 },
-  sidebarDescription: { color: "#8fa4b9", fontSize: 12, lineHeight: 18 },
-  sidebarSignal: { alignItems: "center", backgroundColor: "#091c1b", borderColor: "#173c38", borderRadius: 10, flexDirection: "row", gap: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  workspace: { flex: 1, flexDirection: Platform.OS === "web" ? "row" : "column", gap: 14, minHeight: 0 },
+  sidebar: { backgroundColor: "#081520", borderColor: "#1a3040", borderRightWidth: Platform.OS === "web" ? 1 : 0, gap: 12, padding: Platform.OS === "web" ? 10 : 0, width: Platform.OS === "web" ? 292 : "100%" },
+  sidebarCard: { backgroundColor: "#0b1d2b", borderColor: "#1d3546", borderRadius: 18, borderWidth: 1, gap: 11, padding: 17, shadowColor: "#01050a", shadowOpacity: 0.24, shadowRadius: 16 },
+  sidebarTitle: { color: "#f3eee4", fontFamily: Platform.OS === "ios" ? "Georgia" : "serif", fontSize: 21, fontWeight: "700", letterSpacing: -0.45 },
+  sidebarDescription: { color: "#a4b2bc", fontSize: 12, lineHeight: 19 },
+  sidebarSignal: { alignItems: "center", backgroundColor: "#0c2928", borderColor: "#205752", borderRadius: 999, flexDirection: "row", gap: 8, paddingHorizontal: 10, paddingVertical: 8 },
   sidebarSignalDot: { backgroundColor: "#7ce7c5", borderRadius: 4, height: 8, width: 8 },
   sidebarSignalText: { color: "#9de5cb", fontSize: 11, fontWeight: "800" },
   sidebarKicker: { color: "#718aa6", fontSize: 10, fontWeight: "900", letterSpacing: 1.4 },
-  sidebarMainAction: { alignItems: "center", backgroundColor: "#7ce7c5", borderRadius: 11, justifyContent: "center", minHeight: 46, paddingHorizontal: 12, shadowColor: "#48c7a0", shadowOpacity: 0.18, shadowRadius: 10 },
-  sidebarMainActionText: { color: "#07101d", fontSize: 13, fontWeight: "900" },
-  sidebarAction: { backgroundColor: "#101d2c", borderColor: "#223950", borderRadius: 11, borderWidth: 1, gap: 3, paddingHorizontal: 12, paddingVertical: 11 },
-  sidebarActionActive: { backgroundColor: "#18394a", borderColor: "#2a6e70" },
-  sidebarActionText: { color: "#d9e9f8", fontSize: 13, fontWeight: "800" },
-  sidebarActionMeta: { color: "#8ca4bd", fontSize: 11 },
-  sidebarHint: { color: "#768da6", fontSize: 11, lineHeight: 16, paddingTop: 4 },
+  sidebarMainAction: { alignItems: "center", backgroundColor: "#59d4ad", borderRadius: 12, justifyContent: "center", minHeight: 47, paddingHorizontal: 12, shadowColor: "#275f51", shadowOpacity: 0.35, shadowRadius: 12 },
+  sidebarMainActionText: { color: "#062019", fontSize: 13, fontWeight: "900" },
+  sidebarAction: { backgroundColor: "transparent", borderColor: "transparent", borderRadius: 11, borderWidth: 1, gap: 3, paddingHorizontal: 12, paddingVertical: 11 },
+  sidebarActionActive: { backgroundColor: "#132d3e", borderColor: "#254b58" },
+  sidebarActionText: { color: "#e3e9e5", fontSize: 13, fontWeight: "800" },
+  sidebarActionMeta: { color: "#7f94a4", fontSize: 10 },
+  sidebarHint: { color: "#7890a0", fontSize: 10, lineHeight: 16, paddingTop: 8 },
   sidebarPanel: { marginBottom: 0, maxHeight: 360 },
-  chatColumn: { backgroundColor: "#091320", borderColor: "#182a3e", borderRadius: 22, borderWidth: 1, flex: 1, gap: 12, minHeight: 0, minWidth: 0, padding: 18 },
-  chatHeader: { alignItems: "center", borderBottomColor: "#182b40", borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingBottom: 15 },
+  chatColumn: { backgroundColor: "#0a1825", borderColor: "#203747", borderRadius: 20, borderWidth: 1, flex: 1, gap: 12, minHeight: 0, minWidth: 0, padding: 18, shadowColor: "#02070c", shadowOpacity: 0.22, shadowRadius: 22 },
+  chatHeader: { alignItems: "center", borderBottomColor: "#203747", borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingBottom: 15 },
   chatHeaderIdentity: { alignItems: "center", flexDirection: "row", flexShrink: 1, gap: 11 },
-  chatHeaderOrb: { alignItems: "center", backgroundColor: "#102d36", borderColor: "#23615f", borderRadius: 13, borderWidth: 1, height: 38, justifyContent: "center", width: 38 },
-  chatHeaderOrbText: { color: "#7ce7c5", fontSize: 18, fontWeight: "800" },
+  chatHeaderOrb: { alignItems: "center", backgroundColor: "#102c3a", borderColor: "#2e7580", borderRadius: 13, borderWidth: 1, height: 38, justifyContent: "center", width: 38 },
+  chatHeaderOrbText: { color: "#62dab5", fontSize: 18, fontWeight: "800" },
   chatHeaderKicker: { color: "#63e6be", fontSize: 10, fontWeight: "900", letterSpacing: 1.3 },
   chatHeaderTitle: { color: "#f4f7fb", fontSize: 18, fontWeight: "900", marginTop: 3 },
   chatHeaderMeta: { color: "#8197ae", fontSize: 11, marginTop: 3 },
   chatHeaderActions: { alignItems: "center", flexDirection: "row", gap: 6 },
-  headerButton: { backgroundColor: "#0e1c2b", borderColor: "#2b4865", borderRadius: 10, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 8 },
-  headerButtonText: { color: "#b9d8f5", fontSize: 11, fontWeight: "800" },
+  headerButton: { backgroundColor: "#102334", borderColor: "#2b5068", borderRadius: 10, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 8 },
+  headerButtonText: { color: "#c1d4d9", fontSize: 11, fontWeight: "800" },
   centered: { alignItems: "center", backgroundColor: "#08111f", flex: 1, gap: 12, justifyContent: "center" },
-  loginCard: { alignSelf: "center", backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 24, borderWidth: 1, gap: 14, marginTop: 70, maxWidth: 480, padding: 28, width: "100%" },
+  loginCard: { alignSelf: "center", backgroundColor: "#0b1d2b", borderColor: "#274558", borderRadius: 24, borderWidth: 1, gap: 14, marginTop: 70, maxWidth: 480, padding: 28, width: "100%" },
   header: { alignItems: "flex-start", flexDirection: "row", justifyContent: "space-between", paddingBottom: 12 },
   headerText: { flex: 1, paddingRight: 12 },
   headerActions: { alignItems: "flex-end", gap: 8 },
@@ -804,8 +810,8 @@ const styles = StyleSheet.create({
   projectButton: { borderColor: "#4c5f8a", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
   projectButtonText: { color: "#c7d3ff", fontWeight: "800" },
   eyebrow: { color: "#63e6be", fontSize: 12, fontWeight: "800", letterSpacing: 2 },
-  title: { color: "#f4f7fb", fontSize: 32, fontWeight: "800", lineHeight: 38 },
-  headerTitle: { color: "#f4f7fb", fontSize: 24, fontWeight: "800" },
+  title: { color: "#f5f0e7", fontFamily: Platform.OS === "ios" ? "Georgia" : "serif", fontSize: 32, fontWeight: "800", lineHeight: 38 },
+  headerTitle: { color: "#f5f0e7", fontFamily: Platform.OS === "ios" ? "Georgia" : "serif", fontSize: 23, fontWeight: "800" },
   subtitle: { color: "#9cabc0", fontSize: 15, lineHeight: 22 },
   muted: { color: "#9cabc0", fontSize: 14, lineHeight: 21 },
   input: { backgroundColor: "#0b1728", borderColor: "#29405d", borderRadius: 12, borderWidth: 1, color: "#f4f7fb", fontSize: 16, paddingHorizontal: 14, paddingVertical: 13 },
@@ -818,7 +824,7 @@ const styles = StyleSheet.create({
   error: { color: "#ff8b8b", fontSize: 13, lineHeight: 18 },
   logout: { borderColor: "#29405d", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
   logoutText: { color: "#c4d1e3", fontWeight: "700" },
-  historyPanel: { backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 10 },
+  historyPanel: { backgroundColor: "#0b1d2b", borderColor: "#1d384b", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 10 },
   historyHeaderRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 8 },
   historyHeaderActions: { alignItems: "center", flexDirection: "row", gap: 6 },
   compactButton: { minHeight: 36, paddingHorizontal: 10, paddingVertical: 6 },
@@ -830,8 +836,8 @@ const styles = StyleSheet.create({
   historyActionText: { color: "#b9d8ff", fontSize: 11, fontWeight: "800" },
   dangerAction: { borderColor: "#8d4652" },
   dangerText: { color: "#ff9b9b", fontSize: 11, fontWeight: "800" },
-  projectPanel: { backgroundColor: "#101c2d", borderColor: "#30456b", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 12 },
-  filePanel: { backgroundColor: "#101c2d", borderColor: "#2a6e70", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 12 },
+  projectPanel: { backgroundColor: "#0b1d2b", borderColor: "#27465f", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 12 },
+  filePanel: { backgroundColor: "#102334", borderColor: "#33706c", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 12 },
   panelTitle: { color: "#f4f7fb", fontSize: 15, fontWeight: "800" },
   projectFormRow: { flexDirection: "row", gap: 8 },
   inlineButton: { flex: 1 },
@@ -854,17 +860,17 @@ const styles = StyleSheet.create({
   approvalArguments: { color: "#e8d8ad", fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", fontSize: 12 },
   approvalActions: { flexDirection: "row", gap: 8 },
   messageList: { flexGrow: 1, gap: 14, paddingBottom: 20, paddingTop: 16 },
-  emptyState: { alignItems: "center", gap: 10, marginTop: 100, paddingHorizontal: 24 },
-  emptyBadge: { backgroundColor: "#0c2829", borderColor: "#1d5d58", borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 },
+  emptyState: { alignItems: "center", backgroundColor: "#f4efe5", borderRadius: 18, gap: 10, marginTop: 58, paddingHorizontal: 24, paddingVertical: 36 },
+  emptyBadge: { backgroundColor: "#e3f1e9", borderColor: "#8ac7b3", borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 },
   emptyBadgeText: { color: "#83dfc1", fontSize: 9, fontWeight: "900", letterSpacing: 1.2 },
-  emptyTitle: { color: "#f4f8fc", fontSize: 24, fontWeight: "900", letterSpacing: -0.4 },
+  emptyTitle: { color: "#17303a", fontFamily: Platform.OS === "ios" ? "Georgia" : "serif", fontSize: 25, fontWeight: "900", letterSpacing: -0.4 },
   emptyTips: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", marginTop: 4 },
-  emptyTip: { color: "#6f879e", fontSize: 11 },
+  emptyTip: { color: "#536a75", fontSize: 11 },
   bubble: { borderRadius: 18, maxWidth: "86%", padding: 16 },
-  userBubble: { alignSelf: "flex-end", backgroundColor: "#164c50", borderBottomRightRadius: 5 },
-  assistantBubble: { alignSelf: "flex-start", backgroundColor: "#0e1b2a", borderColor: "#223950", borderWidth: 1, borderBottomLeftRadius: 5 },
+  userBubble: { alignSelf: "flex-end", backgroundColor: "#19595a", borderBottomRightRadius: 5 },
+  assistantBubble: { alignSelf: "flex-start", backgroundColor: "#f3eee4", borderColor: "#d9cec0", borderWidth: 1, borderBottomLeftRadius: 5 },
   bubbleRole: { color: "#63e6be", fontSize: 11, fontWeight: "800", letterSpacing: 1, marginBottom: 4, textTransform: "uppercase" },
-  bubbleText: { color: "#eef5fb", fontSize: 15, lineHeight: 23 },
+  bubbleText: { color: "#15303a", fontSize: 15, lineHeight: 23 },
   thinkingRow: { alignItems: "center", flexDirection: "row", gap: 9, paddingVertical: 3 },
   thinkingText: { color: "#91b5b1", fontSize: 13, fontStyle: "italic" },
   attachmentText: { color: "#a9e8d2", fontSize: 12, marginTop: 8 },
@@ -878,10 +884,10 @@ const styles = StyleSheet.create({
   attachButtonText: { color: "#63e6be", fontSize: 12, fontWeight: "800" },
   mediaButton: { alignItems: "center", borderColor: "#2a6e70", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 42, paddingHorizontal: 9 },
   mediaButtonText: { color: "#a9e8d2", fontSize: 12, fontWeight: "800" },
-  composer: { backgroundColor: "#0c1827", borderColor: "#20364d", borderRadius: 18, borderWidth: 1, gap: 12, marginBottom: 4, padding: 14 },
+  composer: { backgroundColor: "#0c1d2b", borderColor: "#2b4b60", borderRadius: 18, borderWidth: 1, gap: 12, marginBottom: 4, padding: 14 },
   composerHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
   composerSubtext: { color: "#7189a0", fontSize: 11, marginTop: 3 },
-  composerModel: { backgroundColor: "#112c34", borderColor: "#24605d", borderRadius: 8, borderWidth: 1, color: "#8fe3c5", fontSize: 10, fontWeight: "900", paddingHorizontal: 9, paddingVertical: 6 },
+  composerModel: { backgroundColor: "#18383b", borderColor: "#367675", borderRadius: 8, borderWidth: 1, color: "#98e2c8", fontSize: 10, fontWeight: "900", paddingHorizontal: 9, paddingVertical: 6 },
   composerActions: { gap: 7 },
   composerLabel: { color: "#8ea7c4", fontSize: 10, fontWeight: "900", letterSpacing: 1.2, textTransform: "uppercase" },
   actionGroup: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
