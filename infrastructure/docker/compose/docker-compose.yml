@@ -173,7 +173,7 @@ services:
       OLLAMA_URL: http://ollama:11434
       # Quality-first default: DeepSeek R1 14B is the strongest installed text-reasoning profile.
       OLLAMA_MODEL: ${OLLAMA_MODEL:-deepseek-r1:14b}
-      OLLAMA_TIMEOUT_MS: ${OLLAMA_TIMEOUT_MS:-300000}
+      MX_OLLAMA_TIMEOUT_MS: ${MX_OLLAMA_TIMEOUT_MS:-300000}
       OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-1h}
       OLLAMA_FAST_CASUAL: ${OLLAMA_FAST_CASUAL:-true}
       OLLAMA_WARMUP_ENABLED: ${OLLAMA_WARMUP_ENABLED:-true}

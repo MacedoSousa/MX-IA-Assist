@@ -117,6 +117,29 @@ class OllamaServiceTest {
     }
 
     @Test
+    void shouldDisableThinkingForDocumentOutputContract() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/api/generate", exchange -> {
+            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(body).contains("\"think\":false");
+            byte[] response = "{\"response\":\"Documento pronto\",\"done\":true}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(response);
+            }
+        });
+        server.start();
+
+        try {
+            String reply = new OllamaService("http://localhost:" + server.getAddress().getPort())
+                    .generateText("[MX_DOCUMENT_OUTPUT]\nCrie um documento profissional.");
+            assertThat(reply).isEqualTo("Documento pronto");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
     void shouldFailWhenOllamaDoesNotRespondBeforeTheConfiguredTimeout() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/api/generate", exchange -> {

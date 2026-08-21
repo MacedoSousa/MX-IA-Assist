@@ -29,6 +29,7 @@ public class OllamaService {
     private static final String DEFAULT_KEEP_ALIVE = "1h";
     private static final int DEFAULT_CONTEXT_SIZE = 8192;
     private static final int DEFAULT_NUM_THREAD = 0;
+    private static final String DOCUMENT_OUTPUT_MARKER = "[MX_DOCUMENT_OUTPUT]";
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -237,6 +238,7 @@ public class OllamaService {
 
     private boolean shouldThink(String prompt, List<ModelImage> images) {
         if (!fastCasual || (images != null && !images.isEmpty())) return true;
+        if (prompt.startsWith(DOCUMENT_OUTPUT_MARKER)) return false;
         String normalized = prompt.trim().toLowerCase(Locale.ROOT).replaceAll("[!,.?]+$", "");
         return switch (normalized) {
             case "oi", "olá", "ola", "oi mx", "olá mx", "ola mx", "hello", "hello mx", "hi", "hey", "bom dia", "boa tarde", "boa noite" -> false;
