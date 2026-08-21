@@ -39,18 +39,18 @@ public class OllamaService {
     private final int numThread;
 
     public OllamaService() {
-        this("http://localhost:11434", DEFAULT_REQUEST_TIMEOUT, "qwen3:8b", DEFAULT_KEEP_ALIVE, DEFAULT_CONTEXT_SIZE, DEFAULT_NUM_THREAD);
+        this("http://localhost:11434", DEFAULT_REQUEST_TIMEOUT, "deepseek-r1:14b", DEFAULT_KEEP_ALIVE, DEFAULT_CONTEXT_SIZE, DEFAULT_NUM_THREAD);
     }
 
     public OllamaService(String baseUrl) {
-        this(baseUrl, DEFAULT_REQUEST_TIMEOUT, "qwen3:8b", DEFAULT_KEEP_ALIVE);
+        this(baseUrl, DEFAULT_REQUEST_TIMEOUT, "deepseek-r1:14b", DEFAULT_KEEP_ALIVE);
     }
 
     @Autowired
     public OllamaService(
             @Value("${mx.ollama.url:http://localhost:11434}") String baseUrl,
             @Value("${mx.ollama.timeout-ms:120000}") long timeoutMs,
-            @Value("${mx.ollama.model:qwen3:8b}") String model,
+            @Value("${mx.ollama.model:deepseek-r1:14b}") String model,
             @Value("${mx.ollama.keep-alive:10m}") String keepAlive,
             @Value("${mx.ollama.num-ctx:8192}") int contextSize,
             @Value("${mx.ollama.num-thread:0}") int numThread
@@ -59,7 +59,7 @@ public class OllamaService {
     }
 
     public OllamaService(String baseUrl, Duration requestTimeout) {
-        this(baseUrl, requestTimeout, "qwen3:8b", DEFAULT_KEEP_ALIVE);
+        this(baseUrl, requestTimeout, "deepseek-r1:14b", DEFAULT_KEEP_ALIVE);
     }
 
     public OllamaService(String baseUrl, Duration requestTimeout, String model) {

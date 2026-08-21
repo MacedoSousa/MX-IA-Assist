@@ -1,0 +1,26 @@
+# MX local DSH profile.
+# The route is intentionally unauthenticated because Ollama is private to the Docker network.
+llm-pi-ai:
+  providers:
+    mx-ollama:
+      displayName: MX Ollama — DeepSeek R1 14B
+      api: openai-completions
+      baseURL: http://ollama:11434/v1
+      compat:
+        thinkingFormat: deepseek
+        supportsDeveloperRole: false
+        maxTokensField: max_tokens
+      models:
+        - id: deepseek-r1:14b
+          name: DeepSeek R1 14B — local maximum reasoning profile
+          contextWindow: 8192
+          maxTokens: 4096
+          reasoningEfforts:
+            off:
+            low: low
+            high: high
+            max: max
+
+agent-default-model:
+  provider: mx-ollama
+  model: deepseek-r1:14b

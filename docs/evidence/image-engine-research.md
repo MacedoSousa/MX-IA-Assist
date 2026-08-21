@@ -28,3 +28,12 @@ O modelo escolhido para a primeira geração local é `stable-diffusion-v1-5/sta
 
 Fonte: https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5
 Fonte do arquivo indicado no card: https://huggingface.co/sd-legacy/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors
+
+
+## Portas oficiais do AI-Dock
+
+O Compose oficial do AI-Dock Stable Diffusion WebUI Forge diferencia a porta publicada (`FORGE_PORT_HOST`, padrão 7860) da porta local do processo (`FORGE_PORT_LOCAL`, padrão 17860). O Forge recebe `FORGE_ARGS` sem precisar repetir `--port`; o supervisor acrescenta a porta local internamente. O MX foi alinhado a esse contrato: host 7860, processo interno 17860 e `mx-core` apontando para `http://image-engine:17860`.
+
+Fonte: https://raw.githubusercontent.com/ai-dock/stable-diffusion-webui-forge/main/docker-compose.yaml
+Fonte: https://github.com/ai-dock/base-image/wiki/3.0-Storage-Volumes
+Fonte: https://raw.githubusercontent.com/ai-dock/stable-diffusion-webui-forge/main/config/provisioning/default.sh

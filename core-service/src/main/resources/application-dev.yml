@@ -51,7 +51,7 @@ mx:
   ollama:
 
     url: ${OLLAMA_URL:http://localhost:11434}
-    model: ${OLLAMA_MODEL:qwen3:8b}
+    model: ${OLLAMA_MODEL:deepseek-r1:14b}
     # Gemma 4 E4B handles text, image and audio inputs locally; pull it before multimodal use.
     vision-model: ${OLLAMA_VISION_MODEL:gemma4:e4b}
     timeout-ms: ${OLLAMA_TIMEOUT_MS:300000}
