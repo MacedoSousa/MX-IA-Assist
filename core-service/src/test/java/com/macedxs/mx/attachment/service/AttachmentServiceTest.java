@@ -31,7 +31,7 @@ class AttachmentServiceTest {
         UUID userId = UUID.randomUUID();
         UserEntity user = mock(UserEntity.class);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(repository.save(any(AttachmentEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.save(any(AttachmentEntity.class))).thenAnswer(invocation -> persistAsNew(invocation.getArgument(0)));
         AttachmentService service = new AttachmentService(repository, userRepository, tempDir, 1024, 1024, 1024);
         byte[] content = "conteúdo seguro".getBytes(StandardCharsets.UTF_8);
 
@@ -62,7 +62,7 @@ class AttachmentServiceTest {
         UUID userId = UUID.randomUUID();
         UserEntity user = mock(UserEntity.class);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(repository.save(any(AttachmentEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.save(any(AttachmentEntity.class))).thenAnswer(invocation -> persistAsNew(invocation.getArgument(0)));
         AttachmentService service = new AttachmentService(repository, userRepository, tempDir, 4096, 4096, 4096);
         byte[] pdfHeader = "%PDF-1.7\\n".getBytes(StandardCharsets.US_ASCII);
 
@@ -85,7 +85,7 @@ class AttachmentServiceTest {
         UUID userId = UUID.randomUUID();
         UserEntity user = mock(UserEntity.class);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(repository.save(any(AttachmentEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.save(any(AttachmentEntity.class))).thenAnswer(invocation -> persistAsNew(invocation.getArgument(0)));
         AttachmentService service = new AttachmentService(repository, userRepository, tempDir, 4096, 4096, 4096);
         byte[] pdfHeader = "%PDF-1.7\\n".getBytes(StandardCharsets.US_ASCII);
 
@@ -141,7 +141,7 @@ class AttachmentServiceTest {
         UUID userId = UUID.randomUUID();
         UserEntity user = mock(UserEntity.class);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(repository.save(any(AttachmentEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.save(any(AttachmentEntity.class))).thenAnswer(invocation -> persistAsNew(invocation.getArgument(0)));
         AttachmentService service = new AttachmentService(repository, userRepository, tempDir, 1024, 1024, 1024);
         AttachmentEntity image = service.store(
                 userId,
@@ -159,5 +159,11 @@ class AttachmentServiceTest {
         assertThat(resolved.images()).hasSize(1);
         assertThat(resolved.images().getFirst().contentType()).isEqualTo("image/png");
         assertThat(resolved.images().getFirst().base64Data()).isNotBlank();
+    }
+
+    private AttachmentEntity persistAsNew(AttachmentEntity entity) {
+        assertThat(entity.getId()).isNull();
+        entity.setId(UUID.randomUUID());
+        return entity;
     }
 }

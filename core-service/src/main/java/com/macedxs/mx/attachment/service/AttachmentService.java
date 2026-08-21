@@ -113,7 +113,10 @@ public class AttachmentService {
         if (input == null) {
             throw new IllegalArgumentException("Attachment content is required");
         }
-        UUID attachmentId = UUID.randomUUID();
+        // Keep the storage key separate from the database identity. Assigning an id
+        // before JpaRepository.save() makes Spring Data treat this generated-id entity
+        // as detached and use merge(), which can fail with a stale state on insert.
+        UUID storageId = UUID.randomUUID();
         String safeOriginalName = safeFilename(originalFilename);
         String normalizedType = resolveContentType(safeOriginalName, contentType);
         if (!isSupportedContentType(normalizedType)) {
@@ -124,7 +127,7 @@ public class AttachmentService {
         }
 
 
-        String storedFilename = attachmentId + extensionOf(safeOriginalName);
+        String storedFilename = storageId + extensionOf(safeOriginalName);
         Path target = safePath(storedFilename);
         Path temporary = safePath(storedFilename + ".tmp");
 
@@ -137,7 +140,6 @@ public class AttachmentService {
             Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE);
 
             AttachmentEntity entity = new AttachmentEntity();
-            entity.setId(attachmentId);
             entity.setUser(userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("User not found")));
             entity.setOriginalFilename(safeOriginalName);

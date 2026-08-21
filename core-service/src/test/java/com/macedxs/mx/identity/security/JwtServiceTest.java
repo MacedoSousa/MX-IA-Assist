@@ -11,7 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(properties = "jwt.secret=mx-test-signing-key-with-32-or-more-bytes")
 @ActiveProfiles("test")
 class JwtServiceTest {
 
