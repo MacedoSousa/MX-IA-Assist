@@ -11,4 +11,4 @@
 - [x] Inspecionar logs do cliente, MX Core e Forge para identificar os erros dos dois fluxos.
 - [x] Corrigir o envio multipart de arquivos e o acionamento da geração de imagens.
 - [x] Reconstruir os serviços afetados e realizar smoke tests autenticados.
-- [ ] Publicar as correções e registrar os resultados da validação.
+- [x] Publicar as correções e registrar os resultados da validação.
