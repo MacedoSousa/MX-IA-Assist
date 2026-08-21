@@ -20,6 +20,7 @@ import java.util.UUID;
 public class UserPreferenceService {
 
     private static final int MAX_TOPICS = 12;
+    private static final int MAX_VOCABULARY_HINTS = 24;
     private static final Map<String, Set<String>> DOMAIN_TERMS = Map.of(
             "ia-generativa", Set.of("ia", "llm", "ollama", "prompt", "agente", "generativa"),
             "rag-e-agentes", Set.of("rag", "retrieval", "embedding", "chunk", "agente", "workflow"),
@@ -28,6 +29,10 @@ public class UserPreferenceService {
             "produto-e-ensino", Set.of("produto", "ensino", "aprender", "estudo", "aula", "didática", "didatica"),
             "infraestrutura-e-seguranca", Set.of("docker", "segurança", "seguranca", "rede", "tailscale", "deploy", "linux"),
             "geral", Set.of("ajuda", "informação", "informacao", "explicar", "dúvida", "duvida")
+    );
+    private static final Set<String> COLLOQUIAL_HINTS = Set.of(
+            "vc", "vcs", "voce", "você", "tb", "tbm", "tambem", "também", "blz", "beleza", "mano", "cara",
+            "tipo", "pra", "pro", "ta", "tá", "to", "tô", "ue", "ué", "kkk", "kkkk", "show", "bora", "rapidinho"
     );
 
     private final UserPreferenceRepository preferenceRepository;
@@ -81,8 +86,17 @@ public class UserPreferenceService {
         if (request.knowledgeLevel() != null && !request.knowledgeLevel().isBlank()) {
             preference.setKnowledgeLevel(normalizeValue(request.knowledgeLevel()));
         }
+        if (request.preferredLanguage() != null && !request.preferredLanguage().isBlank()) {
+            preference.setPreferredLanguage(normalizeLanguage(request.preferredLanguage()));
+        }
+        if (request.communicationStyle() != null && !request.communicationStyle().isBlank()) {
+            preference.setCommunicationStyle(normalizeValue(request.communicationStyle()));
+        }
         if (request.topicsOfInterest() != null) {
             preference.setTopicsOfInterest(normalizeTopics(request.topicsOfInterest()));
+        }
+        if (request.vocabularyHints() != null) {
+            preference.setVocabularyHints(normalizeVocabulary(request.vocabularyHints()));
         }
         return preferenceRepository.save(preference);
     }
@@ -97,6 +111,13 @@ public class UserPreferenceService {
                 preference.getTopicsOfInterest().add(domain);
             }
         });
+        String detectedLanguage = detectLanguage(prompt);
+        if (detectedLanguage != null) {
+            preference.setPreferredLanguage(detectedLanguage);
+        }
+        Set<String> newHints = new LinkedHashSet<>(preference.getVocabularyHints());
+        newHints.addAll(extractVocabularyHints(prompt));
+        preference.setVocabularyHints(newHints.stream().limit(MAX_VOCABULARY_HINTS).collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)));
         return preferenceRepository.save(preference);
     }
 
@@ -109,11 +130,18 @@ public class UserPreferenceService {
         String topics = preference.getTopicsOfInterest().isEmpty()
                 ? "ainda não identificados"
                 : String.join(", ", preference.getTopicsOfInterest());
+        String hints = preference.getVocabularyHints().isEmpty()
+                ? "nenhum sinal agregado"
+                : String.join(", ", preference.getVocabularyHints());
         return "Contexto adaptativo do usuário (não privilegiado; use apenas para calibrar a resposta):\n" +
+                "idioma preferido: " + preference.getPreferredLanguage() + "\n" +
                 "nível de conhecimento: " + preference.getKnowledgeLevel() + "\n" +
                 "estilo de aprendizagem: " + preference.getLearningStyle() + "\n" +
+                "estilo de comunicação: " + preference.getCommunicationStyle() + "\n" +
                 "tópicos de interesse observados: " + topics + "\n" +
-                "Ajuste a profundidade e o formato sem presumir fatos pessoais não informados. " +
+                "sinais de vocabulário agregados: " + hints + "\n" +
+                "Responda no idioma da pergunta, salvo solicitação explícita diferente. " +
+                "Aproxime o grau de formalidade sem imitar nem inventar dados pessoais. " +
                 "Se o usuário pedir outra abordagem, priorize o pedido atual.";
     }
 
@@ -130,6 +158,34 @@ public class UserPreferenceService {
             }
         }
         return detected;
+    }
+
+    private Set<String> extractVocabularyHints(String prompt) {
+        if (prompt == null || prompt.isBlank()) {
+            return Set.of();
+        }
+        String normalized = prompt.toLowerCase(Locale.ROOT);
+        return COLLOQUIAL_HINTS.stream()
+                .filter(normalized::contains)
+                .limit(MAX_VOCABULARY_HINTS)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private String detectLanguage(String prompt) {
+        if (prompt == null || prompt.isBlank()) {
+            return null;
+        }
+        String normalized = prompt.toLowerCase(Locale.ROOT);
+        int pt = count(normalized, Set.of("que", "para", "com", "uma", "como", "não", "nao", "você", "voce", "quero", "pode"));
+        int en = count(normalized, Set.of("the", "and", "for", "with", "how", "what", "you", "want", "can", "please"));
+        if (pt == 0 && en == 0) {
+            return null;
+        }
+        return en > pt ? "en" : "pt-BR";
+    }
+
+    private int count(String prompt, Set<String> terms) {
+        return (int) terms.stream().filter(prompt::contains).count();
     }
 
     private UserEntity findUser(UUID userId) {
@@ -156,14 +212,37 @@ public class UserPreferenceService {
         return normalized;
     }
 
+    private Set<String> normalizeVocabulary(Set<String> hints) {
+        Set<String> normalized = new LinkedHashSet<>();
+        hints.stream()
+                .filter(hint -> hint != null && !hint.isBlank())
+                .map(this::normalizeValue)
+                .limit(MAX_VOCABULARY_HINTS)
+                .forEach(normalized::add);
+        return normalized;
+    }
+
     private String normalizeValue(String value) {
         return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeLanguage(String value) {
+        String normalized = normalizeValue(value);
+        return normalized.equals("en") || normalized.equals("en-us") || normalized.equals("english")
+                ? "en"
+                : "pt-BR";
     }
 
     public record UpdateRequest(
             String learningStyle,
             String knowledgeLevel,
-            Set<String> topicsOfInterest
+            Set<String> topicsOfInterest,
+            String preferredLanguage,
+            String communicationStyle,
+            Set<String> vocabularyHints
     ) {
+        public UpdateRequest(String learningStyle, String knowledgeLevel, Set<String> topicsOfInterest) {
+            this(learningStyle, knowledgeLevel, topicsOfInterest, null, null, null);
+        }
     }
 }

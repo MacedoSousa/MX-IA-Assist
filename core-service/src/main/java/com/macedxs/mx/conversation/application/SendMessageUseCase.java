@@ -41,6 +41,7 @@ public class SendMessageUseCase {
         String prompt = command.prompt().trim();
         ConversationStore.ConversationRef conversation = conversationStore
                 .findOrCreate(command.ownerId(), command.conversationId());
+        conversationStore.updateMetadata(conversation.id(), prompt);
         String memoryContext = conversationStore.recentHistoryContext(
                 conversation.id(),
                 RECENT_MEMORY_MESSAGES
@@ -89,6 +90,7 @@ public class SendMessageUseCase {
         String prompt = command.prompt().trim();
         ConversationStore.ConversationRef conversation = conversationStore
                 .findOrCreate(command.ownerId(), command.conversationId());
+        conversationStore.updateMetadata(conversation.id(), prompt);
         String memoryContext = conversationStore.recentHistoryContext(
                 conversation.id(),
                 RECENT_MEMORY_MESSAGES

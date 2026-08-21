@@ -55,6 +55,11 @@ public class JpaConversationStore implements ConversationStore {
     }
 
     @Override
+    public void updateMetadata(UUID conversationId, String prompt) {
+        conversationService.updateMetadata(conversationId, prompt);
+    }
+
+    @Override
     public UUID appendMessage(UUID conversationId, MessageRole role, String content) {
         ConversationEntity conversation = conversationService.findById(conversationId)
                 .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));

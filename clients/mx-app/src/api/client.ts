@@ -124,6 +124,46 @@ export type ConversationHistoryPage = {
   last: boolean;
 };
 
+export type ConversationSummary = {
+  id: string;
+  title: string;
+  summary: string | null;
+  createdAt: string;
+  topic: string;
+  language: string;
+  lastMessageAt: string;
+};
+
+export type ConversationPage = {
+  content: ConversationSummary[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+};
+
+export type UserPreference = {
+  userId: string;
+  learningStyle: string;
+  knowledgeLevel: string;
+  topicsOfInterest: string[];
+  preferredLanguage: string;
+  communicationStyle: string;
+  vocabularyHints: string[];
+  lastActiveAt: string | null;
+};
+
+export type UserPreferenceUpdate = {
+  learningStyle?: string;
+  knowledgeLevel?: string;
+  topicsOfInterest?: string[];
+  preferredLanguage?: string;
+  communicationStyle?: string;
+  vocabularyHints?: string[];
+};
+
 export type AudioTranscriptionResponse = {
   attachmentId: string;
   text: string;
@@ -230,6 +270,32 @@ export class MxApiClient {
       body.append("file", input, input.name || "attachment");
     }
     return this.requestMultipart<UploadedAttachment>("/api/v1/attachments", body);
+  }
+
+  async listConversations(
+    page = 0,
+    size = 20,
+    topic?: string,
+    query?: string,
+  ): Promise<ConversationPage> {
+    const params = new URLSearchParams({
+      page: String(Math.max(0, page)),
+      size: String(Math.max(1, Math.min(size, 100))),
+    });
+    if (topic?.trim()) params.set("topic", topic.trim());
+    if (query?.trim()) params.set("query", query.trim());
+    return this.request<ConversationPage>(`/api/v1/conversations?${params.toString()}`, { method: "GET" });
+  }
+
+  async getPreferences(): Promise<UserPreference> {
+    return this.request<UserPreference>("/api/v1/users/me/preferences", { method: "GET" });
+  }
+
+  async updatePreferences(update: UserPreferenceUpdate): Promise<UserPreference> {
+    return this.request<UserPreference>("/api/v1/users/me/preferences", {
+      method: "PUT",
+      body: JSON.stringify(update),
+    });
   }
 
   async getConversationHistory(

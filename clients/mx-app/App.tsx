@@ -8,8 +8,10 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  NativeSyntheticEvent,
   Text,
   TextInput,
+  TextInputKeyPressEventData,
   View,
 } from "react-native";
 
@@ -18,6 +20,7 @@ import {
   mxApi,
   type ChatMessage,
   type ConversationHistoryMessage,
+  type ConversationSummary,
   type ExecutionRunStatusResponse,
   type UploadedAttachment,
 } from "./src/api/client";
@@ -60,11 +63,17 @@ export default function App() {
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<RenderMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | undefined>();
+  const [conversationIndex, setConversationIndex] = useState<ConversationSummary[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyTopic, setHistoryTopic] = useState("");
+  const [historySearch, setHistorySearch] = useState("");
   const [runs, setRuns] = useState<ExecutionRunStatusResponse[]>([]);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [approvalNonce, setApprovalNonce] = useState("");
   const [busy, setBusy] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [transcribingAttachmentId, setTranscribingAttachmentId] = useState<string | null>(null);
   const [uploadedAttachments, setUploadedAttachments] = useState<UploadedAttachment[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [online, setOnline] = useState(true);
@@ -75,25 +84,41 @@ export default function App() {
     ?? runs.find((run) => run.status === "AWAITING_APPROVAL")
     ?? null;
 
+  async function loadConversationHistory(savedConversationId: string | null) {
+    if (!savedConversationId) return;
+    try {
+      const firstPage = await mxApi.getConversationHistory(savedConversationId, 0, 100);
+      const restored = firstPage.content
+        .filter((message): message is ConversationHistoryMessage & { role: "USER" | "ASSISTANT" } => message.role === "USER" || message.role === "ASSISTANT")
+        .map((message) => ({
+          id: message.id,
+          role: message.role,
+          content: message.content,
+        } satisfies RenderMessage));
+      setMessages(restored);
+    } catch {
+      // A restored session must remain usable even if history is temporarily unavailable.
+    }
+  }
+
+  async function loadConversationIndex() {
+    try {
+      const page = await mxApi.listConversations(0, 50, historyTopic, historySearch);
+      setConversationIndex(page.content);
+    } catch {
+      // The conversation remains usable when the index is temporarily unavailable.
+    }
+  }
+
+  async function openConversation(conversation: ConversationSummary) {
+    setConversationId(conversation.id);
+    await writeConversationId(conversation.id);
+    await loadConversationHistory(conversation.id);
+    setShowHistory(false);
+  }
+
   useEffect(() => {
     async function restoreSession() {
-      const restoreHistory = async (savedConversationId: string | null) => {
-        if (!savedConversationId) return;
-        try {
-          const firstPage = await mxApi.getConversationHistory(savedConversationId, 0, 100);
-          const restored = firstPage.content
-            .filter((message): message is ConversationHistoryMessage & { role: "USER" | "ASSISTANT" } => message.role === "USER" || message.role === "ASSISTANT")
-            .map((message) => ({
-              id: message.id,
-              role: message.role,
-              content: message.content,
-            } satisfies RenderMessage));
-          setMessages(restored);
-        } catch {
-          // A restored session must remain usable even if history is temporarily unavailable.
-        }
-      };
-
       try {
         const savedConversationId = await readConversationId();
         const savedRunCursor = await readRunCursor();
@@ -104,7 +129,8 @@ export default function App() {
 
         const accessToken = await readAccessToken();
         if (accessToken) {
-          await restoreHistory(savedConversationId);
+          await loadConversationHistory(savedConversationId);
+          await loadConversationIndex();
           setViewState("chat");
           return;
         }
@@ -114,7 +140,8 @@ export default function App() {
           return;
         }
         await mxApi.refresh();
-        await restoreHistory(savedConversationId);
+        await loadConversationHistory(savedConversationId);
+        await loadConversationIndex();
         setViewState("chat");
       } catch {
         await clearSession();
@@ -123,6 +150,12 @@ export default function App() {
     }
     void restoreSession();
   }, []);
+
+  useEffect(() => {
+    if (viewState !== "chat" || !showHistory) return;
+    const timer = setTimeout(() => void loadConversationIndex(), 250);
+    return () => clearTimeout(timer);
+  }, [historySearch, historyTopic, showHistory, viewState]);
 
   useEffect(() => {
     if (viewState !== "chat") return;
@@ -229,6 +262,43 @@ export default function App() {
     setUploadedAttachments((current) => current.filter((item) => item.id !== attachmentId));
   }
 
+  async function handleTranscribeAudio(attachment: UploadedAttachment) {
+    if (busy || uploadingAttachment || generatingImage || transcribingAttachmentId) return;
+    setTranscribingAttachmentId(attachment.id);
+    setError(null);
+    try {
+      const transcription = await mxApi.transcribeAudio(attachment.id);
+      setPrompt((current) => current.trim() ? `${current.trim()}\n\n${transcription.text}` : transcription.text);
+      await writeDraftPrompt(transcription.text);
+    } catch (cause) {
+      setError(cause instanceof MxApiError ? cause.message : "Não foi possível transcrever o áudio.");
+    } finally {
+      setTranscribingAttachmentId(null);
+    }
+  }
+
+  async function handleGenerateImage() {
+    const imagePrompt = prompt.trim();
+    if (!imagePrompt || busy || uploadingAttachment || generatingImage || !online) return;
+    setGeneratingImage(true);
+    setError(null);
+    try {
+      const generated = await mxApi.generateImage({ prompt: imagePrompt });
+      setUploadedAttachments((current) => [...current, generated]);
+    } catch (cause) {
+      setError(cause instanceof MxApiError ? cause.message : "Não foi possível gerar a imagem local.");
+    } finally {
+      setGeneratingImage(false);
+    }
+  }
+
+  function handlePromptKeyPress(event: NativeSyntheticEvent<TextInputKeyPressEventData>) {
+    const nativeEvent = event.nativeEvent as TextInputKeyPressEventData & { shiftKey?: boolean };
+    if (nativeEvent.key !== "Enter" || nativeEvent.shiftKey) return;
+    (event as unknown as { preventDefault?: () => void }).preventDefault?.();
+    void handleSend();
+  }
+
   async function handleSend() {
     const value = prompt.trim() || (uploadedAttachments.length > 0 ? "Analise os anexos enviados." : "");
     if (!value || busy || !online) return;
@@ -259,6 +329,7 @@ export default function App() {
       }, attachmentIds);
       setConversationId(response.conversationId);
       await writeConversationId(response.conversationId);
+      await loadConversationIndex();
       setActiveRunId(response.runId);
       setMessages((current) => current.map((message) =>
         message.id === assistantId ? { ...message, content: response.answer } : message,
@@ -373,8 +444,19 @@ export default function App() {
           <Text style={styles.headerTitle}>Olá. Como posso ajudar?</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
-        <Pressable onPress={handleLogout} style={({ pressed }) => [styles.logout, pressed && styles.pressed]}><Text style={styles.logoutText}>Sair</Text></Pressable>
+        <View style={styles.headerActions}>
+          <Pressable onPress={() => setShowHistory((current) => !current)} style={({ pressed }) => [styles.historyButton, pressed && styles.pressed]}><Text style={styles.historyButtonText}>{showHistory ? "Fechar" : "Histórico"}</Text></Pressable>
+          <Pressable onPress={handleLogout} style={({ pressed }) => [styles.logout, pressed && styles.pressed]}><Text style={styles.logoutText}>Sair</Text></Pressable>
+        </View>
       </View>
+
+      {showHistory ? <View style={styles.historyPanel}>
+        <View style={styles.historyFilters}>
+          <TextInput onChangeText={setHistoryTopic} placeholder="Tópico" placeholderTextColor="#748198" style={styles.historyInput} value={historyTopic} />
+          <TextInput onChangeText={setHistorySearch} placeholder="Buscar conversa" placeholderTextColor="#748198" style={styles.historyInput} value={historySearch} />
+        </View>
+        {conversationIndex.length === 0 ? <Text style={styles.muted}>Nenhuma conversa encontrada para esses filtros.</Text> : <FlatList data={conversationIndex} keyExtractor={(item) => item.id} renderItem={({ item }) => <Pressable onPress={() => void openConversation(item)} style={({ pressed }) => [styles.historyItem, pressed && styles.pressed]}><Text style={styles.historyItemTitle} numberOfLines={1}>{item.title || "Conversa sem título"}</Text><Text style={styles.historyItemMeta}>{item.topic} · {item.language} · {new Date(item.lastMessageAt).toLocaleString()}</Text></Pressable>} style={styles.historyList} />}
+      </View> : null}
 
       {activeRun?.status === "AWAITING_APPROVAL" ? (
         <View style={styles.approvalCard}>
@@ -404,11 +486,12 @@ export default function App() {
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      {uploadedAttachments.length > 0 ? <View style={styles.attachmentBar}>{uploadedAttachments.map((attachment) => <View key={attachment.id} style={styles.attachmentChip}><Text numberOfLines={1} style={styles.attachmentChipText}>{attachment.filename}</Text><Pressable disabled={busy} onPress={() => removeAttachment(attachment.id)}><Text style={styles.removeAttachment}>×</Text></Pressable></View>)}</View> : null}
+      {uploadedAttachments.length > 0 ? <View style={styles.attachmentBar}>{uploadedAttachments.map((attachment) => <View key={attachment.id} style={styles.attachmentChip}><Text numberOfLines={1} style={styles.attachmentChipText}>{attachment.filename}</Text>{attachment.contentType.startsWith("audio/") ? <Pressable disabled={busy || !!transcribingAttachmentId} onPress={() => void handleTranscribeAudio(attachment)}><Text style={styles.transcribeText}>{transcribingAttachmentId === attachment.id ? "..." : "Transcrever"}</Text></Pressable> : null}<Pressable disabled={busy} onPress={() => removeAttachment(attachment.id)}><Text style={styles.removeAttachment}>×</Text></Pressable></View>)}</View> : null}
       <View style={styles.composer}>
-        <Pressable disabled={busy || uploadingAttachment || !online} onPress={handlePickAttachment} style={({ pressed }) => [styles.attachButton, pressed && styles.pressed, (busy || uploadingAttachment || !online) && styles.disabled]}><Text style={styles.attachButtonText}>{uploadingAttachment ? "..." : "+"}</Text></Pressable>
-        <TextInput editable={!busy && !uploadingAttachment && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onSubmitEditing={handleSend} placeholder={online ? "Escreva sua solicitação..." : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} />
-        <Pressable disabled={busy || uploadingAttachment || !online || (!prompt.trim() && uploadedAttachments.length === 0)} onPress={handleSend} style={({ pressed }) => [styles.sendButton, pressed && styles.pressed, (busy || uploadingAttachment || !online || (!prompt.trim() && uploadedAttachments.length === 0)) && styles.disabled]}>{busy ? <ActivityIndicator color="#08111f" /> : <Text style={styles.sendButtonText}>Enviar</Text>}</Pressable>
+        <Pressable disabled={busy || uploadingAttachment || generatingImage || !online} onPress={handlePickAttachment} style={({ pressed }) => [styles.attachButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || !online) && styles.disabled]}><Text style={styles.attachButtonText}>{uploadingAttachment ? "..." : "+"}</Text></Pressable>
+        <Pressable disabled={busy || uploadingAttachment || generatingImage || !online || !prompt.trim()} onPress={() => void handleGenerateImage()} style={({ pressed }) => [styles.mediaButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.mediaButtonText}>{generatingImage ? "..." : "Imagem"}</Text></Pressable>
+        <TextInput editable={!busy && !uploadingAttachment && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onKeyPress={Platform.OS === "web" ? handlePromptKeyPress : undefined} onSubmitEditing={Platform.OS === "web" ? undefined : () => void handleSend()} placeholder={online ? "Escreva sua solicitação..." : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} />
+        <Pressable disabled={busy || uploadingAttachment || generatingImage || !!transcribingAttachmentId || !online || (!prompt.trim() && uploadedAttachments.length === 0)} onPress={handleSend} style={({ pressed }) => [styles.sendButton, pressed && styles.pressed, (busy || uploadingAttachment || !online || (!prompt.trim() && uploadedAttachments.length === 0)) && styles.disabled]}>{busy ? <ActivityIndicator color="#08111f" /> : <Text style={styles.sendButtonText}>Enviar</Text>}</Pressable>
       </View>
     </KeyboardAvoidingView>
   );
@@ -420,6 +503,9 @@ const styles = StyleSheet.create({
   loginCard: { alignSelf: "center", backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 24, borderWidth: 1, gap: 14, marginTop: 70, maxWidth: 480, padding: 28, width: "100%" },
   header: { alignItems: "flex-start", flexDirection: "row", justifyContent: "space-between", paddingBottom: 12 },
   headerText: { flex: 1, paddingRight: 12 },
+  headerActions: { alignItems: "flex-end", gap: 8 },
+  historyButton: { borderColor: "#2a6e70", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
+  historyButtonText: { color: "#a9e8d2", fontWeight: "800" },
   eyebrow: { color: "#63e6be", fontSize: 12, fontWeight: "800", letterSpacing: 2 },
   title: { color: "#f4f7fb", fontSize: 32, fontWeight: "800", lineHeight: 38 },
   headerTitle: { color: "#f4f7fb", fontSize: 24, fontWeight: "800" },
@@ -435,6 +521,13 @@ const styles = StyleSheet.create({
   error: { color: "#ff8b8b", fontSize: 13, lineHeight: 18 },
   logout: { borderColor: "#29405d", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
   logoutText: { color: "#c4d1e3", fontWeight: "700" },
+  historyPanel: { backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 10 },
+  historyFilters: { flexDirection: "row", gap: 8 },
+  historyInput: { backgroundColor: "#0b1728", borderColor: "#29405d", borderRadius: 9, borderWidth: 1, color: "#f4f7fb", flex: 1, fontSize: 13, minHeight: 38, paddingHorizontal: 10 },
+  historyList: { maxHeight: 180 },
+  historyItem: { borderBottomColor: "#1e3048", borderBottomWidth: 1, paddingVertical: 9 },
+  historyItemTitle: { color: "#f4f7fb", fontSize: 14, fontWeight: "800" },
+  historyItemMeta: { color: "#9cabc0", fontSize: 12, marginTop: 3 },
   runBar: { alignItems: "center", borderBottomColor: "#1e3048", borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingBottom: 8 },
   refreshText: { color: "#63e6be", fontWeight: "700" },
   approvalCard: { backgroundColor: "#332b18", borderColor: "#8a6d2f", borderRadius: 16, borderWidth: 1, gap: 8, marginBottom: 10, padding: 14 },
@@ -454,8 +547,11 @@ const styles = StyleSheet.create({
   attachmentChip: { alignItems: "center", backgroundColor: "#102a35", borderColor: "#2a6e70", borderRadius: 10, borderWidth: 1, flexDirection: "row", maxWidth: "100%", paddingHorizontal: 9, paddingVertical: 6 },
   attachmentChipText: { color: "#c6f4e4", flexShrink: 1, fontSize: 12 },
   removeAttachment: { color: "#ff9b9b", fontSize: 18, lineHeight: 16, marginLeft: 6 },
+  transcribeText: { color: "#a9e8d2", fontSize: 11, fontWeight: "700", marginLeft: 6 },
   attachButton: { alignItems: "center", borderColor: "#29405d", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 42, minWidth: 42 },
   attachButtonText: { color: "#63e6be", fontSize: 24, fontWeight: "700", lineHeight: 28 },
+  mediaButton: { alignItems: "center", borderColor: "#2a6e70", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 42, paddingHorizontal: 9 },
+  mediaButtonText: { color: "#a9e8d2", fontSize: 12, fontWeight: "800" },
   composer: { alignItems: "flex-end", backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 16, borderWidth: 1, flexDirection: "row", gap: 10, marginBottom: 18, padding: 10 },
   promptInput: { color: "#f4f7fb", flex: 1, fontSize: 16, maxHeight: 120, minHeight: 42, paddingHorizontal: 6, paddingVertical: 9 },
   sendButton: { alignItems: "center", backgroundColor: "#63e6be", borderRadius: 10, justifyContent: "center", minHeight: 42, minWidth: 76, paddingHorizontal: 12 },

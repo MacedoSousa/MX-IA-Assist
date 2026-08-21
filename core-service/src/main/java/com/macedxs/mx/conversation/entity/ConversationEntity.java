@@ -23,12 +23,31 @@ public class ConversationEntity {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
+    @Column(nullable = false, length = 120)
+    private String topic = "geral";
+
+    @Column(nullable = false, length = 10)
+    private String language = "pt-BR";
+
+    @Column(name = "last_message_at", nullable = false)
+    private LocalDateTime lastMessageAt;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        if (lastMessageAt == null) {
+            lastMessageAt = now;
+        }
+        if (topic == null || topic.isBlank()) {
+            topic = "geral";
+        }
+        if (language == null || language.isBlank()) {
+            language = "pt-BR";
+        }
     }
 
     public UUID getId() {
@@ -61,5 +80,29 @@ public class ConversationEntity {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public LocalDateTime getLastMessageAt() {
+        return lastMessageAt;
+    }
+
+    public void setLastMessageAt(LocalDateTime lastMessageAt) {
+        this.lastMessageAt = lastMessageAt;
     }
 }

@@ -1,8 +1,37 @@
 {
   "schema_version": "1.1",
-  "generated_at": "2026-08-21T00:19:22.545833+00:00",
-  "source": "estudos-referenciados",
+  "generated_at": "2026-08-21T02:30:46.833338+00:00",
+  "source": "estudos-referenciados-alura-2026-08",
   "records": [
+    {
+      "source": "biblioteca_exercicios_autorais_v1.md",
+      "destination": "knowledge/estudos/biblioteca_exercicios_autorais_v1.md",
+      "sha256": "c4f5a58d877b82dead20f72719a8fa1f2f6e8405fb8766d99acce8a380dfdd7b",
+      "bytes": 6509,
+      "kind": "knowledge",
+      "headings": [
+        "# Biblioteca multidisciplinar — sínteses e exercícios autorais v1",
+        "## 1. Empreendedorismo e produto",
+        "### Síntese",
+        "### Exercício autoral",
+        "### Gabarito orientativo",
+        "## 2. Finanças e custos técnicos",
+        "### Síntese",
+        "### Exercício autoral",
+        "### Gabarito orientativo",
+        "## 3. Educação corporativa e aprendizagem",
+        "### Síntese",
+        "### Exercício autoral",
+        "### Gabarito orientativo",
+        "## 4. Comunicação, liderança e cultura",
+        "### Síntese",
+        "### Exercício autoral",
+        "### Gabarito orientativo",
+        "## 5. LGPD, segurança e governança",
+        "### Síntese",
+        "### Exercício autoral"
+      ]
+    },
     {
       "source": "biblioteca_exercicios_autorais_v2.md",
       "destination": "knowledge/estudos/biblioteca_exercicios_autorais_v2.md",
@@ -51,6 +80,19 @@
       ]
     },
     {
+      "source": "catalogo_alura_categorias_inicial.md",
+      "destination": "knowledge/estudos/catalogo_alura_categorias_inicial.md",
+      "sha256": "7859c959a29543b72e5dd6edf314aca4658222b5a48273c736530bbbab08ba72",
+      "bytes": 4107,
+      "kind": "knowledge",
+      "headings": [
+        "# Catálogo autenticado da Alura — levantamento inicial",
+        "## Busca autenticada de gestão, empreendedorismo e finanças",
+        "## Verificação do filtro de livros",
+        "## Busca autenticada por livros e conteúdos relacionados"
+      ]
+    },
+    {
       "source": "catalogo_multidisciplinar_inicial.md",
       "destination": "knowledge/estudos/catalogo_multidisciplinar_inicial.md",
       "sha256": "9b4ae60708d91a98560f0ac6c783a6ef34e1bb245ef71acd3bc8435d3777e196",
@@ -73,6 +115,14 @@
         "## Nova busca: educação, criatividade, design, comunicação e desenvolvimento pessoal",
         "## Nova busca: cultura, saúde, bem-estar, legislação e sustentabilidade"
       ]
+    },
+    {
+      "source": "catalogo_multidisciplinar_v1.jsonl",
+      "destination": "knowledge/estudos/catalogo_multidisciplinar_v1.jsonl",
+      "sha256": "92462eef6e9d2bb7e19180042b05cc378f2fb18afe126d815494adcf39f9aefc",
+      "bytes": 13841,
+      "kind": "knowledge",
+      "headings": []
     },
     {
       "source": "catalogo_status.md",
@@ -125,6 +175,36 @@
         "## Módulos já consolidados",
         "## Skills criadas",
         "## Dependências de estudo"
+      ]
+    },
+    {
+      "source": "cursos.alura.com.br_course_ia-explorando-potencial-inteligencia-artificial-generativa.md",
+      "destination": "knowledge/estudos/cursos.alura.com.br_course_ia-explorando-potencial-inteligencia-artificial-generativa.md",
+      "sha256": "575a693afdbefb9f36e3a7711929969efa9c0ad90ff052011c91365571344e4a",
+      "bytes": 2917,
+      "kind": "knowledge",
+      "headings": [
+        "# IA: explorando o potencial da inteligência artificial generativa | Alura - Cursos online de tecnologia"
+      ]
+    },
+    {
+      "source": "cursos.alura.com.br_course_langchain-chatbots-rag.md",
+      "destination": "knowledge/estudos/cursos.alura.com.br_course_langchain-chatbots-rag.md",
+      "sha256": "d8996d632b189eee0b53c5eebd0036e6edd65bf1103fd56c59216dcd96b92d06",
+      "bytes": 5209,
+      "kind": "knowledge",
+      "headings": [
+        "# Arquiteturas RAG com LLMs: embeddings, busca semântica e criação de agentes com LangChain | Alura - Cursos online de tecnologia"
+      ]
+    },
+    {
+      "source": "cursos.alura.com.br_learning-guide_company.md",
+      "destination": "knowledge/estudos/cursos.alura.com.br_learning-guide_company.md",
+      "sha256": "7923da44afffbfa74d8468b3d1c7bb69488bc07675cdba6bb892f2a58f86a749",
+      "bytes": 727,
+      "kind": "knowledge",
+      "headings": [
+        "# Trilhas da empresa | Alura - Cursos online de tecnologia"
       ]
     },
     {
@@ -915,14 +995,14 @@
   "retrieval": {
     "chunks": "knowledge_chunks.jsonl",
     "taxonomy": "knowledge_taxonomy.json",
-    "chunk_count": 161,
+    "chunk_count": 189,
     "domain_count": 6
   },
   "counts": {
-    "records": 53,
-    "copied": 4,
+    "records": 59,
+    "copied": 6,
     "changed": 0,
-    "skipped": 49,
+    "skipped": 53,
     "errors": 0
   }
 }

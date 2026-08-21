@@ -31,6 +31,7 @@ public final class StudyKnowledgeContext {
 
     private final String summary;
     private final List<KnowledgeChunk> chunks;
+    private final KnowledgeQueryExpander queryExpander;
 
     public StudyKnowledgeContext(String summary) {
         this(summary, List.of());
@@ -39,6 +40,7 @@ public final class StudyKnowledgeContext {
     private StudyKnowledgeContext(String summary, List<KnowledgeChunk> chunks) {
         this.summary = Objects.requireNonNull(summary, "summary").trim();
         this.chunks = List.copyOf(chunks);
+        this.queryExpander = new KnowledgeQueryExpander();
     }
 
     public static StudyKnowledgeContext fromClasspath() {
@@ -59,9 +61,9 @@ public final class StudyKnowledgeContext {
      */
     public String promptContext(String userPrompt) {
         if (!chunks.isEmpty() && userPrompt != null && !userPrompt.isBlank()) {
-            Set<String> queryTokens = tokens(userPrompt);
+            KnowledgeQueryExpander.ExpandedQuery query = queryExpander.expand(userPrompt);
             List<ScoredChunk> ranked = chunks.stream()
-                    .map(chunk -> new ScoredChunk(chunk, score(chunk, queryTokens)))
+                    .map(chunk -> new ScoredChunk(chunk, score(chunk, query)))
                     .filter(item -> item.score() > 0)
                     .sorted(Comparator.comparingInt(ScoredChunk::score).reversed()
                             .thenComparing(item -> item.chunk().id()))
@@ -118,28 +120,34 @@ public final class StudyKnowledgeContext {
         return builder.toString();
     }
 
-    private int score(KnowledgeChunk chunk, Set<String> queryTokens) {
-        if (queryTokens.isEmpty()) {
+    private int score(KnowledgeChunk chunk, KnowledgeQueryExpander.ExpandedQuery query) {
+        if (query.expandedTokens().isEmpty()) {
             return 0;
         }
         Set<String> haystack = tokens(chunk.text() + " " + chunk.heading() + " " + String.join(" ", chunk.domains()));
-        int overlap = 0;
-        for (String token : queryTokens) {
-            if (haystack.contains(token)) {
-                overlap++;
-            }
-        }
-        return overlap * 10 + (haystack.containsAll(queryTokens) ? 5 : 0);
+        int originalOverlap = (int) query.originalTokens().stream().filter(haystack::contains).count();
+        int expandedOverlap = (int) query.expandedOnly().stream().filter(haystack::contains).count();
+        int coverageBonus = !query.originalTokens().isEmpty() && haystack.containsAll(query.originalTokens()) ? 8 : 0;
+        return originalOverlap * 12 + expandedOverlap * 4 + coverageBonus;
     }
 
     private Set<String> tokens(String text) {
         Set<String> result = new HashSet<>();
-        for (String token : TOKEN_SPLIT.split(text.toLowerCase(Locale.ROOT))) {
+        for (String token : TOKEN_SPLIT.split(normalize(text))) {
             if (token.length() >= 3) {
                 result.add(token);
             }
         }
         return result;
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return "";
+        }
+        return java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase(Locale.ROOT);
     }
 
     private static String readResource(ClassLoader classLoader, String path) {

@@ -48,7 +48,10 @@ public class UserPreferenceV1Controller {
                 new UserPreferenceService.UpdateRequest(
                         request.learningStyle(),
                         request.knowledgeLevel(),
-                        request.topicsOfInterest()
+                        request.topicsOfInterest(),
+                        request.preferredLanguage(),
+                        request.communicationStyle(),
+                        request.vocabularyHints()
                 )
         );
         return ResponseEntity.ok(toDto(user.getId(), preference));
@@ -59,9 +62,10 @@ public class UserPreferenceV1Controller {
                 userId,
                 preference.getLearningStyle(),
                 preference.getKnowledgeLevel(),
-                preference.getTopicsOfInterest() == null
-                        ? Set.of()
-                        : Set.copyOf(preference.getTopicsOfInterest()),
+                preference.getTopicsOfInterest() == null ? Set.of() : Set.copyOf(preference.getTopicsOfInterest()),
+                preference.getPreferredLanguage(),
+                preference.getCommunicationStyle(),
+                preference.getVocabularyHints() == null ? Set.of() : Set.copyOf(preference.getVocabularyHints()),
                 preference.getLastActiveAt()
         );
     }
@@ -78,8 +82,10 @@ public class UserPreferenceV1Controller {
     public record UpdatePreferenceRequest(
             String learningStyle,
             String knowledgeLevel,
-            java.util.Set<String> topicsOfInterest
+            Set<String> topicsOfInterest,
+            String preferredLanguage,
+            String communicationStyle,
+            Set<String> vocabularyHints
     ) {
     }
-
 }

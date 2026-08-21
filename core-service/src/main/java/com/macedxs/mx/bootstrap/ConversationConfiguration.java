@@ -5,6 +5,9 @@ import com.macedxs.mx.agent.application.SkillRouter;
 import com.macedxs.mx.agent.skill.development.DevelopmentSkill;
 import com.macedxs.mx.agent.skill.general.GeneralSkill;
 import com.macedxs.mx.agent.skill.quality.QualitySkill;
+import com.macedxs.mx.agent.skill.infrastructure.InfrastructureSkill;
+import com.macedxs.mx.agent.skill.data.DataSkill;
+import com.macedxs.mx.agent.skill.teaching.TeachingSkill;
 import com.macedxs.mx.conversation.application.SendMessageUseCase;
 import com.macedxs.mx.conversation.application.port.ConversationStore;
 import com.macedxs.mx.conversation.application.port.ModelGateway;
@@ -61,15 +64,36 @@ public class ConversationConfiguration {
     }
 
     @Bean
+    InfrastructureSkill infrastructureSkill(@Qualifier("ollamaModelGateway") ModelGateway modelGateway) {
+        return new InfrastructureSkill(modelGateway);
+    }
+
+    @Bean
+    DataSkill dataSkill(@Qualifier("ollamaModelGateway") ModelGateway modelGateway) {
+        return new DataSkill(modelGateway);
+    }
+
+    @Bean
+    TeachingSkill teachingSkill(@Qualifier("ollamaModelGateway") ModelGateway modelGateway) {
+        return new TeachingSkill(modelGateway);
+    }
+
+    @Bean
     SkillRegistry skillRegistry(
             GeneralSkill generalSkill,
             DevelopmentSkill developmentSkill,
-            QualitySkill qualitySkill
+            QualitySkill qualitySkill,
+            InfrastructureSkill infrastructureSkill,
+            DataSkill dataSkill,
+            TeachingSkill teachingSkill
     ) {
         SkillRegistry registry = new SkillRegistry();
         registry.register(generalSkill);
         registry.register(developmentSkill);
         registry.register(qualitySkill);
+        registry.register(infrastructureSkill);
+        registry.register(dataSkill);
+        registry.register(teachingSkill);
         return registry;
     }
 

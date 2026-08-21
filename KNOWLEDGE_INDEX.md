@@ -1,15 +1,21 @@
 # Índice do conhecimento importado
 
-Gerado em `2026-08-21T00:19:22.545833+00:00`.
+Gerado em `2026-08-21T02:30:46.833338+00:00`.
 
 | Tipo | Destino | SHA-256 | Seções |
 |---|---|---|---|
+| knowledge | `knowledge/estudos/biblioteca_exercicios_autorais_v1.md` | `c4f5a58d877b82de…` | # Biblioteca multidisciplinar — sínteses e exercícios autorais v1; ## 1. Empreendedorismo e produto; ### Síntese |
 | knowledge | `knowledge/estudos/biblioteca_exercicios_autorais_v2.md` | `1eb7db22c49b4c1e…` | # Biblioteca multidisciplinar — sínteses e exercícios autorais v2; ## 1. Bancos de dados e persistência; ### Síntese |
 | knowledge | `knowledge/estudos/biblioteca_taxonomia.md` | `d84eefd809d78a7a…` | # Biblioteca técnica da squad — taxonomia e modelo de conhecimento; ## Objetivo; ## Áreas principais |
+| knowledge | `knowledge/estudos/catalogo_alura_categorias_inicial.md` | `7859c959a29543b7…` | # Catálogo autenticado da Alura — levantamento inicial; ## Busca autenticada de gestão, empreendedorismo e finanças; ## Verificação do filtro de livros |
 | knowledge | `knowledge/estudos/catalogo_multidisciplinar_inicial.md` | `9b4ae60708d91a98…` | # Catálogo multidisciplinar inicial da biblioteca da squad; ## Objetivo; ## Tipos de conteúdo |
+| knowledge | `knowledge/estudos/catalogo_multidisciplinar_v1.jsonl` | `92462eef6e9d2bb7…` |  |
 | knowledge | `knowledge/estudos/catalogo_status.md` | `34f6c1c0b65a9dee…` | # Estado do inventário multidisciplinar; ## Escopo atual; ## Evidências já registradas |
 | knowledge | `knowledge/estudos/curriculo_ai_engineer_priorizado.md` | `9ce9e63a57a10144…` | # Currículo modular priorizado — AI Engineer; ## Objetivo; ## Módulos e prioridade |
 | knowledge | `knowledge/estudos/curriculo_ampliado_priorizado.md` | `082d1f6b213dd29b…` | # Currículo ampliado priorizado — MX e assistente pessoal local; ## Objetivo; ## Fase A — Fundamentos de dados e software |
+| knowledge | `knowledge/estudos/cursos.alura.com.br_course_ia-explorando-potencial-inteligencia-artificial-generativa.md` | `575a693afdbefb9f…` | # IA: explorando o potencial da inteligência artificial generativa \| Alura - Cursos online de tecnologia |
+| knowledge | `knowledge/estudos/cursos.alura.com.br_course_langchain-chatbots-rag.md` | `d8996d632b189eee…` | # Arquiteturas RAG com LLMs: embeddings, busca semântica e criação de agentes com LangChain \| Alura - Cursos online de tecnologia |
+| knowledge | `knowledge/estudos/cursos.alura.com.br_learning-guide_company.md` | `7923da44afffbfa7…` | # Trilhas da empresa \| Alura - Cursos online de tecnologia |
 | knowledge | `knowledge/estudos/integracao_modulos_com_mx.md` | `29476ebfc96c6dce…` | # Integração dos módulos AI Engineer com o projeto MX; ## Diretriz; ## Mapeamento de responsabilidades |
 | knowledge | `knowledge/estudos/mapa_ai_engineer_inicial.md` | `dbb3cd4cca7901cd…` | # Mapa inicial — AI Engineer; ## Fonte consultada; ## Conteúdo visível no primeiro módulo |
 | knowledge | `knowledge/estudos/mapa_cursos_cloud_mlops_inicial.md` | `6cf74c28b6bdfac8…` | # Mapa inicial — Cloud, observabilidade e MLOps; ## Fonte; ## Cursos prioritários identificados |

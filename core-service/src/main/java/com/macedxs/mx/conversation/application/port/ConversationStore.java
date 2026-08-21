@@ -12,6 +12,10 @@ public interface ConversationStore {
         return "";
     }
 
+    default void updateMetadata(UUID conversationId, String prompt) {
+        // Optional for legacy adapters.
+    }
+
     record ConversationRef(UUID id) {
         public ConversationRef {
             if (id == null) {

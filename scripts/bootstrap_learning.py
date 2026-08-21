@@ -65,7 +65,18 @@ def selected(source: Path, path: Path) -> bool:
         or (rel.startswith("skills/") and path.suffix == ".md")
         or (rel.startswith("ml-evaluation/") and path.suffix in {".md", ".jsonl"})
         or name in {"curriculo_ampliado_priorizado.md", "curriculo_ai_engineer_priorizado.md"}
-        or name in {"catalogo_status.md", "biblioteca_exercicios_autorais_v2.md", "biblioteca_taxonomia.md", "catalogo_multidisciplinar_inicial.md"}
+        or name in {
+            "catalogo_status.md",
+            "biblioteca_exercicios_autorais_v1.md",
+            "biblioteca_exercicios_autorais_v2.md",
+            "biblioteca_taxonomia.md",
+            "catalogo_alura_categorias_inicial.md",
+            "catalogo_multidisciplinar_inicial.md",
+            "catalogo_multidisciplinar_v1.jsonl",
+            "cursos.alura.com.br_course_ia-explorando-potencial-inteligencia-artificial-generativa.md",
+            "cursos.alura.com.br_course_langchain-chatbots-rag.md",
+            "cursos.alura.com.br_learning-guide_company.md",
+        }
     )
 
 

@@ -41,6 +41,17 @@ public class UserPreferenceEntity {
     @Column(name = "topic", nullable = false, length = 80)
     private Set<String> topicsOfInterest = new LinkedHashSet<>();
 
+    @Column(name = "preferred_language", nullable = false, length = 10)
+    private String preferredLanguage = "pt-BR";
+
+    @Column(name = "communication_style", nullable = false, length = 40)
+    private String communicationStyle = "natural";
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_preference_vocabulary", joinColumns = @JoinColumn(name = "preference_id"))
+    @Column(name = "hint", nullable = false, length = 40)
+    private Set<String> vocabularyHints = new LinkedHashSet<>();
+
     @Column(name = "last_active_at")
     private LocalDateTime lastActiveAt;
 
@@ -55,20 +66,34 @@ public class UserPreferenceEntity {
         LocalDateTime now = LocalDateTime.now();
         createdAt = now;
         updatedAt = now;
+        defaults();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+        defaults();
+    }
+
+    private void defaults() {
         if (learningStyle == null || learningStyle.isBlank()) {
             learningStyle = "balanced";
         }
         if (knowledgeLevel == null || knowledgeLevel.isBlank()) {
             knowledgeLevel = "beginner";
         }
+        if (preferredLanguage == null || preferredLanguage.isBlank()) {
+            preferredLanguage = "pt-BR";
+        }
+        if (communicationStyle == null || communicationStyle.isBlank()) {
+            communicationStyle = "natural";
+        }
         if (topicsOfInterest == null) {
             topicsOfInterest = new LinkedHashSet<>();
         }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        if (vocabularyHints == null) {
+            vocabularyHints = new LinkedHashSet<>();
+        }
     }
 
     public UUID getId() {
@@ -110,6 +135,35 @@ public class UserPreferenceEntity {
         this.topicsOfInterest = topicsOfInterest == null
                 ? new LinkedHashSet<>()
                 : new LinkedHashSet<>(topicsOfInterest);
+    }
+
+    public String getPreferredLanguage() {
+        return preferredLanguage;
+    }
+
+    public void setPreferredLanguage(String preferredLanguage) {
+        this.preferredLanguage = preferredLanguage;
+    }
+
+    public String getCommunicationStyle() {
+        return communicationStyle;
+    }
+
+    public void setCommunicationStyle(String communicationStyle) {
+        this.communicationStyle = communicationStyle;
+    }
+
+    public Set<String> getVocabularyHints() {
+        if (vocabularyHints == null) {
+            vocabularyHints = new LinkedHashSet<>();
+        }
+        return vocabularyHints;
+    }
+
+    public void setVocabularyHints(Set<String> vocabularyHints) {
+        this.vocabularyHints = vocabularyHints == null
+                ? new LinkedHashSet<>()
+                : new LinkedHashSet<>(vocabularyHints);
     }
 
     public LocalDateTime getLastActiveAt() {
