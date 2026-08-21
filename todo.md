@@ -24,3 +24,10 @@
 - [x] Criar um snapshot consistente do PostgreSQL e dos diretórios persistentes do MX.
 - [x] Gerar manifesto com hashes SHA-256 e instruções de restauração.
 - [x] Registrar e publicar o backup operacional no Git, sem versionar dados sensíveis.
+
+## Investigação de indisponibilidade e confiabilidade
+
+- [x] Coletar eventos Docker, estados de reinicialização e logs dos serviços MX.
+- [x] Determinar a causa provável da queda com evidências técnicas.
+- [x] Implementar proteções de baixo risco para recuperação automática e observabilidade.
+- [x] Validar a recuperação e publicar o diagnóstico priorizado.

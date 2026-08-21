@@ -4,6 +4,7 @@ services:
     image: postgres:16
     container_name: mx-postgres
     restart: unless-stopped
+    stop_grace_period: 60s
     env_file:
       - ../env/.env
     environment:
@@ -24,6 +25,7 @@ services:
     image: redis:7
     container_name: mx-redis
     restart: unless-stopped
+    stop_grace_period: 30s
     command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
     ports:
       - "6379:6379"
@@ -39,6 +41,7 @@ services:
     image: ollama/ollama:latest
     container_name: mx-ollama
     restart: unless-stopped
+    stop_grace_period: 60s
     ports:
       - "127.0.0.1:11434:11434"
     # Use the single NVIDIA GPU when Docker Desktop exposes WSL2 GPU-PV.
@@ -64,11 +67,18 @@ services:
       OLLAMA_NO_CLOUD: ${OLLAMA_NO_CLOUD:-1}
       OLLAMA_FLASH_ATTENTION: ${OLLAMA_FLASH_ATTENTION:-1}
       OLLAMA_KV_CACHE_TYPE: ${OLLAMA_KV_CACHE_TYPE:-q8_0}
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+      start_period: 30s
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: mx-open-webui
     restart: unless-stopped
+    stop_grace_period: 30s
     depends_on:
       - ollama
     ports:
@@ -82,6 +92,7 @@ services:
     image: ghcr.io/ai-dock/stable-diffusion-webui-forge:v2-cuda-12.1.1-base-22.04
     container_name: mx-image-engine
     restart: unless-stopped
+    stop_grace_period: 60s
     ports:
       - "${MX_IMAGE_ENGINE_PORT:-7860}:7860"
     deploy:
@@ -116,6 +127,7 @@ services:
     image: mx-dsh:latest
     container_name: mx-dsh
     restart: unless-stopped
+    stop_grace_period: 30s
     depends_on:
       - ollama
     ports:
@@ -127,6 +139,12 @@ services:
       - ../../../data/dsh:/root/.dsh
       - ../dsh/settings.yaml:/root/.dsh/settings.yaml:ro
     working_dir: /workspace/mx
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"const net=require('net');const socket=net.connect(3080,'127.0.0.1');socket.setTimeout(3000);socket.on('connect',()=>{socket.end();process.exit(0)});socket.on('error',()=>process.exit(1));socket.on('timeout',()=>process.exit(1));\""]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 15s
 
   mx-core:
     build:
@@ -135,13 +153,14 @@ services:
     image: mx-core:latest
     container_name: mx-core
     restart: unless-stopped
+    stop_grace_period: 45s
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
       ollama:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:
@@ -204,11 +223,18 @@ services:
     image: mx-web:latest
     container_name: mx-web
     restart: unless-stopped
+    stop_grace_period: 15s
     depends_on:
       mx-core:
         condition: service_healthy
     ports:
       - "${MX_WEB_PORT:-8082}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
 
 volumes:
   postgres_data:

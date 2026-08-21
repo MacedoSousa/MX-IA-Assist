@@ -2,6 +2,16 @@ server:
   address: ${SERVER_ADDRESS:0.0.0.0}
   port: ${SERVER_PORT:8080}
 
+# Persist the application lifecycle and failure evidence in the mounted /app/logs directory.
+logging:
+  file:
+    name: ${MX_LOG_FILE:/app/logs/mx-core.log}
+  logback:
+    rollingpolicy:
+      max-file-size: ${MX_LOG_MAX_FILE_SIZE:20MB}
+      max-history: ${MX_LOG_MAX_HISTORY:14}
+      total-size-cap: ${MX_LOG_TOTAL_SIZE_CAP:500MB}
+
 spring:
 
   servlet:
