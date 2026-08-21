@@ -1,5 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useRef, useState } from "react";
+import * as Clipboard from "expo-clipboard";
 import * as DocumentPicker from "expo-document-picker";
 import {
   ActivityIndicator,
@@ -79,6 +80,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
+  const [generatingVideo, setGeneratingVideo] = useState(false);
   const [transcribingAttachmentId, setTranscribingAttachmentId] = useState<string | null>(null);
   const [uploadedAttachments, setUploadedAttachments] = useState<UploadedAttachment[]>([]);
   const [projects, setProjects] = useState<import("./src/session/session").LocalProject[]>([]);
@@ -348,7 +350,7 @@ export default function App() {
     setError(null);
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["text/*", "application/pdf", "image/*", "audio/*"],
+        type: ["*/*"],
         copyToCacheDirectory: true,
         multiple: false,
       });
@@ -360,6 +362,7 @@ export default function App() {
         name: asset.name,
         type: asset.mimeType ?? "application/octet-stream",
         size: asset.size,
+        file: "file" in asset && asset.file instanceof Blob ? asset.file : undefined,
       });
       setUploadedAttachments((current) => [...current, uploaded]);
     } catch (cause) {
@@ -374,8 +377,27 @@ export default function App() {
     setUploadedAttachments((current) => current.filter((item) => item.id !== attachmentId));
   }
 
+  async function handleDownloadAttachment(attachment: UploadedAttachment) {
+    setError(null);
+    try {
+      const blob = await mxApi.downloadAttachment(attachment.id);
+      if (Platform.OS === "web" && typeof document !== "undefined") {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = attachment.filename;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return;
+      }
+      setError("O anexo foi gerado. No aplicativo, use o compartilhamento do sistema para salvá-lo.");
+    } catch (cause) {
+      setError(cause instanceof MxApiError ? cause.message : "Não foi possível baixar o anexo.");
+    }
+  }
+
   async function handleTranscribeAudio(attachment: UploadedAttachment) {
-    if (busy || uploadingAttachment || generatingImage || transcribingAttachmentId) return;
+    if (busy || uploadingAttachment || generatingImage || generatingVideo || transcribingAttachmentId) return;
     setTranscribingAttachmentId(attachment.id);
     setError(null);
     try {
@@ -391,7 +413,7 @@ export default function App() {
 
   async function handleGenerateImage() {
     const imagePrompt = prompt.trim();
-    if (!imagePrompt || busy || uploadingAttachment || generatingImage || !online) return;
+    if (!imagePrompt || busy || uploadingAttachment || generatingImage || generatingVideo || !online) return;
     setGeneratingImage(true);
     setError(null);
     try {
@@ -401,6 +423,21 @@ export default function App() {
       setError(cause instanceof MxApiError ? cause.message : "Não foi possível gerar a imagem local.");
     } finally {
       setGeneratingImage(false);
+    }
+  }
+
+  async function handleGenerateVideo() {
+    const videoPrompt = prompt.trim();
+    if (!videoPrompt || busy || uploadingAttachment || generatingImage || generatingVideo || !online) return;
+    setGeneratingVideo(true);
+    setError(null);
+    try {
+      const generated = await mxApi.generateVideo({ prompt: videoPrompt, durationSeconds: 6 });
+      setUploadedAttachments((current) => [...current, generated]);
+    } catch (cause) {
+      setError(cause instanceof MxApiError ? cause.message : "Não foi possível gerar o vídeo local.");
+    } finally {
+      setGeneratingVideo(false);
     }
   }
 
@@ -468,18 +505,14 @@ export default function App() {
   }
 
   async function handlePasteFromClipboard() {
-    if (Platform.OS !== "web" || typeof navigator === "undefined" || !navigator.clipboard?.readText) {
-      setError("A colagem pela área de transferência está disponível no navegador.");
-      return;
-    }
     try {
-      const pasted = await navigator.clipboard.readText();
+      const pasted = (await Clipboard.getStringAsync()).trim();
       if (!pasted) return;
-      const nextPrompt = prompt.trim() ? `${prompt.trim()}\\n${pasted}` : pasted;
+      const nextPrompt = prompt.trim() ? `${prompt.trim()}\n${pasted}` : pasted;
       setPrompt(nextPrompt);
       await writeDraftPrompt(nextPrompt);
     } catch {
-      setError("O navegador bloqueou a leitura da área de transferência. Use Ctrl+V no campo de mensagem.");
+      setError("O sistema bloqueou a leitura da área de transferência. Use Ctrl+V ou cole diretamente no campo.");
     }
   }
 
@@ -710,7 +743,7 @@ export default function App() {
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      {uploadedAttachments.length > 0 ? <View style={styles.attachmentBar}>{uploadedAttachments.map((attachment) => <View key={attachment.id} style={styles.attachmentChip}><Text numberOfLines={1} style={styles.attachmentChipText}>{attachment.filename}</Text>{attachment.contentType.startsWith("audio/") ? <Pressable disabled={busy || !!transcribingAttachmentId} onPress={() => void handleTranscribeAudio(attachment)}><Text style={styles.transcribeText}>{transcribingAttachmentId === attachment.id ? "..." : "Transcrever"}</Text></Pressable> : null}<Pressable disabled={busy} onPress={() => removeAttachment(attachment.id)}><Text style={styles.removeAttachment}>×</Text></Pressable></View>)}</View> : null}
+      {uploadedAttachments.length > 0 ? <View style={styles.attachmentBar}>{uploadedAttachments.map((attachment) => <View key={attachment.id} style={styles.attachmentChip}><Text numberOfLines={1} style={styles.attachmentChipText}>{attachment.contentType.startsWith("video/") ? "Vídeo" : attachment.contentType.startsWith("image/") ? "Imagem" : attachment.contentType.startsWith("audio/") ? "Áudio" : "Arquivo"} · {attachment.filename}</Text>{attachment.contentType.startsWith("audio/") ? <Pressable disabled={busy || !!transcribingAttachmentId} onPress={() => void handleTranscribeAudio(attachment)}><Text style={styles.transcribeText}>{transcribingAttachmentId === attachment.id ? "..." : "Transcrever"}</Text></Pressable> : null}<Pressable disabled={busy} onPress={() => void handleDownloadAttachment(attachment)}><Text style={styles.downloadText}>Baixar</Text></Pressable><Pressable disabled={busy} onPress={() => removeAttachment(attachment.id)}><Text style={styles.removeAttachment}>×</Text></Pressable></View>)}</View> : null}
       {creatingFile ? <View style={styles.filePanel}>
         <Text style={styles.panelTitle}>Criar arquivo</Text>
         <TextInput onChangeText={setNewFileName} placeholder="nome-do-arquivo.txt" placeholderTextColor="#748198" style={styles.historyInput} value={newFileName} />
@@ -718,12 +751,20 @@ export default function App() {
         <View style={styles.projectFormRow}><Pressable onPress={() => void handleCreateFile()} style={[styles.primaryButton, styles.inlineButton]}><Text style={styles.primaryButtonText}>Criar e anexar</Text></Pressable><Pressable onPress={() => setCreatingFile(false)} style={[styles.secondaryButton, styles.inlineButton]}><Text style={styles.logoutText}>Cancelar</Text></Pressable></View>
       </View> : null}
       <View style={styles.composer}>
-        <Pressable disabled={busy || uploadingAttachment || generatingImage || !online} onPress={handlePickAttachment} style={({ pressed }) => [styles.attachButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || !online) && styles.disabled]}><Text style={styles.attachButtonText}>{uploadingAttachment ? "..." : "Anexar"}</Text></Pressable>
-        <Pressable disabled={busy || uploadingAttachment || generatingImage || !online} onPress={() => setCreatingFile((current) => !current)} style={({ pressed }) => [styles.mediaButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || !online) && styles.disabled]}><Text style={styles.mediaButtonText}>Criar arquivo</Text></Pressable>
-        <Pressable disabled={busy || uploadingAttachment || generatingImage || !online} onPress={() => void handlePasteFromClipboard()} style={({ pressed }) => [styles.mediaButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || !online) && styles.disabled]}><Text style={styles.mediaButtonText}>Colar</Text></Pressable>
-        <Pressable disabled={busy || uploadingAttachment || generatingImage || !online || !prompt.trim()} onPress={() => void handleGenerateImage()} style={({ pressed }) => [styles.mediaButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.mediaButtonText}>{generatingImage ? "..." : "Imagem"}</Text></Pressable>
-        <TextInput editable={!busy && !uploadingAttachment && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onKeyPress={Platform.OS === "web" ? handlePromptKeyPress : undefined} onSubmitEditing={Platform.OS === "web" ? undefined : () => void handleSend()} placeholder={online ? "Escreva sua solicitação... Enter envia · Shift+Enter quebra linha" : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} />
-        <Pressable disabled={busy || uploadingAttachment || generatingImage || !!transcribingAttachmentId || !online || (!prompt.trim() && uploadedAttachments.length === 0)} onPress={handleSend} style={({ pressed }) => [styles.sendButton, pressed && styles.pressed, (busy || uploadingAttachment || !online || (!prompt.trim() && uploadedAttachments.length === 0)) && styles.disabled]}>{busy ? <ActivityIndicator color="#08111f" /> : <Text style={styles.sendButtonText}>Enviar</Text>}</Pressable>
+        <View style={styles.composerActions}>
+          <Text style={styles.composerLabel}>Criar e enviar</Text>
+          <View style={styles.actionGroup}>
+            <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={handlePickAttachment} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>{uploadingAttachment ? "Enviando..." : "Anexar arquivo"}</Text></Pressable>
+            <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={() => setCreatingFile((current) => !current)} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>Novo arquivo</Text></Pressable>
+            <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={() => void handlePasteFromClipboard()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>Colar texto</Text></Pressable>
+            <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()} onPress={() => void handleGenerateImage()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.actionButtonText}>{generatingImage ? "Gerando imagem..." : "Gerar imagem"}</Text></Pressable>
+            <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()} onPress={() => void handleGenerateVideo()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.actionButtonText}>{generatingVideo ? "Gerando vídeo..." : "Gerar vídeo"}</Text></Pressable>
+          </View>
+        </View>
+        <View style={styles.composerInputRow}>
+          <TextInput editable={!busy && !uploadingAttachment && !generatingVideo && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onKeyPress={Platform.OS === "web" ? handlePromptKeyPress : undefined} onSubmitEditing={Platform.OS === "web" ? undefined : () => void handleSend()} placeholder={online ? "Escreva uma mensagem ou descreva o que deseja criar..." : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} />
+          <Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !!transcribingAttachmentId || !online || (!prompt.trim() && uploadedAttachments.length === 0)} onPress={handleSend} style={({ pressed }) => [styles.sendButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || (!prompt.trim() && uploadedAttachments.length === 0)) && styles.disabled]}>{busy ? <ActivityIndicator color="#08111f" /> : <Text style={styles.sendButtonText}>Enviar</Text>}</Pressable>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -800,12 +841,19 @@ const styles = StyleSheet.create({
   attachmentChipText: { color: "#c6f4e4", flexShrink: 1, fontSize: 12 },
   removeAttachment: { color: "#ff9b9b", fontSize: 18, lineHeight: 16, marginLeft: 6 },
   transcribeText: { color: "#a9e8d2", fontSize: 11, fontWeight: "700", marginLeft: 6 },
+  downloadText: { color: "#8fd6ff", fontSize: 11, fontWeight: "800", marginLeft: 6 },
   attachButton: { alignItems: "center", borderColor: "#29405d", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 42, paddingHorizontal: 10 },
   attachButtonText: { color: "#63e6be", fontSize: 12, fontWeight: "800" },
   mediaButton: { alignItems: "center", borderColor: "#2a6e70", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 42, paddingHorizontal: 9 },
   mediaButtonText: { color: "#a9e8d2", fontSize: 12, fontWeight: "800" },
-  composer: { alignItems: "flex-end", backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 16, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18, padding: 10 },
-  promptInput: { color: "#f4f7fb", flex: 1, fontSize: 16, maxHeight: 120, minHeight: 42, paddingHorizontal: 6, paddingVertical: 9 },
+  composer: { backgroundColor: "#101c2d", borderColor: "#243b57", borderRadius: 18, borderWidth: 1, gap: 10, marginBottom: 18, padding: 12 },
+  composerActions: { gap: 7 },
+  composerLabel: { color: "#8ea7c4", fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase" },
+  actionGroup: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  actionButton: { alignItems: "center", backgroundColor: "#15283d", borderColor: "#31516f", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 38, paddingHorizontal: 10 },
+  actionButtonText: { color: "#c5e5ff", fontSize: 12, fontWeight: "800" },
+  composerInputRow: { alignItems: "flex-end", flexDirection: "row", gap: 8 },
+  promptInput: { backgroundColor: "#0b1728", borderColor: "#29405d", borderRadius: 12, borderWidth: 1, color: "#f4f7fb", flex: 1, fontSize: 16, maxHeight: 120, minHeight: 48, paddingHorizontal: 12, paddingVertical: 10 },
   sendButton: { alignItems: "center", backgroundColor: "#63e6be", borderRadius: 10, justifyContent: "center", minHeight: 42, minWidth: 76, paddingHorizontal: 12 },
   sendButtonText: { color: "#08111f", fontWeight: "800" },
 });

@@ -33,15 +33,29 @@ public class AttachmentService {
             "text/plain",
             "text/markdown",
             "text/csv",
+            "text/html",
+            "text/xml",
             "application/json",
+            "application/xml",
             "application/pdf",
+            "application/rtf",
+            "application/zip",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             "image/png",
             "image/jpeg",
             "image/webp",
+            "image/gif",
+            "image/svg+xml",
             "audio/mpeg",
             "audio/wav",
             "audio/ogg",
-            "audio/mp4"
+            "audio/mp4",
+            "audio/webm",
+            "video/mp4",
+            "video/webm",
+            "video/quicktime"
     );
 
     private final AttachmentRepository repository;
@@ -99,16 +113,17 @@ public class AttachmentService {
         if (input == null) {
             throw new IllegalArgumentException("Attachment content is required");
         }
-        String normalizedType = normalizeContentType(contentType);
-        if (!ALLOWED_CONTENT_TYPES.contains(normalizedType)) {
+        UUID attachmentId = UUID.randomUUID();
+        String safeOriginalName = safeFilename(originalFilename);
+        String normalizedType = resolveContentType(safeOriginalName, contentType);
+        if (!isSupportedContentType(normalizedType)) {
             throw new IllegalArgumentException("Unsupported attachment content type: " + normalizedType);
         }
         if (declaredSize > maxBytes) {
             throw new IllegalArgumentException("Attachment exceeds the maximum allowed size");
         }
 
-        UUID attachmentId = UUID.randomUUID();
-        String safeOriginalName = safeFilename(originalFilename);
+
         String storedFilename = attachmentId + extensionOf(safeOriginalName);
         Path target = safePath(storedFilename);
         Path temporary = safePath(storedFilename + ".tmp");
@@ -275,6 +290,42 @@ public class AttachmentService {
 
     private String normalizeContentType(String contentType) {
         return contentType == null ? "" : contentType.split(";", 2)[0].trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String resolveContentType(String filename, String contentType) {
+        String normalized = normalizeContentType(contentType);
+        if (!normalized.isBlank() && !"application/octet-stream".equals(normalized)) {
+            return normalized;
+        }
+        String extension = extensionOf(filename);
+        return switch (extension) {
+            case ".txt", ".log", ".java", ".kt", ".ts", ".tsx", ".js", ".jsx", ".css", ".scss", ".md" -> "text/plain";
+            case ".csv" -> "text/csv";
+            case ".json" -> "application/json";
+            case ".xml" -> "application/xml";
+            case ".html", ".htm" -> "text/html";
+            case ".pdf" -> "application/pdf";
+            case ".docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            case ".xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            case ".pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+            case ".zip" -> "application/zip";
+            case ".png" -> "image/png";
+            case ".jpg", ".jpeg" -> "image/jpeg";
+            case ".webp" -> "image/webp";
+            case ".gif" -> "image/gif";
+            case ".svg" -> "image/svg+xml";
+            case ".mp3" -> "audio/mpeg";
+            case ".wav" -> "audio/wav";
+            case ".ogg" -> "audio/ogg";
+            case ".m4a", ".mp4" -> "audio/mp4";
+            case ".webm" -> "video/webm";
+            case ".mov" -> "video/quicktime";
+            default -> normalized;
+        };
+    }
+
+    private boolean isSupportedContentType(String contentType) {
+        return contentType.startsWith("text/") || ALLOWED_CONTENT_TYPES.contains(contentType);
     }
 
     private String safeFilename(String originalFilename) {

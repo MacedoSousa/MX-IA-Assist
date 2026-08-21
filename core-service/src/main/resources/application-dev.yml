@@ -59,6 +59,13 @@ mx:
       url: ${MX_IMAGE_GENERATION_URL:http://host.docker.internal:7860}
       max-pixels: ${MX_IMAGE_GENERATION_MAX_PIXELS:1048576}
       steps: ${MX_IMAGE_GENERATION_STEPS:24}
+    video-generation:
+      enabled: ${MX_VIDEO_GENERATION_ENABLED:true}
+      ffmpeg-command: ${MX_VIDEO_GENERATION_FFMPEG_COMMAND:ffmpeg}
+      max-duration-seconds: ${MX_VIDEO_GENERATION_MAX_DURATION_SECONDS:30}
+      max-pixels: ${MX_VIDEO_GENERATION_MAX_PIXELS:2073600}
+      frames-per-second: ${MX_VIDEO_GENERATION_FRAMES_PER_SECOND:24}
+      timeout-seconds: ${MX_VIDEO_GENERATION_TIMEOUT_SECONDS:180}
     audio-transcription:
       enabled: ${MX_AUDIO_TRANSCRIPTION_ENABLED:false}
       command: ${MX_AUDIO_TRANSCRIPTION_COMMAND:whisper}

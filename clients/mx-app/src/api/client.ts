@@ -104,7 +104,7 @@ export type UploadedAttachment = {
 };
 
 export type AttachmentUploadInput =
-  | { uri: string; name: string; type: string; size?: number }
+  | { uri: string; name: string; type: string; size?: number; file?: Blob }
   | Blob & { name?: string; type?: string };
 
 export type ConversationHistoryMessage = {
@@ -180,6 +180,19 @@ export type ImageGenerationInput = {
   prompt: string;
   width?: number;
   height?: number;
+};
+
+export type VideoGenerationInput = {
+  prompt: string;
+  durationSeconds?: number;
+  width?: number;
+  height?: number;
+};
+
+export type GeneratedMediaInput = {
+  filename: string;
+  contentType: string;
+  data: string;
 };
 
 export type ChatV1Response = {
@@ -267,15 +280,23 @@ export class MxApiClient {
   async uploadAttachment(input: AttachmentUploadInput): Promise<UploadedAttachment> {
     const body = new FormData();
     if ("uri" in input) {
-      body.append("file", {
-        uri: input.uri,
-        name: input.name,
-        type: input.type,
-      } as unknown as Blob);
+      if (input.file instanceof Blob) {
+        body.append("file", input.file, input.name);
+      } else {
+        body.append("file", {
+          uri: input.uri,
+          name: input.name,
+          type: input.type,
+        } as unknown as Blob);
+      }
     } else {
       body.append("file", input, input.name || "attachment");
     }
     return this.requestMultipart<UploadedAttachment>("/api/v1/attachments", body);
+  }
+
+  async downloadAttachment(attachmentId: string): Promise<Blob> {
+    return this.requestBlob(`/api/v1/attachments/${encodeURIComponent(attachmentId)}`);
   }
 
   async listConversations(
@@ -371,6 +392,18 @@ export class MxApiClient {
         prompt: input.prompt,
         width: input.width ?? 768,
         height: input.height ?? 768,
+      }),
+    });
+  }
+
+  async generateVideo(input: VideoGenerationInput): Promise<UploadedAttachment> {
+    return this.request<UploadedAttachment>("/api/v1/media/videos", {
+      method: "POST",
+      body: JSON.stringify({
+        prompt: input.prompt,
+        durationSeconds: input.durationSeconds ?? 6,
+        width: input.width ?? 1280,
+        height: input.height ?? 720,
       }),
     });
   }
@@ -577,6 +610,22 @@ export class MxApiClient {
       );
     }
     return response.json() as Promise<T>;
+  }
+
+  private async requestBlob(path: string, retryOnUnauthorized = true): Promise<Blob> {
+    const token = await readAccessToken();
+    const headers = new Headers({ Accept: "application/octet-stream" });
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const response = await fetch(`${this.baseUrl}${path}`, { method: "GET", headers });
+    if (!response.ok && response.status === 401 && retryOnUnauthorized) {
+      const refreshedToken = await this.refreshAccessToken();
+      if (refreshedToken) return this.requestBlob(path, false);
+    }
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new MxApiError(response.status, payload?.code ?? "MX_API_ERROR", payload?.message ?? "Não foi possível baixar o anexo.");
+    }
+    return response.blob();
   }
 
   private async request<T>(path: string, init: RequestInit, retryOnUnauthorized = true): Promise<T> {
