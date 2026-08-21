@@ -29,10 +29,12 @@ import {
   readAccessToken,
   readConversationId,
   readDraftPrompt,
+  readProjects,
   readRunCursor,
   readRefreshToken,
   writeConversationId,
   writeDraftPrompt,
+  writeProjects,
   writeRunCursor,
   writeSession,
 } from "./src/session/session";
@@ -75,6 +77,13 @@ export default function App() {
   const [generatingImage, setGeneratingImage] = useState(false);
   const [transcribingAttachmentId, setTranscribingAttachmentId] = useState<string | null>(null);
   const [uploadedAttachments, setUploadedAttachments] = useState<UploadedAttachment[]>([]);
+  const [projects, setProjects] = useState<import("./src/session/session").LocalProject[]>([]);
+  const [showProjects, setShowProjects] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectPath, setNewProjectPath] = useState("");
+  const [creatingFile, setCreatingFile] = useState(false);
+  const [newFileName, setNewFileName] = useState("");
+  const [newFileContent, setNewFileContent] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [online, setOnline] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -123,6 +132,8 @@ export default function App() {
         const savedConversationId = await readConversationId();
         const savedRunCursor = await readRunCursor();
         const draft = await readDraftPrompt();
+        const savedProjects = await readProjects();
+        setProjects(savedProjects);
         setConversationId(savedConversationId ?? undefined);
         runCursorRef.current = savedRunCursor ?? undefined;
         setPrompt(draft);
@@ -223,6 +234,10 @@ export default function App() {
     try {
       const response = await mxApi.login(email.trim(), password);
       await writeSession(response.token, response.refreshToken);
+      const savedConversationId = await readConversationId();
+      setConversationId(savedConversationId ?? undefined);
+      await loadConversationHistory(savedConversationId);
+      await loadConversationIndex();
       setViewState("chat");
     } catch (cause) {
       setError(cause instanceof MxApiError ? cause.message : "Não foi possível entrar no MX.");
@@ -292,6 +307,85 @@ export default function App() {
     }
   }
 
+  async function handleCreateProject() {
+    const name = newProjectName.trim();
+    if (!name) {
+      setError("Informe um nome para o projeto.");
+      return;
+    }
+    const project = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      name,
+      path: newProjectPath.trim() || `workspace/${name.replace(/[^a-zA-Z0-9._-]+/g, "-").toLowerCase()}`,
+      createdAt: new Date().toISOString(),
+    };
+    const nextProjects = [project, ...projects];
+    setProjects(nextProjects);
+    await writeProjects(nextProjects);
+    setNewProjectName("");
+    setNewProjectPath("");
+    setError(null);
+  }
+
+  async function handleChooseProjectFolder() {
+    if (Platform.OS !== "web") {
+      setNewProjectPath("workspace/");
+      return;
+    }
+    try {
+      const picker = (globalThis as typeof globalThis & {
+        showDirectoryPicker?: () => Promise<{ name: string }>;
+      }).showDirectoryPicker;
+      if (!picker) {
+        setNewProjectPath("workspace/");
+        return;
+      }
+      const directory = await picker();
+      setNewProjectPath(directory.name);
+    } catch {
+      // Cancelar a escolha da pasta não deve interromper o chat.
+    }
+  }
+
+  async function handleCreateFile() {
+    const filename = newFileName.trim();
+    if (!filename) {
+      setError("Informe o nome do arquivo.");
+      return;
+    }
+    if (!online || uploadingAttachment) return;
+    setUploadingAttachment(true);
+    setError(null);
+    try {
+      const file = Object.assign(new Blob([newFileContent], { type: "text/plain" }), { name: filename });
+      const uploaded = await mxApi.uploadAttachment(file);
+      setUploadedAttachments((current) => [...current, uploaded]);
+      setCreatingFile(false);
+      setNewFileName("");
+      setNewFileContent("");
+    } catch (cause) {
+      setError(cause instanceof MxApiError ? cause.message : "Não foi possível criar o arquivo.");
+    } finally {
+      setUploadingAttachment(false);
+    }
+  }
+
+  async function handlePasteFromClipboard() {
+    if (Platform.OS !== "web" || typeof navigator === "undefined" || !navigator.clipboard?.readText) {
+      setError("A colagem pela área de transferência está disponível no navegador.");
+      return;
+    }
+    try {
+      const pasted = await navigator.clipboard.readText();
+      if (!pasted) return;
+      const nextPrompt = prompt.trim() ? `${prompt.trim()}\\n${pasted}` : pasted;
+      setPrompt(nextPrompt);
+      await writeDraftPrompt(nextPrompt);
+    } catch {
+      setError("O navegador bloqueou a leitura da área de transferência. Use Ctrl+V no campo de mensagem.");
+    }
+  }
+
   function handlePromptKeyPress(event: NativeSyntheticEvent<TextInputKeyPressEventData>) {
     const nativeEvent = event.nativeEvent as TextInputKeyPressEventData & { shiftKey?: boolean };
     if (nativeEvent.key !== "Enter" || nativeEvent.shiftKey) return;
@@ -329,6 +423,7 @@ export default function App() {
       }, attachmentIds);
       setConversationId(response.conversationId);
       await writeConversationId(response.conversationId);
+      await loadConversationHistory(response.conversationId);
       await loadConversationIndex();
       setActiveRunId(response.runId);
       setMessages((current) => current.map((message) =>
@@ -446,6 +541,7 @@ export default function App() {
         </View>
         <View style={styles.headerActions}>
           <Pressable onPress={() => setShowHistory((current) => !current)} style={({ pressed }) => [styles.historyButton, pressed && styles.pressed]}><Text style={styles.historyButtonText}>{showHistory ? "Fechar" : "Histórico"}</Text></Pressable>
+          <Pressable onPress={() => setShowProjects((current) => !current)} style={({ pressed }) => [styles.projectButton, pressed && styles.pressed]}><Text style={styles.projectButtonText}>{showProjects ? "Fechar projetos" : "Projetos"}</Text></Pressable>
           <Pressable onPress={handleLogout} style={({ pressed }) => [styles.logout, pressed && styles.pressed]}><Text style={styles.logoutText}>Sair</Text></Pressable>
         </View>
       </View>
@@ -456,6 +552,18 @@ export default function App() {
           <TextInput onChangeText={setHistorySearch} placeholder="Buscar conversa" placeholderTextColor="#748198" style={styles.historyInput} value={historySearch} />
         </View>
         {conversationIndex.length === 0 ? <Text style={styles.muted}>Nenhuma conversa encontrada para esses filtros.</Text> : <FlatList data={conversationIndex} keyExtractor={(item) => item.id} renderItem={({ item }) => <Pressable onPress={() => void openConversation(item)} style={({ pressed }) => [styles.historyItem, pressed && styles.pressed]}><Text style={styles.historyItemTitle} numberOfLines={1}>{item.title || "Conversa sem título"}</Text><Text style={styles.historyItemMeta}>{item.topic} · {item.language} · {new Date(item.lastMessageAt).toLocaleString()}</Text></Pressable>} style={styles.historyList} />}
+      </View> : null}
+
+      {showProjects ? <View style={styles.projectPanel}>
+        <Text style={styles.panelTitle}>Pastas de projetos</Text>
+        <Text style={styles.muted}>Organize os arquivos por workspace local. No navegador, a pasta escolhida é usada como referência segura do projeto.</Text>
+        <View style={styles.projectFormRow}>
+          <TextInput onChangeText={setNewProjectName} placeholder="Nome do projeto" placeholderTextColor="#748198" style={styles.historyInput} value={newProjectName} />
+          <Pressable onPress={() => void handleChooseProjectFolder()} style={({ pressed }) => [styles.secondaryButton, styles.inlineButton, pressed && styles.pressed]}><Text style={styles.logoutText}>Escolher pasta</Text></Pressable>
+        </View>
+        <TextInput onChangeText={setNewProjectPath} placeholder="Pasta ou workspace/projeto" placeholderTextColor="#748198" style={styles.historyInput} value={newProjectPath} />
+        <Pressable onPress={() => void handleCreateProject()} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text style={styles.primaryButtonText}>Criar projeto</Text></Pressable>
+        {projects.length === 0 ? <Text style={styles.muted}>Nenhum projeto local cadastrado.</Text> : projects.map((project) => <View key={project.id} style={styles.projectItem}><Text style={styles.historyItemTitle}>{project.name}</Text><Text style={styles.historyItemMeta}>{project.path}</Text></View>)}
       </View> : null}
 
       {activeRun?.status === "AWAITING_APPROVAL" ? (
@@ -487,10 +595,18 @@ export default function App() {
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {uploadedAttachments.length > 0 ? <View style={styles.attachmentBar}>{uploadedAttachments.map((attachment) => <View key={attachment.id} style={styles.attachmentChip}><Text numberOfLines={1} style={styles.attachmentChipText}>{attachment.filename}</Text>{attachment.contentType.startsWith("audio/") ? <Pressable disabled={busy || !!transcribingAttachmentId} onPress={() => void handleTranscribeAudio(attachment)}><Text style={styles.transcribeText}>{transcribingAttachmentId === attachment.id ? "..." : "Transcrever"}</Text></Pressable> : null}<Pressable disabled={busy} onPress={() => removeAttachment(attachment.id)}><Text style={styles.removeAttachment}>×</Text></Pressable></View>)}</View> : null}
+      {creatingFile ? <View style={styles.filePanel}>
+        <Text style={styles.panelTitle}>Criar arquivo</Text>
+        <TextInput onChangeText={setNewFileName} placeholder="nome-do-arquivo.txt" placeholderTextColor="#748198" style={styles.historyInput} value={newFileName} />
+        <TextInput multiline onChangeText={setNewFileContent} placeholder="Conteúdo do arquivo" placeholderTextColor="#748198" style={styles.fileContentInput} value={newFileContent} />
+        <View style={styles.projectFormRow}><Pressable onPress={() => void handleCreateFile()} style={[styles.primaryButton, styles.inlineButton]}><Text style={styles.primaryButtonText}>Criar e anexar</Text></Pressable><Pressable onPress={() => setCreatingFile(false)} style={[styles.secondaryButton, styles.inlineButton]}><Text style={styles.logoutText}>Cancelar</Text></Pressable></View>
+      </View> : null}
       <View style={styles.composer}>
-        <Pressable disabled={busy || uploadingAttachment || generatingImage || !online} onPress={handlePickAttachment} style={({ pressed }) => [styles.attachButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || !online) && styles.disabled]}><Text style={styles.attachButtonText}>{uploadingAttachment ? "..." : "+"}</Text></Pressable>
+        <Pressable disabled={busy || uploadingAttachment || generatingImage || !online} onPress={handlePickAttachment} style={({ pressed }) => [styles.attachButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || !online) && styles.disabled]}><Text style={styles.attachButtonText}>{uploadingAttachment ? "..." : "Anexar"}</Text></Pressable>
+        <Pressable disabled={busy || uploadingAttachment || generatingImage || !online} onPress={() => setCreatingFile((current) => !current)} style={({ pressed }) => [styles.mediaButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || !online) && styles.disabled]}><Text style={styles.mediaButtonText}>Criar arquivo</Text></Pressable>
+        <Pressable disabled={busy || uploadingAttachment || generatingImage || !online} onPress={() => void handlePasteFromClipboard()} style={({ pressed }) => [styles.mediaButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || !online) && styles.disabled]}><Text style={styles.mediaButtonText}>Colar</Text></Pressable>
         <Pressable disabled={busy || uploadingAttachment || generatingImage || !online || !prompt.trim()} onPress={() => void handleGenerateImage()} style={({ pressed }) => [styles.mediaButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.mediaButtonText}>{generatingImage ? "..." : "Imagem"}</Text></Pressable>
-        <TextInput editable={!busy && !uploadingAttachment && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onKeyPress={Platform.OS === "web" ? handlePromptKeyPress : undefined} onSubmitEditing={Platform.OS === "web" ? undefined : () => void handleSend()} placeholder={online ? "Escreva sua solicitação..." : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} />
+        <TextInput editable={!busy && !uploadingAttachment && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onKeyPress={Platform.OS === "web" ? handlePromptKeyPress : undefined} onSubmitEditing={Platform.OS === "web" ? undefined : () => void handleSend()} placeholder={online ? "Escreva sua solicitação... Enter envia · Shift+Enter quebra linha" : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} />
         <Pressable disabled={busy || uploadingAttachment || generatingImage || !!transcribingAttachmentId || !online || (!prompt.trim() && uploadedAttachments.length === 0)} onPress={handleSend} style={({ pressed }) => [styles.sendButton, pressed && styles.pressed, (busy || uploadingAttachment || !online || (!prompt.trim() && uploadedAttachments.length === 0)) && styles.disabled]}>{busy ? <ActivityIndicator color="#08111f" /> : <Text style={styles.sendButtonText}>Enviar</Text>}</Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -506,6 +622,8 @@ const styles = StyleSheet.create({
   headerActions: { alignItems: "flex-end", gap: 8 },
   historyButton: { borderColor: "#2a6e70", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
   historyButtonText: { color: "#a9e8d2", fontWeight: "800" },
+  projectButton: { borderColor: "#4c5f8a", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
+  projectButtonText: { color: "#c7d3ff", fontWeight: "800" },
   eyebrow: { color: "#63e6be", fontSize: 12, fontWeight: "800", letterSpacing: 2 },
   title: { color: "#f4f7fb", fontSize: 32, fontWeight: "800", lineHeight: 38 },
   headerTitle: { color: "#f4f7fb", fontSize: 24, fontWeight: "800" },
@@ -522,6 +640,13 @@ const styles = StyleSheet.create({
   logout: { borderColor: "#29405d", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
   logoutText: { color: "#c4d1e3", fontWeight: "700" },
   historyPanel: { backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 10 },
+  projectPanel: { backgroundColor: "#101c2d", borderColor: "#30456b", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 12 },
+  filePanel: { backgroundColor: "#101c2d", borderColor: "#2a6e70", borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 10, padding: 12 },
+  panelTitle: { color: "#f4f7fb", fontSize: 15, fontWeight: "800" },
+  projectFormRow: { flexDirection: "row", gap: 8 },
+  inlineButton: { flex: 1 },
+  projectItem: { borderBottomColor: "#1e3048", borderBottomWidth: 1, paddingVertical: 8 },
+  fileContentInput: { backgroundColor: "#0b1728", borderColor: "#29405d", borderRadius: 9, borderWidth: 1, color: "#f4f7fb", fontSize: 14, minHeight: 90, padding: 10, textAlignVertical: "top" },
   historyFilters: { flexDirection: "row", gap: 8 },
   historyInput: { backgroundColor: "#0b1728", borderColor: "#29405d", borderRadius: 9, borderWidth: 1, color: "#f4f7fb", flex: 1, fontSize: 13, minHeight: 38, paddingHorizontal: 10 },
   historyList: { maxHeight: 180 },
@@ -548,11 +673,11 @@ const styles = StyleSheet.create({
   attachmentChipText: { color: "#c6f4e4", flexShrink: 1, fontSize: 12 },
   removeAttachment: { color: "#ff9b9b", fontSize: 18, lineHeight: 16, marginLeft: 6 },
   transcribeText: { color: "#a9e8d2", fontSize: 11, fontWeight: "700", marginLeft: 6 },
-  attachButton: { alignItems: "center", borderColor: "#29405d", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 42, minWidth: 42 },
-  attachButtonText: { color: "#63e6be", fontSize: 24, fontWeight: "700", lineHeight: 28 },
+  attachButton: { alignItems: "center", borderColor: "#29405d", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 42, paddingHorizontal: 10 },
+  attachButtonText: { color: "#63e6be", fontSize: 12, fontWeight: "800" },
   mediaButton: { alignItems: "center", borderColor: "#2a6e70", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 42, paddingHorizontal: 9 },
   mediaButtonText: { color: "#a9e8d2", fontSize: 12, fontWeight: "800" },
-  composer: { alignItems: "flex-end", backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 16, borderWidth: 1, flexDirection: "row", gap: 10, marginBottom: 18, padding: 10 },
+  composer: { alignItems: "flex-end", backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 16, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18, padding: 10 },
   promptInput: { color: "#f4f7fb", flex: 1, fontSize: 16, maxHeight: 120, minHeight: 42, paddingHorizontal: 6, paddingVertical: 9 },
   sendButton: { alignItems: "center", backgroundColor: "#63e6be", borderRadius: 10, justifyContent: "center", minHeight: 42, minWidth: 76, paddingHorizontal: 12 },
   sendButtonText: { color: "#08111f", fontWeight: "800" },

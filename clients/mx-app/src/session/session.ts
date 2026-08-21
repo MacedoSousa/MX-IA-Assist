@@ -6,6 +6,14 @@ const ACCESS_TOKEN_KEY = "mx.access-token";
 const REFRESH_TOKEN_KEY = "mx.refresh-token";
 const CONVERSATION_ID_KEY = "mx.conversation-id";
 const RUN_CURSOR_KEY = "mx.run-cursor";
+const PROJECTS_KEY = "mx.projects";
+
+export type LocalProject = {
+  id: string;
+  name: string;
+  path: string;
+  createdAt: string;
+};
 
 async function readValue(key: string): Promise<string | null> {
   if (Platform.OS === "web") {
@@ -96,4 +104,19 @@ export async function writeRunCursor(cursor: string | null): Promise<void> {
   } else {
     await AsyncStorage.removeItem(RUN_CURSOR_KEY);
   }
+}
+
+export async function readProjects(): Promise<LocalProject[]> {
+  const raw = await AsyncStorage.getItem(PROJECTS_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed as LocalProject[] : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function writeProjects(projects: LocalProject[]): Promise<void> {
+  await AsyncStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
 }
