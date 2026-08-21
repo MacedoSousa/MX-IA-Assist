@@ -27,7 +27,7 @@ class VideoGenerationServiceTest {
     @Test
     void rejectsBlankPromptBeforeStartingFfmpeg() {
         AttachmentService attachments = mock(AttachmentService.class);
-        VideoGenerationService service = service(attachments, true, "false");
+        VideoGenerationService service = service(attachments, mock(ImageGenerationService.class), true, "false");
 
         assertThatThrownBy(() -> service.generate(USER_ID, "  ", 6, 1280, 720))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -36,7 +36,7 @@ class VideoGenerationServiceTest {
 
     @Test
     void rejectsDurationAboveConfiguredLimit() {
-        VideoGenerationService service = service(mock(AttachmentService.class), true, "false");
+        VideoGenerationService service = service(mock(AttachmentService.class), mock(ImageGenerationService.class), true, "false");
 
         assertThatThrownBy(() -> service.generate(USER_ID, "A short MX video", 31, 1280, 720))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -46,7 +46,7 @@ class VideoGenerationServiceTest {
     @Test
     void rejectsDimensionsAboveConfiguredPixelLimit() {
         VideoGenerationService service = new VideoGenerationService(
-                mock(AttachmentService.class), true, "false", 30, 640 * 480, 24, 10
+                mock(AttachmentService.class), mock(ImageGenerationService.class), true, "false", 30, 640 * 480, 24, 10
         );
 
         assertThatThrownBy(() -> service.generate(USER_ID, "A short MX video", 6, 1280, 720))
@@ -56,7 +56,7 @@ class VideoGenerationServiceTest {
 
     @Test
     void refusesGenerationWhenFeatureIsDisabled() {
-        VideoGenerationService service = service(mock(AttachmentService.class), false, "false");
+        VideoGenerationService service = service(mock(AttachmentService.class), mock(ImageGenerationService.class), false, "false");
 
         assertThatThrownBy(() -> service.generate(USER_ID, "A short MX video", 6, 1280, 720))
                 .isInstanceOf(IllegalStateException.class)
@@ -66,7 +66,9 @@ class VideoGenerationServiceTest {
     @Test
     void surfacesFfmpegFailureWithoutPersistingAttachment() {
         AttachmentService attachments = mock(AttachmentService.class);
-        VideoGenerationService service = service(attachments, true, "false");
+        ImageGenerationService images = mock(ImageGenerationService.class);
+        when(images.render(eq(USER_ID), anyString(), eq(320), eq(240))).thenReturn(new byte[]{1, 2, 3});
+        VideoGenerationService service = service(attachments, images, true, "false");
 
         assertThatThrownBy(() -> service.generate(USER_ID, "A short MX video", 1, 320, 240))
                 .isInstanceOf(IllegalStateException.class)
@@ -78,13 +80,15 @@ class VideoGenerationServiceTest {
     @Test
     void storesGeneratedMp4AsOwnedAttachment(@TempDir Path tempDir) throws Exception {
         AttachmentService attachments = mock(AttachmentService.class);
+        ImageGenerationService images = mock(ImageGenerationService.class);
         AttachmentEntity expected = new AttachmentEntity();
         Path executable = fakeFfmpeg(tempDir);
+        when(images.render(eq(USER_ID), anyString(), eq(320), eq(240))).thenReturn(new byte[]{1, 2, 3});
         when(attachments.store(
                 eq(USER_ID), anyString(), eq("video/mp4"), anyLong(), any(InputStream.class)
         )).thenReturn(expected);
 
-        VideoGenerationService service = service(attachments, true, executable.toString());
+        VideoGenerationService service = service(attachments, images, true, executable.toString());
         AttachmentEntity actual = service.generate(USER_ID, "A short MX video", 1, 320, 240);
 
         assertThat(actual).isSameAs(expected);
@@ -93,8 +97,8 @@ class VideoGenerationServiceTest {
         );
     }
 
-    private VideoGenerationService service(AttachmentService attachments, boolean enabled, String ffmpeg) {
-        return new VideoGenerationService(attachments, enabled, ffmpeg, 30, 2_073_600, 24, 10);
+    private VideoGenerationService service(AttachmentService attachments, ImageGenerationService images, boolean enabled, String ffmpeg) {
+        return new VideoGenerationService(attachments, images, enabled, ffmpeg, 30, 2_073_600, 24, 10);
     }
 
     private Path fakeFfmpeg(Path tempDir) throws Exception {

@@ -52,3 +52,11 @@
 - [x] Mapear contratos e regras que descartam contexto, impedem ferramentas ou criam estados inconsistentes.
 - [x] Corrigir desconexões de baixo risco entre chat, skills, IA, anexos, tarefas e execução de ferramentas.
 - [x] Validar os fluxos críticos e publicar o diagnóstico de regras que exigem evolução arquitetural.
+
+## IA generativa: imagens, vídeos e documentos
+
+- [x] Recuperar e sintetizar os materiais autorizados sobre IA generativa referenciados pelo usuário.
+- [x] Mapear os contratos atuais de geração, análise, armazenamento e entrega de imagens, vídeos e documentos.
+- [x] Implementar as lacunas priorizadas com limites, validação de entrada, rastreabilidade e mensagens de erro úteis.
+- [ ] Executar smoke tests locais para cada modalidade sem versionar mídia ou dados pessoais.
+- [ ] Publicar a documentação de capacidades, restrições técnicas e fluxo de uso no MX.

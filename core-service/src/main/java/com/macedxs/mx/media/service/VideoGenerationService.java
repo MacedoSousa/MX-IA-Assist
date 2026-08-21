@@ -2,7 +2,6 @@ package com.macedxs.mx.media.service;
 
 import com.macedxs.mx.attachment.entity.AttachmentEntity;
 import com.macedxs.mx.attachment.service.AttachmentService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class VideoGenerationService {
 
     private final AttachmentService attachmentService;
+    private final ImageGenerationService imageGenerationService;
     private final boolean enabled;
     private final String ffmpegCommand;
     private final int maxDurationSeconds;
@@ -28,6 +28,7 @@ public class VideoGenerationService {
 
     public VideoGenerationService(
             AttachmentService attachmentService,
+            ImageGenerationService imageGenerationService,
             @Value("${mx.media.video-generation.enabled:false}") boolean enabled,
             @Value("${mx.media.video-generation.ffmpeg-command:ffmpeg}") String ffmpegCommand,
             @Value("${mx.media.video-generation.max-duration-seconds:30}") int maxDurationSeconds,
@@ -35,13 +36,14 @@ public class VideoGenerationService {
             @Value("${mx.media.video-generation.frames-per-second:24}") int framesPerSecond,
             @Value("${mx.media.video-generation.timeout-seconds:180}") int timeoutSeconds
     ) {
-        if (attachmentService == null) {
-            throw new IllegalArgumentException("Attachment service is required");
+        if (attachmentService == null || imageGenerationService == null) {
+            throw new IllegalArgumentException("Video generation dependencies are required");
         }
         if (maxDurationSeconds <= 0 || maxPixels <= 0 || framesPerSecond <= 0 || timeoutSeconds <= 0) {
             throw new IllegalArgumentException("Video generation limits must be positive");
         }
         this.attachmentService = attachmentService;
+        this.imageGenerationService = imageGenerationService;
         this.enabled = enabled;
         this.ffmpegCommand = ffmpegCommand == null || ffmpegCommand.isBlank() ? "ffmpeg" : ffmpegCommand.trim();
         this.maxDurationSeconds = maxDurationSeconds;
@@ -70,21 +72,19 @@ public class VideoGenerationService {
         Path workDir = null;
         try {
             workDir = Files.createTempDirectory("mx-video-");
-            Path promptFile = workDir.resolve("prompt.txt");
+            Path keyframeFile = workDir.resolve("keyframe.png");
             Path outputFile = workDir.resolve("generated.mp4");
-            Files.writeString(promptFile, prompt.trim(), StandardCharsets.UTF_8);
+            Files.write(keyframeFile, imageGenerationService.render(userId, prompt.trim(), width, height));
 
-            String escapedPromptPath = escapeFilterPath(promptFile);
-            String filter = "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-                    + ":textfile=" + escapedPromptPath
-                    + ":fontcolor=white:fontsize=42:line_spacing=10"
-                    + ":x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=0x08111f99:boxborderw=24";
+            String filter = "scale=" + width + ":" + height + ":force_original_aspect_ratio=increase,"
+                    + "crop=" + width + ":" + height + ","
+                    + "zoompan=z='min(zoom+0.0008,1.10)':d=1:s=" + width + "x" + height + ":fps=" + framesPerSecond;
 
             Process process = new ProcessBuilder(
                     ffmpegCommand,
                     "-y",
-                    "-f", "lavfi",
-                    "-i", "color=c=0x164f52:s=" + width + "x" + height + ":r=" + framesPerSecond,
+                    "-loop", "1",
+                    "-i", keyframeFile.toString(),
                     "-t", Integer.toString(durationSeconds),
                     "-vf", filter,
                     "-an",
@@ -130,13 +130,6 @@ public class VideoGenerationService {
         } finally {
             deleteWorkDir(workDir);
         }
-    }
-
-    private String escapeFilterPath(Path path) {
-        return path.toAbsolutePath().toString()
-                .replace("\\", "/")
-                .replace(":", "\\:")
-                .replace("'", "\\'");
     }
 
     private void deleteWorkDir(Path workDir) {

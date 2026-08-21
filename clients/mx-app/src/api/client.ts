@@ -215,6 +215,12 @@ export type VideoGenerationInput = {
   height?: number;
 };
 
+export type DocumentGenerationInput = {
+  prompt: string;
+  title?: string;
+  format?: "MARKDOWN" | "DOCX" | "PDF";
+};
+
 export type GeneratedMediaInput = {
   filename: string;
   contentType: string;
@@ -461,6 +467,17 @@ export class MxApiClient {
         durationSeconds: input.durationSeconds ?? 6,
         width: input.width ?? 1280,
         height: input.height ?? 720,
+      }),
+    });
+  }
+
+  async generateDocument(input: DocumentGenerationInput): Promise<UploadedAttachment> {
+    return this.request<UploadedAttachment>("/api/v1/media/documents", {
+      method: "POST",
+      body: JSON.stringify({
+        prompt: input.prompt,
+        title: input.title,
+        format: input.format ?? "MARKDOWN",
       }),
     });
   }

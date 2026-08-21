@@ -77,6 +77,21 @@ public class ImageGenerationService {
     }
 
     public AttachmentEntity generate(UUID userId, String prompt, int width, int height) {
+        byte[] png = render(userId, prompt, width, height);
+        return attachmentService.store(
+                userId,
+                "mx-generated-" + UUID.randomUUID() + ".png",
+                "image/png",
+                png.length,
+                new ByteArrayInputStream(png)
+        );
+    }
+
+    /**
+     * Produz somente os bytes do quadro visual. Serviços compostos, como vídeo,
+     * podem usar o resultado sem criar um anexo intermediário exposto ao usuário.
+     */
+    public byte[] render(UUID userId, String prompt, int width, int height) {
         if (userId == null) {
             throw new IllegalArgumentException("User is required");
         }
@@ -113,14 +128,7 @@ public class ImageGenerationService {
             if (!images.isArray() || images.isEmpty() || images.get(0).asText().isBlank()) {
                 throw new IllegalStateException("Image generation endpoint returned no image");
             }
-            byte[] png = Base64.getDecoder().decode(stripDataUri(images.get(0).asText()));
-            return attachmentService.store(
-                    userId,
-                    "mx-generated-" + UUID.randomUUID() + ".png",
-                    "image/png",
-                    png.length,
-                    new ByteArrayInputStream(png)
-            );
+            return Base64.getDecoder().decode(stripDataUri(images.get(0).asText()));
         } catch (IllegalStateException exception) {
             throw exception;
         } catch (Exception exception) {

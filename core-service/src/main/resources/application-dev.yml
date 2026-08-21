@@ -83,6 +83,8 @@ mx:
       max-pixels: ${MX_VIDEO_GENERATION_MAX_PIXELS:2073600}
       frames-per-second: ${MX_VIDEO_GENERATION_FRAMES_PER_SECOND:24}
       timeout-seconds: ${MX_VIDEO_GENERATION_TIMEOUT_SECONDS:180}
+    document-generation:
+      enabled: ${MX_DOCUMENT_GENERATION_ENABLED:true}
     audio-transcription:
       enabled: ${MX_AUDIO_TRANSCRIPTION_ENABLED:false}
       command: ${MX_AUDIO_TRANSCRIPTION_COMMAND:whisper}
