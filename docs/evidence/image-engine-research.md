@@ -15,3 +15,16 @@ O Forge é baseado no WebUI do AUTOMATIC1111, otimiza gerenciamento de recursos 
 Fonte: https://github.com/lllyasviel/stable-diffusion-webui-forge
 
 Decisão técnica: usar um servidor local compatível com AUTOMATIC1111, preferencialmente Forge para explorar melhor os 8 GB de VRAM da RTX 2060 Super, mantendo Stable Diffusion/SDXL em resoluções e passos moderados. FLUX não será o padrão para essa GPU devido ao maior consumo de memória e ao risco de latência/OOM. O Compose deve manter o motor separado e tolerar a indisponibilidade temporária, sem impedir que `mx-core` suba.
+
+
+## Atualização de provisionamento
+
+A documentação do AI-Dock publicada em 2026-08-21 informa que a tag CUDA atual segue o padrão `v2-cuda-12.1.1-base-22.04`, enquanto a tag sem o prefixo `v2` não está publicada no registro consultado. A imagem usada pelo Compose foi corrigida para `ghcr.io/ai-dock/stable-diffusion-webui-forge:v2-cuda-12.1.1-base-22.04`.
+
+Fonte: https://raw.githubusercontent.com/ai-dock/stable-diffusion-webui-forge/main/README.md
+Fonte: https://raw.githubusercontent.com/ai-dock/stable-diffusion-webui-forge/main/docker-compose.yaml
+
+O modelo escolhido para a primeira geração local é `stable-diffusion-v1-5/stable-diffusion-v1-5`, usando o arquivo de inferência `v1-5-pruned-emaonly.safetensors`, disponibilizado no card do modelo e indicado para AUTOMATIC1111, Forge e outros clientes locais. O modelo usa resolução base de 512x512 e requer atenção às limitações de texto, viés, segurança e licença CreativeML OpenRAIL-M.
+
+Fonte: https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5
+Fonte do arquivo indicado no card: https://huggingface.co/sd-legacy/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors

@@ -82,7 +82,7 @@ services:
       - ../../../data/open-webui:/app/backend/data
 
   image-engine:
-    image: ghcr.io/ai-dock/stable-diffusion-webui-forge:cuda-12.1.1-base-22.04
+    image: ghcr.io/ai-dock/stable-diffusion-webui-forge:v2-cuda-12.1.1-base-22.04
     container_name: mx-image-engine
     restart: unless-stopped
     ports:
