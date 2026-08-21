@@ -1,6 +1,7 @@
 const baseUrl = (process.env.MX_API_BASE_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
 const email = process.env.MX_SMOKE_EMAIL;
 const password = process.env.MX_SMOKE_PASSWORD;
+const requestTimeoutMs = Number.parseInt(process.env.MX_SMOKE_TIMEOUT_MS ?? "300000", 10);
 
 if (!email || !password) {
   throw new Error("Defina MX_SMOKE_EMAIL e MX_SMOKE_PASSWORD antes de executar o smoke test.");
@@ -14,6 +15,7 @@ async function request(path, options = {}, token) {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers ?? {}),
     },
+    signal: AbortSignal.timeout(requestTimeoutMs),
   });
   if (!response.ok) {
     const detail = await response.text();
@@ -28,6 +30,7 @@ function assertAttachment(attachment, expectedType) {
   }
 }
 
+console.log("[smoke] autenticando");
 const login = await request("/api/auth/login", {
   method: "POST",
   body: JSON.stringify({ email, password, deviceName: "mx-generative-smoke" }),
@@ -35,6 +38,7 @@ const login = await request("/api/auth/login", {
 const { token } = await login.json();
 if (!token) throw new Error("Autenticação não retornou token.");
 
+console.log("[smoke] gerando imagem");
 const image = await request("/api/v1/media/images", {
   method: "POST",
   body: JSON.stringify({
@@ -46,6 +50,7 @@ const image = await request("/api/v1/media/images", {
 const imageAttachment = await image.json();
 assertAttachment(imageAttachment, "image/png");
 
+console.log("[smoke] gerando vídeo");
 const video = await request("/api/v1/media/videos", {
   method: "POST",
   body: JSON.stringify({
@@ -58,6 +63,7 @@ const video = await request("/api/v1/media/videos", {
 const videoAttachment = await video.json();
 assertAttachment(videoAttachment, "video/mp4");
 
+console.log("[smoke] gerando documento");
 const document = await request("/api/v1/media/documents", {
   method: "POST",
   body: JSON.stringify({
@@ -69,6 +75,7 @@ const document = await request("/api/v1/media/documents", {
 const documentAttachment = await document.json();
 assertAttachment(documentAttachment, "application/pdf");
 
+console.log("[smoke] validando download do PDF");
 const downloaded = await request(`/api/v1/attachments/${encodeURIComponent(documentAttachment.id)}`, {}, token);
 const pdfHeader = Buffer.from(await downloaded.arrayBuffer()).subarray(0, 4).toString("ascii");
 if (pdfHeader !== "%PDF") throw new Error("O documento baixado não possui assinatura PDF válida.");
