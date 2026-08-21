@@ -3,6 +3,13 @@ package com.macedxs.mx.bootstrap;
 import com.macedxs.mx.agent.application.SkillRegistry;
 import com.macedxs.mx.agent.application.SkillRouter;
 import com.macedxs.mx.agent.skill.development.DevelopmentSkill;
+import com.macedxs.mx.agent.skill.development.SelfImprovementSkill;
+import com.macedxs.mx.evolution.application.SelfExtensionJobStore;
+import com.macedxs.mx.evolution.application.SelfExtensionPolicy;
+import com.macedxs.mx.evolution.application.SelfExtensionService;
+import com.macedxs.mx.evolution.infrastructure.FileSystemSelfExtensionJobStore;
+import com.macedxs.mx.tool.evolution.SelfExtensionSubmitTool;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.macedxs.mx.agent.skill.general.DuckDuckGoSearchClient;
 import com.macedxs.mx.agent.skill.general.ExternalSearchClient;
 import com.macedxs.mx.agent.skill.general.GeneralSkill;
@@ -42,6 +49,11 @@ import com.macedxs.mx.identity.service.UserPreferenceService;
 
 @Configuration
 public class ConversationConfiguration {
+
+    @Bean
+    ObjectMapper objectMapper() {
+        return new ObjectMapper().findAndRegisterModules();
+    }
 
     @Bean
     GeneralSkill generalSkill(
@@ -87,6 +99,46 @@ public class ConversationConfiguration {
     }
 
     @Bean
+    SelfExtensionPolicy selfExtensionPolicy(
+            @Value("${mx.evolution.max-files:20}") int maxFiles,
+            @Value("${mx.evolution.max-file-bytes:262144}") long maxFileBytes,
+            @Value("${mx.evolution.max-total-bytes:1048576}") long maxTotalBytes,
+            @Value("${mx.evolution.allow-push-requests:false}") boolean allowPushRequests
+    ) {
+        return new SelfExtensionPolicy(maxFiles, maxFileBytes, maxTotalBytes, allowPushRequests);
+    }
+
+    @Bean
+    SelfExtensionJobStore selfExtensionJobStore(
+            ObjectMapper objectMapper,
+            @Value("${mx.evolution.root:/app/workspace/evolution}") String root
+    ) {
+        return new FileSystemSelfExtensionJobStore(Path.of(root), objectMapper);
+    }
+
+    @Bean
+    SelfExtensionService selfExtensionService(
+            ObjectMapper objectMapper,
+            SelfExtensionPolicy policy,
+            SelfExtensionJobStore jobStore
+    ) {
+        return new SelfExtensionService(objectMapper, policy, jobStore);
+    }
+
+    @Bean
+    SelfExtensionSubmitTool selfExtensionSubmitTool(SelfExtensionService selfExtensionService) {
+        return new SelfExtensionSubmitTool(selfExtensionService);
+    }
+
+    @Bean
+    SelfImprovementSkill selfImprovementSkill(
+            @Qualifier("ollamaModelGateway") ModelGateway modelGateway,
+            ToolExecutor toolExecutor
+    ) {
+        return new SelfImprovementSkill(modelGateway, toolExecutor);
+    }
+
+    @Bean
     DevelopmentSkill developmentSkill(
             @Qualifier("ollamaModelGateway") ModelGateway modelGateway,
             ToolExecutor toolExecutor
@@ -121,7 +173,8 @@ public class ConversationConfiguration {
             QualitySkill qualitySkill,
             InfrastructureSkill infrastructureSkill,
             DataSkill dataSkill,
-            TeachingSkill teachingSkill
+            TeachingSkill teachingSkill,
+            SelfImprovementSkill selfImprovementSkill
     ) {
         SkillRegistry registry = new SkillRegistry();
         registry.register(generalSkill);
@@ -130,6 +183,7 @@ public class ConversationConfiguration {
         registry.register(infrastructureSkill);
         registry.register(dataSkill);
         registry.register(teachingSkill);
+        registry.register(selfImprovementSkill);
         return registry;
     }
 
@@ -206,12 +260,14 @@ public class ConversationConfiguration {
     ToolRegistry toolRegistry(
             WorkspaceListTool workspaceListTool,
             WorkspaceReadFileTool workspaceReadFileTool,
-            com.macedxs.mx.tool.workspace.WorkspaceWriteTool workspaceWriteTool
+            com.macedxs.mx.tool.workspace.WorkspaceWriteTool workspaceWriteTool,
+            SelfExtensionSubmitTool selfExtensionSubmitTool
     ) {
         ToolRegistry registry = new ToolRegistry();
         registry.register(workspaceListTool);
         registry.register(workspaceReadFileTool);
         registry.register(workspaceWriteTool);
+        registry.register(selfExtensionSubmitTool);
         return registry;
     }
 

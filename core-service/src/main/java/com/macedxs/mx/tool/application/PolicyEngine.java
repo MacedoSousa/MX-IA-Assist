@@ -35,6 +35,16 @@ public class PolicyEngine {
             return PolicyDecision.allow("Allowed read-only tool");
         }
 
+        if (definition.effect() == ToolEffect.SELF_MODIFICATION) {
+            if (grantedAutonomy != AutonomyLevel.EXECUTE_AUTONOMOUSLY) {
+                return PolicyDecision.deny("Self-modification requires the internal autonomous execution level");
+            }
+            if (grantedAutonomy.ordinal() < definition.minimumAutonomy().ordinal()) {
+                return PolicyDecision.deny("Granted autonomy is below the tool minimum");
+            }
+            return PolicyDecision.allow("Allowed bounded self-modification job");
+        }
+
         if (grantedAutonomy.ordinal() < AutonomyLevel.PROPOSE.ordinal()) {
             return PolicyDecision.deny("Sensitive tool cannot be invoked from response-only autonomy");
         }

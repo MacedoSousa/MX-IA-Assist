@@ -129,6 +129,11 @@ services:
       MX_SELF_ANALYSIS_SEARCH_ENDPOINT: ${MX_SELF_ANALYSIS_SEARCH_ENDPOINT:-https://api.duckduckgo.com}
       MX_SELF_ANALYSIS_MAX_RESULTS: ${MX_SELF_ANALYSIS_MAX_RESULTS:-3}
       MX_SELF_ANALYSIS_AUDIT_PATH: /app/workspace/knowledge/runtime/self-analysis.jsonl
+      MX_EVOLUTION_ROOT: /app/workspace/evolution
+      MX_EVOLUTION_MAX_FILES: ${MX_EVOLUTION_MAX_FILES:-20}
+      MX_EVOLUTION_MAX_FILE_BYTES: ${MX_EVOLUTION_MAX_FILE_BYTES:-262144}
+      MX_EVOLUTION_MAX_TOTAL_BYTES: ${MX_EVOLUTION_MAX_TOTAL_BYTES:-1048576}
+      MX_EVOLUTION_ALLOW_PUSH_REQUESTS: ${MX_EVOLUTION_ALLOW_PUSH_REQUESTS:-false}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q 'UP'"]
       interval: 10s
@@ -139,6 +144,7 @@ services:
       - ../../../logs:/app/logs
       - ../../../data/attachments:/app/workspace/attachments
       - ../../../data/knowledge:/app/workspace/knowledge
+      - ../../../data/evolution:/app/workspace/evolution
 
   mx-web:
     build:

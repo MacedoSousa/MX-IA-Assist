@@ -82,6 +82,12 @@ mx:
     max-depth: ${MX_WORKSPACE_MAX_DEPTH:4}
     max-read-bytes: ${MX_WORKSPACE_MAX_READ_BYTES:1048576}
     max-write-bytes: ${MX_WORKSPACE_MAX_WRITE_BYTES:1048576}
+  evolution:
+    root: ${MX_EVOLUTION_ROOT:/app/workspace/evolution}
+    max-files: ${MX_EVOLUTION_MAX_FILES:20}
+    max-file-bytes: ${MX_EVOLUTION_MAX_FILE_BYTES:262144}
+    max-total-bytes: ${MX_EVOLUTION_MAX_TOTAL_BYTES:1048576}
+    allow-push-requests: ${MX_EVOLUTION_ALLOW_PUSH_REQUESTS:false}
 
 management:
   endpoints:

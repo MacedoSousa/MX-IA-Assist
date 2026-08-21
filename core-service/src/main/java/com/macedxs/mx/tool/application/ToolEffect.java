@@ -4,5 +4,6 @@ public enum ToolEffect {
     READ_ONLY,
     WRITE,
     DESTRUCTIVE,
-    EXTERNAL
+    EXTERNAL,
+    SELF_MODIFICATION
 }
