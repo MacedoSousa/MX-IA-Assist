@@ -41,6 +41,16 @@ O comando **Gerar documento PDF** usa o conteúdo atual do compositor como solic
 
 As rotas exigem autenticação, associam artefatos ao usuário autenticado e aplicam limites antes de iniciar processos locais. O FFmpeg recebe argumentos estruturados, possui timeout e remove o diretório temporário ao fim da tarefa. Nenhum prompt, mídia ou documento de usuário é versionado no Git.
 
+Em **21 de agosto de 2026**, o script autenticado `infrastructure/docker/scripts/smoke-generative.mjs` foi executado contra o host local. Ele confirmou, em sequência, a criação de uma imagem pelo Forge, a composição de um vídeo MP4 local e a geração e o download de um PDF válido. O teste usa credenciais somente em variáveis de ambiente, não versiona os artefatos e verifica a assinatura do PDF antes de reportar sucesso.
+
+| Modalidade | Resultado de validação | Observação |
+|---|---|---|
+| Imagem | Aprovado | Artefato registrado pela API de anexos. |
+| Vídeo | Aprovado | MP4 composto localmente a partir de quadro visual gerado. |
+| Documento | Aprovado | PDF gerado, armazenado e baixado com assinatura válida. |
+
+O runtime usa `MX_OLLAMA_TIMEOUT_MS`, com padrão operacional de cinco minutos, para acomodar a inferência híbrida do `deepseek-r1:14b`. Documentos usam um contrato de saída estruturada que desativa o raciocínio interno do modelo, sem desviar a solicitação do MX Core.
+
 O conteúdo gerado deve ser revisado antes de uso acadêmico, jurídico, médico, financeiro ou administrativo. O MX não apresenta automaticamente um documento gerado como fato comprovado: fontes, valores, nomes e datas devem ser conferidos pelo usuário contra o material original.
 
 ## Próximas evoluções deliberadas

@@ -58,5 +58,5 @@
 - [x] Recuperar e sintetizar os materiais autorizados sobre IA generativa referenciados pelo usuário.
 - [x] Mapear os contratos atuais de geração, análise, armazenamento e entrega de imagens, vídeos e documentos.
 - [x] Implementar as lacunas priorizadas com limites, validação de entrada, rastreabilidade e mensagens de erro úteis.
-- [ ] Executar smoke tests locais para cada modalidade sem versionar mídia ou dados pessoais.
-- [ ] Publicar a documentação de capacidades, restrições técnicas e fluxo de uso no MX.
+- [x] Executar smoke tests locais para cada modalidade sem versionar mídia ou dados pessoais.
+- [x] Publicar a documentação de capacidades, restrições técnicas e fluxo de uso no MX.
