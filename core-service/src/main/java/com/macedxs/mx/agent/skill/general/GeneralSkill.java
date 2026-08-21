@@ -1,6 +1,5 @@
 package com.macedxs.mx.agent.skill.general;
 
-import com.macedxs.mx.ai.service.OllamaService;
 import com.macedxs.mx.agent.application.AutonomyLevel;
 import com.macedxs.mx.agent.application.Skill;
 import com.macedxs.mx.agent.application.SkillDefinition;
@@ -10,6 +9,7 @@ import com.macedxs.mx.agent.application.SkillResult;
 import com.macedxs.mx.conversation.application.ModelGenerationException;
 import com.macedxs.mx.conversation.application.port.ModelGateway;
 import com.macedxs.mx.conversation.application.port.StreamingModelGateway;
+import com.macedxs.mx.identity.service.UserPreferenceService;
 
 import java.time.Duration;
 import java.util.Map;
@@ -30,21 +30,31 @@ public class GeneralSkill implements Skill {
 
     private final ModelGateway modelGateway;
     private final StudyKnowledgeContext studyKnowledgeContext;
+    private final UserPreferenceService userPreferenceService;
 
     public GeneralSkill(ModelGateway modelGateway) {
-        this(modelGateway, StudyKnowledgeContext.fromClasspath());
+        this(modelGateway, StudyKnowledgeContext.fromClasspath(), null);
     }
 
     GeneralSkill(ModelGateway modelGateway, StudyKnowledgeContext studyKnowledgeContext) {
+        this(modelGateway, studyKnowledgeContext, null);
+    }
+
+    public GeneralSkill(
+            ModelGateway modelGateway,
+            StudyKnowledgeContext studyKnowledgeContext,
+            UserPreferenceService userPreferenceService
+    ) {
         this.modelGateway = modelGateway;
         this.studyKnowledgeContext = studyKnowledgeContext;
+        this.userPreferenceService = userPreferenceService;
     }
 
     @Override
     public SkillDefinition definition() {
         return new SkillDefinition(
                 "general",
-                "1.0.0",
+                "1.2.0",
                 "Conversação geral e esclarecimento de solicitações",
                 Set.of(),
                 Set.of(),
@@ -57,7 +67,7 @@ public class GeneralSkill implements Skill {
     public SkillResult execute(SkillRequest request, SkillExecutionContext context) {
         long startedAt = System.nanoTime();
         ModelGateway.ModelResponse response = modelGateway.complete(
-                new ModelGateway.ModelRequest(buildPrompt(request.prompt()))
+                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt(), context.userId()))
         );
 
         if (response == null || response.answer() == null || response.answer().isBlank()) {
@@ -89,7 +99,7 @@ public class GeneralSkill implements Skill {
 
         long startedAt = System.nanoTime();
         ModelGateway.ModelResponse response = streamingModelGateway.stream(
-                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt())),
+                new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt(), context.userId())),
                 chunkConsumer
         );
         if (response == null || response.answer() == null || response.answer().isBlank()) {
@@ -109,7 +119,17 @@ public class GeneralSkill implements Skill {
         );
     }
 
-    private String buildPrompt(String prompt) {
-        return SYSTEM_PROMPT + studyKnowledgeContext.promptContext() + "\n\nSolicitação do usuário:\n" + prompt;
+    private String buildPrompt(String prompt, java.util.UUID userId) {
+        String adaptiveContext = "";
+        if (userPreferenceService != null) {
+            try {
+                adaptiveContext = userPreferenceService.promptContext(userId, prompt);
+            } catch (RuntimeException ignored) {
+                // Preferimos responder sem personalização a interromper a conversa por falha de memória.
+            }
+        }
+        return SYSTEM_PROMPT + studyKnowledgeContext.promptContext(prompt) +
+                (adaptiveContext.isBlank() ? "" : "\n\n" + adaptiveContext) +
+                "\n\nSolicitação do usuário:\n" + prompt;
     }
 }

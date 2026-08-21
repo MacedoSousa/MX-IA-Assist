@@ -47,7 +47,28 @@ mx:
 
     url: ${OLLAMA_URL:http://localhost:11434}
     model: ${OLLAMA_MODEL:qwen3:8b}
-    timeout-ms: ${OLLAMA_TIMEOUT_MS:120000}
+    vision-model: ${OLLAMA_VISION_MODEL:llava:7b}
+    timeout-ms: ${OLLAMA_TIMEOUT_MS:300000}
+    keep-alive: ${OLLAMA_KEEP_ALIVE:10m}
+    num-ctx: ${OLLAMA_NUM_CTX:8192}
+    num-thread: ${OLLAMA_NUM_THREAD:0}
+  media:
+    image-generation:
+      enabled: ${MX_IMAGE_GENERATION_ENABLED:false}
+      url: ${MX_IMAGE_GENERATION_URL:http://host.docker.internal:7860}
+      max-pixels: ${MX_IMAGE_GENERATION_MAX_PIXELS:1048576}
+      steps: ${MX_IMAGE_GENERATION_STEPS:24}
+    audio-transcription:
+      enabled: ${MX_AUDIO_TRANSCRIPTION_ENABLED:false}
+      command: ${MX_AUDIO_TRANSCRIPTION_COMMAND:whisper}
+      model: ${MX_AUDIO_TRANSCRIPTION_MODEL:base}
+      timeout-seconds: ${MX_AUDIO_TRANSCRIPTION_TIMEOUT_SECONDS:300}
+      max-chars: ${MX_AUDIO_TRANSCRIPTION_MAX_CHARS:50000}
+  attachments:
+    root: ${MX_ATTACHMENTS_ROOT:./workspace/attachments}
+    max-bytes: ${MX_ATTACHMENTS_MAX_BYTES:26214400}
+    max-text-bytes: ${MX_ATTACHMENTS_MAX_TEXT_BYTES:262144}
+    max-vision-bytes: ${MX_ATTACHMENTS_MAX_VISION_BYTES:5242880}
   workspace:
     root: ${MX_WORKSPACE_ROOT:.}
     max-entries: ${MX_WORKSPACE_MAX_ENTRIES:500}

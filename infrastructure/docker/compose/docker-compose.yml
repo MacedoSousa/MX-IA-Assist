@@ -40,11 +40,24 @@ services:
     container_name: mx-ollama
     restart: unless-stopped
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
+    cpus: ${OLLAMA_CPUS:-8.0}
+    mem_limit: ${OLLAMA_MEM_LIMIT:-12g}
+    mem_reservation: ${OLLAMA_MEM_RESERVATION:-6g}
+    shm_size: "1g"
     volumes:
       - ../../../data/ollama:/root/.ollama
     environment:
       OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_NUM_PARALLEL: ${OLLAMA_NUM_PARALLEL:-2}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-1}
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-10m}
+      OLLAMA_CONTEXT_LENGTH: ${OLLAMA_CONTEXT_LENGTH:-8192}
+      OLLAMA_MAX_QUEUE: ${OLLAMA_MAX_QUEUE:-64}
+      OLLAMA_LOAD_TIMEOUT: ${OLLAMA_LOAD_TIMEOUT:-10m}
+      OLLAMA_NO_CLOUD: ${OLLAMA_NO_CLOUD:-1}
+      OLLAMA_FLASH_ATTENTION: ${OLLAMA_FLASH_ATTENTION:-1}
+      OLLAMA_KV_CACHE_TYPE: ${OLLAMA_KV_CACHE_TYPE:-q8_0}
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
@@ -85,6 +98,23 @@ services:
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b}
       OLLAMA_TIMEOUT_MS: ${OLLAMA_TIMEOUT_MS:-300000}
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-10m}
+      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-llava:7b}
+      OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-8192}
+      OLLAMA_NUM_THREAD: ${OLLAMA_NUM_THREAD:-0}
+      MX_ATTACHMENTS_ROOT: /app/workspace/attachments
+      MX_ATTACHMENTS_MAX_BYTES: ${MX_ATTACHMENTS_MAX_BYTES:-26214400}
+      MX_ATTACHMENTS_MAX_TEXT_BYTES: ${MX_ATTACHMENTS_MAX_TEXT_BYTES:-262144}
+      MX_ATTACHMENTS_MAX_VISION_BYTES: ${MX_ATTACHMENTS_MAX_VISION_BYTES:-5242880}
+      MX_IMAGE_GENERATION_ENABLED: ${MX_IMAGE_GENERATION_ENABLED:-false}
+      MX_IMAGE_GENERATION_URL: ${MX_IMAGE_GENERATION_URL:-http://host.docker.internal:7860}
+      MX_IMAGE_GENERATION_MAX_PIXELS: ${MX_IMAGE_GENERATION_MAX_PIXELS:-1048576}
+      MX_IMAGE_GENERATION_STEPS: ${MX_IMAGE_GENERATION_STEPS:-24}
+      MX_AUDIO_TRANSCRIPTION_ENABLED: ${MX_AUDIO_TRANSCRIPTION_ENABLED:-false}
+      MX_AUDIO_TRANSCRIPTION_COMMAND: ${MX_AUDIO_TRANSCRIPTION_COMMAND:-whisper}
+      MX_AUDIO_TRANSCRIPTION_MODEL: ${MX_AUDIO_TRANSCRIPTION_MODEL:-base}
+      MX_AUDIO_TRANSCRIPTION_TIMEOUT_SECONDS: ${MX_AUDIO_TRANSCRIPTION_TIMEOUT_SECONDS:-300}
+      MX_AUDIO_TRANSCRIPTION_MAX_CHARS: ${MX_AUDIO_TRANSCRIPTION_MAX_CHARS:-50000}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q 'UP'"]
       interval: 10s
@@ -93,6 +123,7 @@ services:
       start_period: 30s
     volumes:
       - ../../../logs:/app/logs
+      - ../../../data/attachments:/app/workspace/attachments
 
   mx-web:
     build:

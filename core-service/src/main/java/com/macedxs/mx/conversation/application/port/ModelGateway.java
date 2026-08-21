@@ -1,31 +1,54 @@
 package com.macedxs.mx.conversation.application.port;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public interface ModelGateway {
 
     ModelResponse complete(ModelRequest request);
 
-    record ModelRequest(UUID userId, String prompt, String idempotencyKey) {
+    record ModelRequest(UUID userId, String prompt, String idempotencyKey, List<ModelImage> images) {
         public ModelRequest {
             if (prompt == null || prompt.isBlank()) {
                 throw new IllegalArgumentException("Prompt is required");
             }
             prompt = prompt.trim();
             idempotencyKey = normalize(idempotencyKey);
+            images = images == null ? List.of() : List.copyOf(images);
+        }
+
+        public ModelRequest(UUID userId, String prompt, String idempotencyKey) {
+            this(userId, prompt, idempotencyKey, List.of());
         }
 
         public ModelRequest(UUID userId, String prompt) {
-            this(userId, prompt, null);
+            this(userId, prompt, null, List.of());
         }
 
         public ModelRequest(String prompt) {
-            this(null, prompt, null);
+            this(null, prompt, null, List.of());
+        }
+
+        public ModelRequest withImages(List<ModelImage> additionalImages) {
+            return new ModelRequest(userId, prompt, idempotencyKey, additionalImages);
         }
 
         private static String normalize(String value) {
             return value == null || value.isBlank() ? null : value.trim();
+        }
+    }
+
+    record ModelImage(String contentType, String base64Data) {
+        public ModelImage {
+            if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
+                throw new IllegalArgumentException("Model image content type is invalid");
+            }
+            if (base64Data == null || base64Data.isBlank()) {
+                throw new IllegalArgumentException("Model image data is required");
+            }
+            contentType = contentType.trim().toLowerCase();
+            base64Data = base64Data.trim();
         }
     }
 

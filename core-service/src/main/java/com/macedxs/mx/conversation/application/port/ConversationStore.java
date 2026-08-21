@@ -8,6 +8,10 @@ public interface ConversationStore {
 
     UUID appendMessage(UUID conversationId, MessageRole role, String content);
 
+    default String recentHistoryContext(UUID conversationId, int maxMessages) {
+        return "";
+    }
+
     record ConversationRef(UUID id) {
         public ConversationRef {
             if (id == null) {

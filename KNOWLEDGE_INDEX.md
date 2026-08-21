@@ -1,9 +1,13 @@
 # Índice do conhecimento importado
 
-Gerado em `2026-08-20T15:15:51.278633+00:00`.
+Gerado em `2026-08-21T00:19:22.545833+00:00`.
 
 | Tipo | Destino | SHA-256 | Seções |
 |---|---|---|---|
+| knowledge | `knowledge/estudos/biblioteca_exercicios_autorais_v2.md` | `1eb7db22c49b4c1e…` | # Biblioteca multidisciplinar — sínteses e exercícios autorais v2; ## 1. Bancos de dados e persistência; ### Síntese |
+| knowledge | `knowledge/estudos/biblioteca_taxonomia.md` | `d84eefd809d78a7a…` | # Biblioteca técnica da squad — taxonomia e modelo de conhecimento; ## Objetivo; ## Áreas principais |
+| knowledge | `knowledge/estudos/catalogo_multidisciplinar_inicial.md` | `9b4ae60708d91a98…` | # Catálogo multidisciplinar inicial da biblioteca da squad; ## Objetivo; ## Tipos de conteúdo |
+| knowledge | `knowledge/estudos/catalogo_status.md` | `34f6c1c0b65a9dee…` | # Estado do inventário multidisciplinar; ## Escopo atual; ## Evidências já registradas |
 | knowledge | `knowledge/estudos/curriculo_ai_engineer_priorizado.md` | `9ce9e63a57a10144…` | # Currículo modular priorizado — AI Engineer; ## Objetivo; ## Módulos e prioridade |
 | knowledge | `knowledge/estudos/curriculo_ampliado_priorizado.md` | `082d1f6b213dd29b…` | # Currículo ampliado priorizado — MX e assistente pessoal local; ## Objetivo; ## Fase A — Fundamentos de dados e software |
 | knowledge | `knowledge/estudos/integracao_modulos_com_mx.md` | `29476ebfc96c6dce…` | # Integração dos módulos AI Engineer com o projeto MX; ## Diretriz; ## Mapeamento de responsabilidades |

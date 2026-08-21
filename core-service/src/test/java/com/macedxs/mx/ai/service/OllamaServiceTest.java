@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.time.Duration;
 import java.util.List;
 
+import com.macedxs.mx.conversation.application.port.ModelGateway.ModelImage;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -47,6 +49,44 @@ class OllamaServiceTest {
 
             assertThat(chunks).containsExactly("Oi ", "mundo");
             assertThat(reply).isEqualTo("Oi mundo");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void shouldSendMultimodalPayloadWithPerformanceOptions() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/api/generate", exchange -> {
+            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(body).contains("\"model\":\"llava:7b\"");
+            assertThat(body).contains("\"keep_alive\":\"10m\"");
+            assertThat(body).contains("\"num_ctx\":8192");
+            assertThat(body).contains("\"num_thread\":4");
+            assertThat(body).contains("\"images\":[\"aGVsbG8=\"]");
+            byte[] response = "{\"response\":\"imagem analisada\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(response);
+            }
+        });
+        server.start();
+
+        try {
+            OllamaService service = new OllamaService(
+                    "http://localhost:" + server.getAddress().getPort(),
+                    Duration.ofSeconds(5),
+                    "qwen3:8b",
+                    "10m",
+                    8192,
+                    4
+            );
+            String reply = service.generateText(
+                    "descreva",
+                    List.of(new ModelImage("image/png", "aGVsbG8=")),
+                    "llava:7b"
+            );
+            assertThat(reply).isEqualTo("imagem analisada");
         } finally {
             server.stop(0);
         }

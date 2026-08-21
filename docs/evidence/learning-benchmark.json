@@ -1,0 +1,17 @@
+{
+  "index": "core-service/src/main/resources/knowledge/estudos/knowledge_chunks.jsonl",
+  "chunkCount": 161,
+  "queryCount": 5,
+  "iterations": 100,
+  "loadMs": 2.644,
+  "retrievalMs": {
+    "min": 6.855,
+    "median": 7.069,
+    "p95": 7.714,
+    "max": 10.426
+  },
+  "resultCountRange": [
+    4,
+    4
+  ]
+}

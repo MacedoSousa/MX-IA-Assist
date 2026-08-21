@@ -30,13 +30,21 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import com.macedxs.mx.identity.service.UserPreferenceService;
 
 @Configuration
 public class ConversationConfiguration {
 
     @Bean
-    GeneralSkill generalSkill(@Qualifier("ollamaModelGateway") ModelGateway modelGateway) {
-        return new GeneralSkill(modelGateway);
+    GeneralSkill generalSkill(
+            @Qualifier("ollamaModelGateway") ModelGateway modelGateway,
+            UserPreferenceService userPreferenceService
+    ) {
+        return new GeneralSkill(
+                modelGateway,
+                com.macedxs.mx.agent.skill.general.StudyKnowledgeContext.fromClasspath(),
+                userPreferenceService
+        );
     }
 
     @Bean
@@ -170,8 +178,9 @@ public class ConversationConfiguration {
     @Bean
     SendMessageUseCase sendMessageUseCase(
             ConversationStore conversationStore,
-            MxCoreModelGateway mxCoreModelGateway
+            MxCoreModelGateway mxCoreModelGateway,
+            com.macedxs.mx.attachment.service.AttachmentService attachmentService
     ) {
-        return new SendMessageUseCase(conversationStore, mxCoreModelGateway);
+        return new SendMessageUseCase(conversationStore, mxCoreModelGateway, attachmentService);
     }
 }

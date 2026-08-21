@@ -57,7 +57,8 @@ public class ChatV1SseController {
                                 user.getId(),
                                 request.conversationId(),
                                 request.prompt(),
-                                request.idempotencyKey()
+                                request.idempotencyKey(),
+                                request.attachmentIds()
                         ),
                         new ModelStreamObserver() {
                             @Override

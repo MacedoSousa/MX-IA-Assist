@@ -35,7 +35,8 @@ public class ChatV1Controller {
                         user.getId(),
                         request.conversationId(),
                         request.prompt(),
-                        request.idempotencyKey()
+                        request.idempotencyKey(),
+                        request.attachmentIds()
                 )
         );
 

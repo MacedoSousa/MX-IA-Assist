@@ -1,5 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useRef, useState } from "react";
+import * as DocumentPicker from "expo-document-picker";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,7 +17,9 @@ import {
   MxApiError,
   mxApi,
   type ChatMessage,
+  type ConversationHistoryMessage,
   type ExecutionRunStatusResponse,
+  type UploadedAttachment,
 } from "./src/api/client";
 import {
   clearSession,
@@ -33,7 +36,7 @@ import {
 
 type ViewState = "checking" | "login" | "chat";
 
-type RenderMessage = ChatMessage & { id: string };
+type RenderMessage = ChatMessage & { id: string; attachmentNames?: string[] };
 
 function mergeRuns(current: ExecutionRunStatusResponse[], incoming: ExecutionRunStatusResponse[]) {
   const byId = new Map(current.map((run) => [run.runId, run]));
@@ -61,6 +64,8 @@ export default function App() {
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [approvalNonce, setApprovalNonce] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [uploadedAttachments, setUploadedAttachments] = useState<UploadedAttachment[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [online, setOnline] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +77,23 @@ export default function App() {
 
   useEffect(() => {
     async function restoreSession() {
+      const restoreHistory = async (savedConversationId: string | null) => {
+        if (!savedConversationId) return;
+        try {
+          const firstPage = await mxApi.getConversationHistory(savedConversationId, 0, 100);
+          const restored = firstPage.content
+            .filter((message): message is ConversationHistoryMessage & { role: "USER" | "ASSISTANT" } => message.role === "USER" || message.role === "ASSISTANT")
+            .map((message) => ({
+              id: message.id,
+              role: message.role,
+              content: message.content,
+            } satisfies RenderMessage));
+          setMessages(restored);
+        } catch {
+          // A restored session must remain usable even if history is temporarily unavailable.
+        }
+      };
+
       try {
         const savedConversationId = await readConversationId();
         const savedRunCursor = await readRunCursor();
@@ -82,6 +104,7 @@ export default function App() {
 
         const accessToken = await readAccessToken();
         if (accessToken) {
+          await restoreHistory(savedConversationId);
           setViewState("chat");
           return;
         }
@@ -91,6 +114,7 @@ export default function App() {
           return;
         }
         await mxApi.refresh();
+        await restoreHistory(savedConversationId);
         setViewState("chat");
       } catch {
         await clearSession();
@@ -174,19 +198,53 @@ export default function App() {
     }
   }
 
+  async function handlePickAttachment() {
+    if (busy || uploadingAttachment || !online) return;
+    setError(null);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["text/*", "application/pdf", "image/*", "audio/*"],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      setUploadingAttachment(true);
+      const uploaded = await mxApi.uploadAttachment({
+        uri: asset.uri,
+        name: asset.name,
+        type: asset.mimeType ?? "application/octet-stream",
+        size: asset.size,
+      });
+      setUploadedAttachments((current) => [...current, uploaded]);
+    } catch (cause) {
+      setError(cause instanceof MxApiError ? cause.message : "Não foi possível anexar o arquivo.");
+    } finally {
+      setUploadingAttachment(false);
+    }
+  }
+
+  function removeAttachment(attachmentId: string) {
+    if (busy) return;
+    setUploadedAttachments((current) => current.filter((item) => item.id !== attachmentId));
+  }
+
   async function handleSend() {
-    const value = prompt.trim();
+    const value = prompt.trim() || (uploadedAttachments.length > 0 ? "Analise os anexos enviados." : "");
     if (!value || busy || !online) return;
 
     const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const assistantId = `${requestId}-assistant`;
+    const attachmentIds = uploadedAttachments.map((attachment) => attachment.id);
+    const attachmentNames = uploadedAttachments.map((attachment) => attachment.filename);
     setError(null);
     setBusy(true);
     setPrompt("");
+    setUploadedAttachments([]);
     await writeDraftPrompt("");
     setMessages((current) => [
       ...current,
-      { id: `${requestId}-user`, role: "USER", content: value },
+      { id: `${requestId}-user`, role: "USER", content: value, attachmentNames },
       { id: assistantId, role: "ASSISTANT", content: "" },
     ]);
 
@@ -198,7 +256,7 @@ export default function App() {
             message.id === assistantId ? { ...message, content: `${message.content}${delta}` } : message,
           ));
         },
-      });
+      }, attachmentIds);
       setConversationId(response.conversationId);
       await writeConversationId(response.conversationId);
       setActiveRunId(response.runId);
@@ -342,13 +400,15 @@ export default function App() {
         data={messages}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={<View style={styles.emptyState}><Text style={styles.emptyTitle}>O MX está pronto.</Text><Text style={styles.muted}>Comece uma conversa. Os runs ficam sincronizados para acompanhamento em outro canal.</Text></View>}
-        renderItem={({ item }) => <View style={[styles.bubble, item.role === "USER" ? styles.userBubble : styles.assistantBubble]}><Text style={styles.bubbleRole}>{item.role === "USER" ? "Você" : "MX"}</Text><Text style={styles.bubbleText}>{item.content}</Text></View>}
+        renderItem={({ item }) => <View style={[styles.bubble, item.role === "USER" ? styles.userBubble : styles.assistantBubble]}><Text style={styles.bubbleRole}>{item.role === "USER" ? "Você" : "MX"}</Text><Text style={styles.bubbleText}>{item.content}</Text>{item.attachmentNames?.map((name) => <Text key={name} style={styles.attachmentText}>Anexo: {name}</Text>)}</View>}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {uploadedAttachments.length > 0 ? <View style={styles.attachmentBar}>{uploadedAttachments.map((attachment) => <View key={attachment.id} style={styles.attachmentChip}><Text numberOfLines={1} style={styles.attachmentChipText}>{attachment.filename}</Text><Pressable disabled={busy} onPress={() => removeAttachment(attachment.id)}><Text style={styles.removeAttachment}>×</Text></Pressable></View>)}</View> : null}
       <View style={styles.composer}>
-        <TextInput editable={!busy && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onSubmitEditing={handleSend} placeholder={online ? "Escreva sua solicitação..." : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} />
-        <Pressable disabled={busy || !online || !prompt.trim()} onPress={handleSend} style={({ pressed }) => [styles.sendButton, pressed && styles.pressed, (busy || !online || !prompt.trim()) && styles.disabled]}>{busy ? <ActivityIndicator color="#08111f" /> : <Text style={styles.sendButtonText}>Enviar</Text>}</Pressable>
+        <Pressable disabled={busy || uploadingAttachment || !online} onPress={handlePickAttachment} style={({ pressed }) => [styles.attachButton, pressed && styles.pressed, (busy || uploadingAttachment || !online) && styles.disabled]}><Text style={styles.attachButtonText}>{uploadingAttachment ? "..." : "+"}</Text></Pressable>
+        <TextInput editable={!busy && !uploadingAttachment && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onSubmitEditing={handleSend} placeholder={online ? "Escreva sua solicitação..." : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} />
+        <Pressable disabled={busy || uploadingAttachment || !online || (!prompt.trim() && uploadedAttachments.length === 0)} onPress={handleSend} style={({ pressed }) => [styles.sendButton, pressed && styles.pressed, (busy || uploadingAttachment || !online || (!prompt.trim() && uploadedAttachments.length === 0)) && styles.disabled]}>{busy ? <ActivityIndicator color="#08111f" /> : <Text style={styles.sendButtonText}>Enviar</Text>}</Pressable>
       </View>
     </KeyboardAvoidingView>
   );
@@ -389,6 +449,13 @@ const styles = StyleSheet.create({
   assistantBubble: { alignSelf: "flex-start", backgroundColor: "#101c2d", borderColor: "#1e3048", borderWidth: 1 },
   bubbleRole: { color: "#63e6be", fontSize: 11, fontWeight: "800", letterSpacing: 1, marginBottom: 4, textTransform: "uppercase" },
   bubbleText: { color: "#f4f7fb", fontSize: 16, lineHeight: 23 },
+  attachmentText: { color: "#a9e8d2", fontSize: 12, marginTop: 6 },
+  attachmentBar: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 },
+  attachmentChip: { alignItems: "center", backgroundColor: "#102a35", borderColor: "#2a6e70", borderRadius: 10, borderWidth: 1, flexDirection: "row", maxWidth: "100%", paddingHorizontal: 9, paddingVertical: 6 },
+  attachmentChipText: { color: "#c6f4e4", flexShrink: 1, fontSize: 12 },
+  removeAttachment: { color: "#ff9b9b", fontSize: 18, lineHeight: 16, marginLeft: 6 },
+  attachButton: { alignItems: "center", borderColor: "#29405d", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 42, minWidth: 42 },
+  attachButtonText: { color: "#63e6be", fontSize: 24, fontWeight: "700", lineHeight: 28 },
   composer: { alignItems: "flex-end", backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 16, borderWidth: 1, flexDirection: "row", gap: 10, marginBottom: 18, padding: 10 },
   promptInput: { color: "#f4f7fb", flex: 1, fontSize: 16, maxHeight: 120, minHeight: 42, paddingHorizontal: 6, paddingVertical: 9 },
   sendButton: { alignItems: "center", backgroundColor: "#63e6be", borderRadius: 10, justifyContent: "center", minHeight: 42, minWidth: 76, paddingHorizontal: 12 },

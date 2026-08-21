@@ -1,8 +1,94 @@
 {
-  "schema_version": "1.0",
-  "generated_at": "2026-08-20T15:15:51.278633+00:00",
-  "source": "estudos-autorizados",
+  "schema_version": "1.1",
+  "generated_at": "2026-08-21T00:19:22.545833+00:00",
+  "source": "estudos-referenciados",
   "records": [
+    {
+      "source": "biblioteca_exercicios_autorais_v2.md",
+      "destination": "knowledge/estudos/biblioteca_exercicios_autorais_v2.md",
+      "sha256": "1eb7db22c49b4c1eeb885dde108d886f1ded90be23eac515e9fd37d680c079e1",
+      "bytes": 7551,
+      "kind": "knowledge",
+      "headings": [
+        "# Biblioteca multidisciplinar — sínteses e exercícios autorais v2",
+        "## 1. Bancos de dados e persistência",
+        "### Síntese",
+        "### Exercício autoral",
+        "### Gabarito orientativo",
+        "## 2. Testes e qualidade",
+        "### Síntese",
+        "### Exercício autoral",
+        "### Gabarito orientativo",
+        "## 3. Kubernetes, Helm e releases",
+        "### Síntese",
+        "### Exercício autoral",
+        "### Gabarito orientativo",
+        "## 4. Redes, DNS e servidores",
+        "### Síntese",
+        "### Exercício autoral",
+        "### Gabarito orientativo",
+        "## 5. Frontend, mobile e UX/UI",
+        "### Síntese",
+        "### Exercício autoral"
+      ]
+    },
+    {
+      "source": "biblioteca_taxonomia.md",
+      "destination": "knowledge/estudos/biblioteca_taxonomia.md",
+      "sha256": "d84eefd809d78a7ad90afa7998ff986b17826cbc1457e95aff9c97ab3c0dc33d",
+      "bytes": 5040,
+      "kind": "knowledge",
+      "headings": [
+        "# Biblioteca técnica da squad — taxonomia e modelo de conhecimento",
+        "## Objetivo",
+        "## Áreas principais",
+        "## Estrutura de cada módulo",
+        "## Metadados mínimos",
+        "## Regra de autoria e evidência",
+        "## Estados do conhecimento",
+        "## Ordem de evolução",
+        "## Expansão multidisciplinar"
+      ]
+    },
+    {
+      "source": "catalogo_multidisciplinar_inicial.md",
+      "destination": "knowledge/estudos/catalogo_multidisciplinar_inicial.md",
+      "sha256": "9b4ae60708d91a98560f0ac6c783a6ef34e1bb245ef71acd3bc8435d3777e196",
+      "bytes": 11075,
+      "kind": "knowledge",
+      "headings": [
+        "# Catálogo multidisciplinar inicial da biblioteca da squad",
+        "## Objetivo",
+        "## Tipos de conteúdo",
+        "## Categorias visíveis no catálogo",
+        "## Itens de gestão e negócios observados",
+        "## Conteúdos editoriais relacionados a livros",
+        "## Carreiras técnicas observadas na busca por livros",
+        "## Metadados a completar",
+        "## Limites de uso",
+        "## Nova busca: administração, negócios, marketing, vendas, carreira e produtividade",
+        "## Nova busca: administração, gestão de pessoas, marketing, vendas e produtividade",
+        "## Estado do inventário",
+        "## Nova busca: finanças, administração, empreendedorismo e negócios",
+        "## Nova busca: educação, criatividade, design, comunicação e desenvolvimento pessoal",
+        "## Nova busca: cultura, saúde, bem-estar, legislação e sustentabilidade"
+      ]
+    },
+    {
+      "source": "catalogo_status.md",
+      "destination": "knowledge/estudos/catalogo_status.md",
+      "sha256": "34f6c1c0b65a9deee91a8da67d3dd9e4c71fa6a93371aeaf6f316103371875a4",
+      "bytes": 1982,
+      "kind": "knowledge",
+      "headings": [
+        "# Estado do inventário multidisciplinar",
+        "## Escopo atual",
+        "## Evidências já registradas",
+        "## Regras da biblioteca",
+        "## Próximas etapas",
+        "## Limitação operacional"
+      ]
+    },
     {
       "source": "curriculo_ai_engineer_priorizado.md",
       "destination": "knowledge/estudos/curriculo_ai_engineer_priorizado.md",
@@ -826,9 +912,16 @@
       ]
     }
   ],
+  "retrieval": {
+    "chunks": "knowledge_chunks.jsonl",
+    "taxonomy": "knowledge_taxonomy.json",
+    "chunk_count": 161,
+    "domain_count": 6
+  },
   "counts": {
-    "records": 49,
-    "copied": 0,
+    "records": 53,
+    "copied": 4,
+    "changed": 0,
     "skipped": 49,
     "errors": 0
   }

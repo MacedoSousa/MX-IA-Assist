@@ -94,6 +94,48 @@ export type ChatStreamHandlers = {
   onError?: (event: ChatV1StreamError) => void;
 };
 
+export type UploadedAttachment = {
+  id: string;
+  filename: string;
+  contentType: string;
+  size: number;
+  checksumSha256: string;
+  createdAt: string;
+};
+
+export type AttachmentUploadInput =
+  | { uri: string; name: string; type: string; size?: number }
+  | Blob & { name?: string; type?: string };
+
+export type ConversationHistoryMessage = {
+  id: string;
+  role: "USER" | "ASSISTANT" | "SYSTEM";
+  content: string;
+  createdAt: string;
+};
+
+export type ConversationHistoryPage = {
+  content: ConversationHistoryMessage[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+};
+
+export type AudioTranscriptionResponse = {
+  attachmentId: string;
+  text: string;
+  engine: string;
+};
+
+export type ImageGenerationInput = {
+  prompt: string;
+  width?: number;
+  height?: number;
+};
+
 export type ChatV1Response = {
   status: "COMPLETED";
   correlationId: string | null;
@@ -168,10 +210,58 @@ export class MxApiClient {
     prompt: string,
     conversationId?: string,
     idempotencyKey?: string,
+    attachmentIds: string[] = [],
   ): Promise<ChatV1Response> {
     return this.request<ChatV1Response>("/api/v1/conversations/messages", {
       method: "POST",
-      body: JSON.stringify({ conversationId, prompt, idempotencyKey }),
+      body: JSON.stringify({ conversationId, prompt, idempotencyKey, attachmentIds }),
+    });
+  }
+
+  async uploadAttachment(input: AttachmentUploadInput): Promise<UploadedAttachment> {
+    const body = new FormData();
+    if ("uri" in input) {
+      body.append("file", {
+        uri: input.uri,
+        name: input.name,
+        type: input.type,
+      } as unknown as Blob);
+    } else {
+      body.append("file", input, input.name || "attachment");
+    }
+    return this.requestMultipart<UploadedAttachment>("/api/v1/attachments", body);
+  }
+
+  async getConversationHistory(
+    conversationId: string,
+    page = 0,
+    size = 50,
+  ): Promise<ConversationHistoryPage> {
+    const params = new URLSearchParams({
+      page: String(Math.max(0, page)),
+      size: String(Math.max(1, Math.min(size, 100))),
+    });
+    return this.request<ConversationHistoryPage>(
+      `/api/v1/conversations/${encodeURIComponent(conversationId)}/messages?${params.toString()}`,
+      { method: "GET" },
+    );
+  }
+
+  async transcribeAudio(attachmentId: string): Promise<AudioTranscriptionResponse> {
+    return this.request<AudioTranscriptionResponse>(
+      `/api/v1/media/audio/${encodeURIComponent(attachmentId)}/transcription`,
+      { method: "POST" },
+    );
+  }
+
+  async generateImage(input: ImageGenerationInput): Promise<UploadedAttachment> {
+    return this.request<UploadedAttachment>("/api/v1/media/images", {
+      method: "POST",
+      body: JSON.stringify({
+        prompt: input.prompt,
+        width: input.width ?? 768,
+        height: input.height ?? 768,
+      }),
     });
   }
 
@@ -180,12 +270,13 @@ export class MxApiClient {
     conversationId: string | undefined,
     idempotencyKey: string | undefined,
     handlers: ChatStreamHandlers,
+    attachmentIds: string[] = [],
   ): Promise<ChatV1Response> {
     return this.requestStream(
       "/api/v1/conversations/messages/stream",
       {
         method: "POST",
-        body: JSON.stringify({ conversationId, prompt, idempotencyKey }),
+        body: JSON.stringify({ conversationId, prompt, idempotencyKey, attachmentIds }),
       },
       handlers,
     );
@@ -345,6 +436,37 @@ export class MxApiClient {
     }
 
     return this.refreshPromise;
+  }
+
+  private async requestMultipart<T>(path: string, body: FormData, retryOnUnauthorized = true): Promise<T> {
+    const token = await readAccessToken();
+    const headers = new Headers();
+    headers.set("Accept", "application/json");
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: "POST",
+      headers,
+      body,
+    });
+    if (!response.ok && response.status === 401 && retryOnUnauthorized) {
+      const refreshedToken = await this.refreshAccessToken();
+      if (refreshedToken) {
+        return this.requestMultipart(path, body, false);
+      }
+    }
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new MxApiError(
+        response.status,
+        payload?.code ?? "MX_API_ERROR",
+        payload?.message ?? "Não foi possível enviar o anexo.",
+        payload?.correlationId,
+      );
+    }
+    return response.json() as Promise<T>;
   }
 
   private async request<T>(path: string, init: RequestInit, retryOnUnauthorized = true): Promise<T> {

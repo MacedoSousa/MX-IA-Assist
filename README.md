@@ -44,7 +44,11 @@ A regra central é que dependências apontam para dentro: o domínio e os casos 
 | Skills | Implementado | Skills `general`, `development` e `quality` atrás do MX Core, com contratos explícitos e roteamento interno. |
 | Tools | Integradas com segurança | Parser estruturado `[MX_TOOL_CALL]`, allowlist, `ToolExecutor`, sandbox, bloqueio de traversal/symlink, escrita atômica e limite de bytes. |
 | Aprovação | Integrada no caminho de produção | `REQUIRE_APPROVAL` cria `ExecutionRun` em `AWAITING_APPROVAL` com nonce hash, expiração, idempotência e propagação REST/SSE. |
-| Cliente | Implementado em nível funcional | App Expo universal com login, logout, refresh automático, chat síncrono, streaming e consulta/aprovação de runs. |
+| Cliente | Implementado em nível funcional | App Expo universal com login, logout, refresh automático, chat síncrono, streaming, histórico inicial, seleção de anexos e controles de mídia. |
+| Histórico e memória | Implementados | Histórico paginado, memória recente limitada no prompt e perfil persistente de aprendizagem por usuário. |
+| Aprendizagem adaptativa | Implementada em nível inicial | Taxonomia de domínios, tópicos detectados lexicalmente, nível/estilo configuráveis e contexto personalizado para a GeneralSkill. |
+| Multimodalidade | Implementada com engines opcionais | Upload/download privado de anexos, imagens enviadas ao modelo visual configurável, transcrição Whisper opcional e geração Stable Diffusion opcional. |
+| Desempenho Ollama | Implementado em nível configurável | `keep_alive`, `num_ctx`, `num_thread`, paralelismo controlado, cache persistente, cloud desabilitada por padrão e porta publicada somente em localhost. |
 | Observabilidade | Implementada na fundação operacional | Actuator, healthchecks, métricas Micrometer, correlação, evidências de execução e runbook operacional. Dashboards históricos e alertas externos continuam como evolução. |
 
 ## Requisitos locais
@@ -110,6 +114,12 @@ O contrato oficial está em [`docs/api/mx-v1.yaml`](docs/api/mx-v1.yaml). A API 
 | `POST` | `/api/auth/logout` | Revogar a sessão atual. |
 | `POST` | `/api/v1/conversations/messages` | Processar uma mensagem de forma síncrona. |
 | `POST` | `/api/v1/conversations/messages/stream` | Processar uma mensagem com resposta incremental via SSE. |
+| `GET` | `/api/v1/conversations/{conversationId}/messages` | Consultar histórico paginado e isolado por usuário. |
+| `POST` | `/api/v1/attachments` | Armazenar um anexo privado com allowlist MIME, limite e checksum. |
+| `GET` | `/api/v1/attachments/{attachmentId}` | Baixar um anexo pertencente ao usuário autenticado. |
+| `POST` | `/api/v1/media/audio/{attachmentId}/transcription` | Transcrever áudio por engine local opcional. |
+| `POST` | `/api/v1/media/images` | Gerar imagem por engine local opcional. |
+| `GET/PUT` | `/api/v1/users/me/preferences` | Consultar e ajustar perfil adaptativo de aprendizagem. |
 | `GET` | `/api/v1/runs/{runId}` | Consultar o run do usuário autenticado. |
 | `POST` | `/api/v1/runs/{runId}/approve` | Aprovar um run pendente. |
 | `POST` | `/api/v1/runs/{runId}/reject` | Rejeitar um run com motivo obrigatório. |
@@ -120,8 +130,10 @@ Exemplo de mensagem síncrona:
 curl -X POST http://localhost:8080/api/v1/conversations/messages \
   -H "Authorization: Bearer <access-token>" \
   -H "Content-Type: application/json" \
-  -d '{"prompt":"Explique como organizar este projeto"}'
+  -d '{"prompt":"Explique como organizar este projeto","attachmentIds":[]}'
 ```
+
+Para anexar um arquivo, faça primeiro `POST /api/v1/attachments` como `multipart/form-data` e envie os UUIDs retornados em `attachmentIds`. O cliente Expo automatiza esse fluxo no web, Android e iOS. A transcrição e a geração de imagem permanecem desligadas por padrão até que uma engine local seja configurada.
 
 O endpoint de streaming retorna eventos SSE. O evento `started` apresenta `runId` e `correlationId`; eventos `token` carregam deltas textuais; `completed` informa o encerramento; `error` representa falha controlada do fluxo.
 
@@ -137,15 +149,17 @@ As validações executadas no ambiente de desenvolvimento foram:
 
 | Validação | Resultado conhecido |
 |---|---|
-| Suíte TDD do backend | 79 testes, 0 falhas, 0 erros e 0 ignorados; imagem `mx-core` reconstruída com sucesso. |
+| Suíte TDD do backend | 96 testes, 0 falhas, 0 erros e 0 ignorados; testes de memória, preferências, anexos e payload multimodal incluídos. |
 | TypeScript do cliente | `npm run typecheck` aprovado. |
-| Exportação web Expo | `npx expo export --platform web` aprovado e servido pelo Nginx em `mx-web`. |
-| Stack Docker | `mx-core` healthy, `mx-web` ativo em 8082, PostgreSQL/Redis/Open WebUI saudáveis e Ollama com `qwen3:8b` disponível. |
-| E2E local | Registro, login, sessão persistida e chat síncrono concluídos contra o Ollama local. |
-| Always-On | Tarefa `MX-AI-Assistant-AlwaysOn` executada com `LastTaskResult = 0`; reinício idempotente validado. |
+| Exportação web Expo | `npx expo export --platform web` aprovado; bundle web de 446 kB gerado. |
+| Compose | YAML válido, seis serviços preservados, Ollama publicado somente em `127.0.0.1:11434` e `OLLAMA_NO_CLOUD=1`. |
+| Benchmark de aprendizagem | 161 chunks; carga 2,644 ms; mediana lexical 7,069 ms; P95 7,714 ms. |
+| OpenAPI | 11 rotas e 15 schemas validados por `scripts/validate_openapi.py`. |
+| E2E local | Registro, login, sessão persistida e chat síncrono foram validados anteriormente contra o Ollama local; a revalidação ao vivo depende do daemon Docker/containers ativos. |
+| Always-On | Tarefa `MX-AI-Assistant-AlwaysOn` foi validada anteriormente; serviços MX mantêm `restart: unless-stopped`. |
 |
 
-As provas detalhadas e os comandos reproduzíveis estão em [`docs/portfolio/README.md`](docs/portfolio/README.md), incluindo inventário Docker, healthchecks, log Maven, sumário TDD, teste E2E, diagrama e vídeo de apresentação. Execute novamente os comandos após qualquer alteração. O sucesso dessas verificações não equivale a alta disponibilidade de produção; backups restauráveis e observabilidade histórica continuam como evoluções recomendadas.
+As provas detalhadas e os comandos reproduzíveis estão em [`docs/portfolio/README.md`](docs/portfolio/README.md) e [`docs/evidence/validation-phase-8.md`](docs/evidence/validation-phase-8.md), incluindo inventário Docker, healthchecks, sumário TDD, benchmark do conhecimento, OpenAPI e limitações da validação. Execute novamente os comandos após qualquer alteração. O sucesso dessas verificações não equivale a alta disponibilidade de produção; backups restauráveis, observabilidade histórica e validação E2E com os containers ativos continuam como evoluções recomendadas.
 
 ## Estrutura do projeto
 
