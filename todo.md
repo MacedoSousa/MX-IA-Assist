@@ -12,3 +12,15 @@
 - [x] Corrigir o envio multipart de arquivos e o acionamento da geração de imagens.
 - [x] Reconstruir os serviços afetados e realizar smoke tests autenticados.
 - [x] Publicar as correções e registrar os resultados da validação.
+
+## Recreação segura dos contêineres
+
+- [x] Registrar os dados persistentes que devem ser preservados antes da recriação.
+- [x] Recriar apenas os serviços MX, sem usar remoção de volumes ou diretórios de dados.
+- [x] Confirmar a saúde dos serviços e a preservação das memórias após a inicialização.
+
+## Backup local verificável
+
+- [x] Criar um snapshot consistente do PostgreSQL e dos diretórios persistentes do MX.
+- [x] Gerar manifesto com hashes SHA-256 e instruções de restauração.
+- [x] Registrar e publicar o backup operacional no Git, sem versionar dados sensíveis.
