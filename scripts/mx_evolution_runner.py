@@ -255,7 +255,7 @@ def write_evidence(root: Path, normalized: dict[str, Any], validation_results: l
         f"- Type: `{normalized['type']}`",
         f"- Slug: `{normalized['slug']}`",
         f"- Description: {normalized['description']}",
-        f"- Commit: `{commit or 'not created'}`",
+        f"- Commit: `{commit or 'created after validation by runner'}`",
         "",
         "## Validations",
         "",
