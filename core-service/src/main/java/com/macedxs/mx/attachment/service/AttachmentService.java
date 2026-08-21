@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -64,6 +63,7 @@ public class AttachmentService {
     private final long maxBytes;
     private final long maxTextBytes;
     private final long maxVisionBytes;
+    private final AttachmentTextExtractor textExtractor;
 
     @Autowired
     public AttachmentService(
@@ -97,6 +97,7 @@ public class AttachmentService {
         this.maxBytes = maxBytes;
         this.maxTextBytes = maxTextBytes;
         this.maxVisionBytes = maxVisionBytes;
+        this.textExtractor = new AttachmentTextExtractor();
     }
 
     @Transactional
@@ -206,10 +207,9 @@ public class AttachmentService {
             if (!Files.isRegularFile(path)) {
                 throw new IllegalStateException("Attachment content is missing");
             }
-            if (entity.getContentType().startsWith("text/")) {
-                textParts.add("Arquivo " + entity.getOriginalFilename() + ":\n" + readText(path));
-            } else if (isJson(entity.getContentType())) {
-                textParts.add("Arquivo " + entity.getOriginalFilename() + ":\n" + readText(path));
+            if (supportsTextExtraction(entity.getContentType())) {
+                textParts.add("Arquivo " + entity.getOriginalFilename() + ":\n"
+                        + readText(path, entity.getContentType()));
             } else if (entity.getContentType().startsWith("image/")) {
                 if (entity.getSize() > maxVisionBytes) {
                     throw new IllegalArgumentException("Image exceeds the vision model limit");
@@ -264,14 +264,8 @@ public class AttachmentService {
         return total;
     }
 
-    private String readText(Path path) {
-        try {
-            byte[] bytes = Files.readAllBytes(path);
-            int length = (int) Math.min(bytes.length, maxTextBytes);
-            return new String(bytes, 0, length, StandardCharsets.UTF_8);
-        } catch (IOException exception) {
-            throw new IllegalStateException("Could not read text attachment", exception);
-        }
+    private String readText(Path path, String contentType) {
+        return textExtractor.extract(path, contentType, Math.toIntExact(maxTextBytes));
     }
 
     private String checksum(Path path) throws IOException {
@@ -329,6 +323,17 @@ public class AttachmentService {
 
     private boolean isSupportedContentType(String contentType) {
         return contentType.startsWith("text/") || ALLOWED_CONTENT_TYPES.contains(contentType);
+    }
+
+    private boolean supportsTextExtraction(String contentType) {
+        return contentType.startsWith("text/")
+                || "application/json".equals(contentType)
+                || "application/xml".equals(contentType)
+                || "application/pdf".equals(contentType)
+                || "application/rtf".equals(contentType)
+                || "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(contentType)
+                || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet".equals(contentType)
+                || "application/vnd.openxmlformats-officedocument.presentationml.presentation".equals(contentType);
     }
 
     private String safeFilename(String originalFilename) {

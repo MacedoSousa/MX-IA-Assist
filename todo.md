@@ -31,3 +31,18 @@
 - [x] Determinar a causa provável da queda com evidências técnicas.
 - [x] Implementar proteções de baixo risco para recuperação automática e observabilidade.
 - [x] Validar a recuperação e publicar o diagnóstico priorizado.
+
+## Auditoria de obsolescência e desempenho
+
+- [ ] Inventariar versões, dependências e gargalos de tempo, memória e GPU.
+- [ ] Classificar componentes obsoletos, riscos técnicos e oportunidades de alto impacto.
+- [ ] Publicar o roadmap técnico priorizado, sem aplicar atualizações de versão não validadas.
+
+## Processamento de anexos
+
+- [x] Mapear o fluxo entre upload, extração de conteúdo e mensagens da conversa.
+- [x] Implementar extração segura e contexto de anexos por conversa.
+- [x] Corrigir a serialização do contrato de mensagem usada na validação integrada.
+- [x] Preservar imagens anexadas até o gateway visual, sem descartá-las no roteador de skills.
+- [x] Validar PDF, texto e imagem em uma resposta fundamentada do MX.
+- [x] Publicar a correção sem versionar anexos nem dados pessoais.
