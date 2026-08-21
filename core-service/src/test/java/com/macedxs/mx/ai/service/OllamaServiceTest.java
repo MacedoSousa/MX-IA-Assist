@@ -60,9 +60,10 @@ class OllamaServiceTest {
         server.createContext("/api/generate", exchange -> {
             String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
             assertThat(body).contains("\"model\":\"llava:7b\"");
-            assertThat(body).contains("\"keep_alive\":\"10m\"");
+            assertThat(body).contains("\"keep_alive\":\"1h\"");
             assertThat(body).contains("\"num_ctx\":8192");
             assertThat(body).contains("\"num_thread\":4");
+            assertThat(body).contains("\"think\":true");
             assertThat(body).contains("\"images\":[\"aGVsbG8=\"]");
             byte[] response = "{\"response\":\"imagem analisada\"}".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, response.length);
@@ -77,7 +78,7 @@ class OllamaServiceTest {
                     "http://localhost:" + server.getAddress().getPort(),
                     Duration.ofSeconds(5),
                     "qwen3:8b",
-                    "10m",
+                    "1h",
                     8192,
                     4
             );
@@ -87,6 +88,29 @@ class OllamaServiceTest {
                     "llava:7b"
             );
             assertThat(reply).isEqualTo("imagem analisada");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void shouldDisableThinkingForShortGreetings() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/api/generate", exchange -> {
+            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(body).contains("\"model\":\"deepseek-r1:14b\"");
+            assertThat(body).contains("\"think\":false");
+            byte[] response = "{\"response\":\"Oi!\",\"done\":true}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(response);
+            }
+        });
+        server.start();
+
+        try {
+            String reply = new OllamaService("http://localhost:" + server.getAddress().getPort()).generateText("oi");
+            assertThat(reply).isEqualTo("Oi!");
         } finally {
             server.stop(0);
         }

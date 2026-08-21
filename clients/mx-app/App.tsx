@@ -93,6 +93,9 @@ export default function App() {
   const [syncing, setSyncing] = useState(false);
   const [online, setOnline] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [responseElapsedSeconds, setResponseElapsedSeconds] = useState(0);
+  const [receivedToken, setReceivedToken] = useState(false);
+  const responseStartedAtRef = useRef<number | undefined>(undefined);
   const runCursorRef = useRef<string | undefined>(undefined);
 
   const activeRun = runs.find((run) => run.runId === activeRunId)
@@ -316,12 +319,31 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!busy) {
+      setResponseElapsedSeconds(0);
+      return;
+    }
+    const timer = setInterval(() => {
+      const startedAt = responseStartedAtRef.current;
+      if (startedAt) setResponseElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [busy]);
+
   const subtitle = useMemo(() => {
     if (viewState === "checking") return "Preparando sua sessão local";
     if (viewState === "login") return "Seu assistente pessoal, em todos os seus dispositivos";
     if (!online) return "Offline: rascunho preservado; nenhuma tool será executada automaticamente";
     return syncing ? "Sincronizando runs e aprovações" : "O MX Core coordena as skills especialistas por você";
   }, [online, syncing, viewState]);
+
+  const responseStage = useMemo(() => {
+    if (!busy) return "DeepSeek R1 14B · execução local";
+    if (!receivedToken && responseElapsedSeconds >= 12) return `Aquecendo o modelo local · ${responseElapsedSeconds}s`;
+    if (!receivedToken) return `Raciocinando · ${responseElapsedSeconds}s`;
+    return `Gerando resposta · ${responseElapsedSeconds}s`;
+  }, [busy, receivedToken, responseElapsedSeconds]);
 
   async function handleLogin() {
     if (!email.trim() || !password) {
@@ -533,6 +555,9 @@ export default function App() {
     const attachmentNames = uploadedAttachments.map((attachment) => attachment.filename);
     setError(null);
     setBusy(true);
+    responseStartedAtRef.current = Date.now();
+    setResponseElapsedSeconds(0);
+    setReceivedToken(false);
     setPrompt("");
     setUploadedAttachments([]);
     await writeDraftPrompt("");
@@ -546,6 +571,7 @@ export default function App() {
       const response = await mxApi.sendMessageStream(value, conversationId, requestId, {
         onStarted: ({ runId }) => setActiveRunId(runId),
         onToken: ({ delta }) => {
+          setReceivedToken(true);
           setMessages((current) => current.map((message) =>
             message.id === assistantId ? { ...message, content: `${message.content}${delta}` } : message,
           ));
@@ -570,6 +596,7 @@ export default function App() {
       setError(cause instanceof MxApiError ? cause.message : "O MX não conseguiu concluir a mensagem.");
     } finally {
       setBusy(false);
+      responseStartedAtRef.current = undefined;
     }
   }
 
@@ -664,15 +691,16 @@ export default function App() {
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <StatusBar style="light" />
       <View style={styles.appShell}>
-        <View style={styles.topBar}>
+          <View style={styles.topBar}>
           <View style={styles.brandBlock}>
             <View style={styles.brandMark}><Text style={styles.brandMarkText}>MX</Text></View>
             <View style={styles.brandCopy}>
-              <Text style={styles.eyebrow}>ASSISTENTE LOCAL</Text>
-              <Text style={styles.headerTitle}>Olá. Como posso ajudar?</Text>
+              <Text style={styles.eyebrow}>MX CORE · LOCAL-FIRST</Text>
+              <Text style={styles.headerTitle}>Seu espaço de comando</Text>
               <Text style={styles.subtitle}>{subtitle}</Text>
             </View>
           </View>
+          <View style={styles.topBarMeta}><Text style={styles.topBarMetaLabel}>MODELO ATIVO</Text><Text style={styles.topBarMetaValue}>deepseek-r1:14b</Text><Text style={styles.topBarMetaHint}>{responseStage}</Text></View>
           <View style={styles.topBarActions}>
             <View style={[styles.statusPill, online ? styles.statusPillOnline : styles.statusPillOffline]}><View style={[styles.statusDot, online ? styles.statusDotOnline : styles.statusDotOffline]} /><Text style={styles.statusText}>{online ? "Online" : "Offline"}</Text></View>
             <Pressable onPress={handleLogout} style={({ pressed }) => [styles.logout, pressed && styles.pressed]}><Text style={styles.logoutText}>Sair</Text></Pressable>
@@ -684,6 +712,9 @@ export default function App() {
           <View style={styles.sidebar}>
             <View style={styles.sidebarCard}>
               <Text style={styles.sidebarKicker}>ESPAÇO DE TRABALHO</Text>
+              <Text style={styles.sidebarTitle}>Tudo começa aqui.</Text>
+              <Text style={styles.sidebarDescription}>Converse com o MX, organize projetos e use suas ferramentas locais com privacidade.</Text>
+              <View style={styles.sidebarSignal}><View style={styles.sidebarSignalDot} /><Text style={styles.sidebarSignalText}>{online ? "Sistema operacional" : "Modo offline"}</Text></View>
               <Pressable disabled={busy || !online} onPress={() => void handleCreateConversation()} style={({ pressed }) => [styles.sidebarMainAction, pressed && styles.pressed, (busy || !online) && styles.disabled]}><Text style={styles.sidebarMainActionText}>+ Nova conversa</Text></Pressable>
               <Pressable onPress={() => setShowHistory((current) => !current)} style={({ pressed }) => [styles.sidebarAction, showHistory && styles.sidebarActionActive, pressed && styles.pressed]}><Text style={styles.sidebarActionText}>Histórico e lixeira</Text><Text style={styles.sidebarActionMeta}>{conversationIndex.length} conversas</Text></Pressable>
               <Pressable onPress={() => setShowProjects((current) => !current)} style={({ pressed }) => [styles.sidebarAction, showProjects && styles.sidebarActionActive, pressed && styles.pressed]}><Text style={styles.sidebarActionText}>Projetos e arquivos</Text><Text style={styles.sidebarActionMeta}>{projects.length} projetos locais</Text></Pressable>
@@ -698,14 +729,14 @@ export default function App() {
           </View>
 
           <View style={styles.chatColumn}>
-            <View style={styles.chatHeader}><View><Text style={styles.chatHeaderKicker}>CONVERSA ATUAL</Text><Text style={styles.chatHeaderTitle}>{conversationIndex.find((item) => item.id === conversationId)?.title || "Nova conversa"}</Text><Text style={styles.chatHeaderMeta}>{messages.length} mensagens · {uploadedAttachments.length} anexos pendentes</Text></View><View style={styles.chatHeaderActions}><Pressable onPress={() => setShowHistory((current) => !current)} style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}><Text style={styles.headerButtonText}>{showHistory ? "Ocultar histórico" : "Histórico"}</Text></Pressable><Pressable onPress={() => setShowProjects((current) => !current)} style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}><Text style={styles.headerButtonText}>{showProjects ? "Ocultar projetos" : "Projetos"}</Text></Pressable></View></View>
+            <View style={styles.chatHeader}><View style={styles.chatHeaderIdentity}><View style={styles.chatHeaderOrb}><Text style={styles.chatHeaderOrbText}>✦</Text></View><View><Text style={styles.chatHeaderKicker}>CONVERSA ATUAL</Text><Text style={styles.chatHeaderTitle}>{conversationIndex.find((item) => item.id === conversationId)?.title || "Nova conversa"}</Text><Text style={styles.chatHeaderMeta}>{messages.length} mensagens · {uploadedAttachments.length} anexos pendentes</Text></View></View><View style={styles.chatHeaderActions}><Pressable onPress={() => setShowHistory((current) => !current)} style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}><Text style={styles.headerButtonText}>{showHistory ? "Ocultar histórico" : "Histórico"}</Text></Pressable><Pressable onPress={() => setShowProjects((current) => !current)} style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}><Text style={styles.headerButtonText}>{showProjects ? "Ocultar projetos" : "Projetos"}</Text></Pressable></View></View>
 
             {activeRun?.status === "AWAITING_APPROVAL" ? <View style={styles.approvalCard}><Text style={styles.approvalTitle}>Ação aguardando aprovação</Text><Text style={styles.muted}>Tool: {activeRun.pendingApproval ?? "não informado"}</Text>{activeRun.pendingApprovalArguments ? <Text style={styles.approvalArguments}>{activeRun.pendingApprovalArguments}</Text> : null}{activeRun.approvalExpiresAt ? <Text style={styles.muted}>Expira em: {new Date(activeRun.approvalExpiresAt).toLocaleString()}</Text> : null}{activeRun.approvalNonceRequired ? <TextInput onChangeText={setApprovalNonce} placeholder="Nonce de aprovação" placeholderTextColor="#748198" style={styles.input} value={approvalNonce} /> : null}<View style={styles.approvalActions}><Pressable disabled={busy} onPress={handleApprove} style={[styles.primaryButton, styles.smallButton, busy && styles.disabled]}><Text style={styles.primaryButtonText}>Aprovar</Text></Pressable><Pressable disabled={busy} onPress={handleReject} style={[styles.secondaryButton, styles.smallButton, busy && styles.disabled]}><Text style={styles.logoutText}>Rejeitar</Text></Pressable></View></View> : null}
-            <View style={styles.runBar}><Text style={styles.muted}>{activeRun ? `Run ${activeRun.status}` : "Nenhuma execução selecionada"}</Text><Pressable onPress={refreshActiveRun} disabled={!activeRunId || syncing}><Text style={styles.refreshText}>{syncing ? "Sincronizando..." : "Atualizar"}</Text></Pressable></View>
-            <FlatList contentContainerStyle={styles.messageList} data={messages} keyExtractor={(item) => item.id} ListEmptyComponent={<View style={styles.emptyState}><Text style={styles.emptyTitle}>O MX está pronto.</Text><Text style={styles.muted}>Converse, anexe arquivos ou descreva uma imagem ou vídeo para começar.</Text></View>} renderItem={({ item }) => <View style={[styles.bubble, item.role === "USER" ? styles.userBubble : styles.assistantBubble]}><Text style={styles.bubbleRole}>{item.role === "USER" ? "Você" : "MX"}</Text><Text style={styles.bubbleText}>{item.content}</Text>{item.attachmentNames?.map((name) => <Text key={name} style={styles.attachmentText}>Anexo: {name}</Text>)}</View>} />
+            <View style={styles.runBar}><View style={styles.runStatus}><View style={[styles.runDot, busy && styles.runDotBusy]} /><Text style={styles.runStatusText}>{busy ? responseStage : activeRun ? `Run ${activeRun.status}` : "Pronto para executar"}</Text></View><Pressable onPress={refreshActiveRun} disabled={!activeRunId || syncing}><Text style={styles.refreshText}>{syncing ? "Sincronizando..." : "Atualizar"}</Text></Pressable></View>
+            <FlatList contentContainerStyle={styles.messageList} data={messages} keyExtractor={(item) => item.id} ListEmptyComponent={<View style={styles.emptyState}><View style={styles.emptyBadge}><Text style={styles.emptyBadgeText}>LOCAL · PRIVADO · SEM API KEY</Text></View><Text style={styles.emptyTitle}>Seu assistente está pronto.</Text><Text style={styles.muted}>Converse, anexe arquivos ou descreva uma imagem ou vídeo para começar.</Text><View style={styles.emptyTips}><Text style={styles.emptyTip}>⌘  Enter para enviar</Text><Text style={styles.emptyTip}>↗  Shift + Enter para nova linha</Text><Text style={styles.emptyTip}>◌  O modelo aquece após períodos ocioso</Text></View></View>} renderItem={({ item }) => <View style={[styles.bubble, item.role === "USER" ? styles.userBubble : styles.assistantBubble]}><Text style={styles.bubbleRole}>{item.role === "USER" ? "Você" : "MX · DEEPSEEK"}</Text>{item.content ? <Text style={styles.bubbleText}>{item.content}</Text> : <View style={styles.thinkingRow}><ActivityIndicator color="#78e3c2" size="small" /><Text style={styles.thinkingText}>{responseStage}</Text></View>}{item.attachmentNames?.map((name) => <Text key={name} style={styles.attachmentText}>Anexo: {name}</Text>)}</View>} />
             {uploadedAttachments.length > 0 ? <View style={styles.attachmentBar}>{uploadedAttachments.map((attachment) => <View key={attachment.id} style={styles.attachmentChip}><Text numberOfLines={1} style={styles.attachmentChipText}>{attachment.contentType.startsWith("video/") ? "Vídeo" : attachment.contentType.startsWith("image/") ? "Imagem" : attachment.contentType.startsWith("audio/") ? "Áudio" : "Arquivo"} · {attachment.filename}</Text>{attachment.contentType.startsWith("audio/") ? <Pressable disabled={busy || !!transcribingAttachmentId} onPress={() => void handleTranscribeAudio(attachment)}><Text style={styles.transcribeText}>{transcribingAttachmentId === attachment.id ? "..." : "Transcrever"}</Text></Pressable> : null}<Pressable disabled={busy} onPress={() => void handleDownloadAttachment(attachment)}><Text style={styles.downloadText}>Baixar</Text></Pressable><Pressable disabled={busy} onPress={() => removeAttachment(attachment.id)}><Text style={styles.removeAttachment}>×</Text></Pressable></View>)}</View> : null}
             {creatingFile ? <View style={styles.filePanel}><Text style={styles.panelTitle}>Criar arquivo</Text><TextInput onChangeText={setNewFileName} placeholder="nome-do-arquivo.txt" placeholderTextColor="#748198" style={styles.historyInput} value={newFileName} /><TextInput multiline onChangeText={setNewFileContent} placeholder="Conteúdo do arquivo" placeholderTextColor="#748198" style={styles.fileContentInput} value={newFileContent} /><View style={styles.projectFormRow}><Pressable onPress={() => void handleCreateFile()} style={[styles.primaryButton, styles.inlineButton]}><Text style={styles.primaryButtonText}>Criar e anexar</Text></Pressable><Pressable onPress={() => setCreatingFile(false)} style={[styles.secondaryButton, styles.inlineButton]}><Text style={styles.logoutText}>Cancelar</Text></Pressable></View></View> : null}
-            <View style={styles.composer}><View style={styles.composerActions}><Text style={styles.composerLabel}>AÇÕES RÁPIDAS</Text><View style={styles.actionGroup}><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={handlePickAttachment} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>{uploadingAttachment ? "Enviando..." : "Anexar arquivo"}</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={() => setCreatingFile((current) => !current)} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>Novo arquivo</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={() => void handlePasteFromClipboard()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>Colar texto</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()} onPress={() => void handleGenerateImage()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.actionButtonText}>{generatingImage ? "Gerando imagem..." : "Gerar imagem"}</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()} onPress={() => void handleGenerateVideo()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.actionButtonText}>{generatingVideo ? "Gerando vídeo..." : "Gerar vídeo"}</Text></Pressable></View></View><View style={styles.composerInputRow}><TextInput editable={!busy && !uploadingAttachment && !generatingVideo && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onKeyPress={Platform.OS === "web" ? handlePromptKeyPress : undefined} onSubmitEditing={Platform.OS === "web" ? undefined : () => void handleSend()} placeholder={online ? "Escreva uma mensagem ou descreva o que deseja criar..." : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} /><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !!transcribingAttachmentId || !online || (!prompt.trim() && uploadedAttachments.length === 0)} onPress={handleSend} style={({ pressed }) => [styles.sendButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || (!prompt.trim() && uploadedAttachments.length === 0)) && styles.disabled]}>{busy ? <ActivityIndicator color="#08111f" /> : <Text style={styles.sendButtonText}>Enviar</Text>}</Pressable></View></View>
+            <View style={styles.composer}><View style={styles.composerHeader}><View><Text style={styles.composerLabel}>COMANDO DO MX</Text><Text style={styles.composerSubtext}>Escreva naturalmente. O MX decide qual skill usar.</Text></View><Text style={styles.composerModel}>R1 · 14B</Text></View><View style={styles.composerActions}><Text style={styles.composerLabel}>AÇÕES RÁPIDAS</Text><View style={styles.actionGroup}><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={handlePickAttachment} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>{uploadingAttachment ? "Enviando..." : "Anexar arquivo"}</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={() => setCreatingFile((current) => !current)} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>Novo arquivo</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online} onPress={() => void handlePasteFromClipboard()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online) && styles.disabled]}><Text style={styles.actionButtonText}>Colar texto</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()} onPress={() => void handleGenerateImage()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.actionButtonText}>{generatingImage ? "Gerando imagem..." : "Gerar imagem"}</Text></Pressable><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()} onPress={() => void handleGenerateVideo()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || !prompt.trim()) && styles.disabled]}><Text style={styles.actionButtonText}>{generatingVideo ? "Gerando vídeo..." : "Gerar vídeo"}</Text></Pressable></View></View><View style={styles.composerInputRow}><TextInput editable={!busy && !uploadingAttachment && !generatingVideo && online} multiline onChangeText={(value) => { setPrompt(value); void writeDraftPrompt(value); }} onKeyPress={Platform.OS === "web" ? handlePromptKeyPress : undefined} onSubmitEditing={Platform.OS === "web" ? undefined : () => void handleSend()} placeholder={online ? "Escreva uma mensagem ou descreva o que deseja criar..." : "Offline: seu rascunho será preservado"} placeholderTextColor="#748198" returnKeyType="send" style={styles.promptInput} value={prompt} /><Pressable disabled={busy || uploadingAttachment || generatingImage || generatingVideo || !!transcribingAttachmentId || !online || (!prompt.trim() && uploadedAttachments.length === 0)} onPress={handleSend} style={({ pressed }) => [styles.sendButton, pressed && styles.pressed, (busy || uploadingAttachment || generatingImage || generatingVideo || !online || (!prompt.trim() && uploadedAttachments.length === 0)) && styles.disabled]}>{busy ? <ActivityIndicator color="#08111f" /> : <Text style={styles.sendButtonText}>Enviar</Text>}</Pressable></View></View>
           </View>
         </View>
       </View>
@@ -714,42 +745,54 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#07101d", paddingHorizontal: 18, paddingTop: 22 },
-  appShell: { flex: 1, gap: 14, maxWidth: 1480, width: "100%", alignSelf: "center" },
-  topBar: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 4, paddingVertical: 6 },
+  screen: { flex: 1, backgroundColor: "#050a13", paddingHorizontal: 28, paddingTop: 26 },
+  appShell: { flex: 1, gap: 18, maxWidth: 1560, width: "100%", alignSelf: "center" },
+  topBar: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 2, paddingVertical: 4 },
   brandBlock: { alignItems: "center", flexDirection: "row", flexShrink: 1, gap: 12 },
-  brandMark: { alignItems: "center", backgroundColor: "#63e6be", borderRadius: 13, height: 42, justifyContent: "center", width: 42 },
-  brandMarkText: { color: "#07101d", fontSize: 14, fontWeight: "900", letterSpacing: 1 },
-  brandCopy: { flexShrink: 1, gap: 2 },
+  brandMark: { alignItems: "center", backgroundColor: "#7ce7c5", borderRadius: 15, height: 48, justifyContent: "center", shadowColor: "#48c7a0", shadowOpacity: 0.24, shadowRadius: 14, width: 48 },
+  brandMarkText: { color: "#041017", fontSize: 15, fontWeight: "900", letterSpacing: 1 },
+  brandCopy: { flexShrink: 1, gap: 3 },
+  topBarMeta: { alignItems: "flex-end", flex: 1, gap: 2, marginHorizontal: 24 },
+  topBarMetaLabel: { color: "#60758e", fontSize: 9, fontWeight: "900", letterSpacing: 1.5 },
+  topBarMetaValue: { color: "#dbe8f4", fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", fontSize: 12, fontWeight: "800" },
+  topBarMetaHint: { color: "#7f95aa", fontSize: 10 },
   topBarActions: { alignItems: "center", flexDirection: "row", gap: 10 },
   statusPill: { alignItems: "center", borderRadius: 999, flexDirection: "row", gap: 7, paddingHorizontal: 10, paddingVertical: 7 },
-  statusPillOnline: { backgroundColor: "#10362f" },
-  statusPillOffline: { backgroundColor: "#3b2028" },
+  statusPillOnline: { backgroundColor: "#0d2a27", borderColor: "#1f6655", borderWidth: 1 },
+  statusPillOffline: { backgroundColor: "#3b2028", borderColor: "#8d4652", borderWidth: 1 },
   statusDot: { borderRadius: 5, height: 9, width: 9 },
   statusDotOnline: { backgroundColor: "#63e6be" },
   statusDotOffline: { backgroundColor: "#ff8b8b" },
   statusText: { color: "#e3edf6", fontSize: 12, fontWeight: "800" },
   errorBanner: { backgroundColor: "#3b2028", borderColor: "#8d4652", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 9 },
   errorBannerText: { color: "#ffd1d1", fontSize: 13, lineHeight: 18 },
-  workspace: { flex: 1, flexDirection: Platform.OS === "web" ? "row" : "column", gap: 14, minHeight: 0 },
-  sidebar: { gap: 12, width: Platform.OS === "web" ? 292 : "100%" },
-  sidebarCard: { backgroundColor: "#0e1b2b", borderColor: "#1d3049", borderRadius: 16, borderWidth: 1, gap: 9, padding: 14 },
+  workspace: { flex: 1, flexDirection: Platform.OS === "web" ? "row" : "column", gap: 18, minHeight: 0 },
+  sidebar: { gap: 12, width: Platform.OS === "web" ? 304 : "100%" },
+  sidebarCard: { backgroundColor: "#0c1522", borderColor: "#1a2b40", borderRadius: 20, borderWidth: 1, gap: 10, padding: 18 },
+  sidebarTitle: { color: "#f4f8fc", fontSize: 19, fontWeight: "900", letterSpacing: -0.3 },
+  sidebarDescription: { color: "#8fa4b9", fontSize: 12, lineHeight: 18 },
+  sidebarSignal: { alignItems: "center", backgroundColor: "#091c1b", borderColor: "#173c38", borderRadius: 10, flexDirection: "row", gap: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  sidebarSignalDot: { backgroundColor: "#7ce7c5", borderRadius: 4, height: 8, width: 8 },
+  sidebarSignalText: { color: "#9de5cb", fontSize: 11, fontWeight: "800" },
   sidebarKicker: { color: "#718aa6", fontSize: 10, fontWeight: "900", letterSpacing: 1.4 },
-  sidebarMainAction: { alignItems: "center", backgroundColor: "#63e6be", borderRadius: 10, justifyContent: "center", minHeight: 42, paddingHorizontal: 12 },
+  sidebarMainAction: { alignItems: "center", backgroundColor: "#7ce7c5", borderRadius: 11, justifyContent: "center", minHeight: 46, paddingHorizontal: 12, shadowColor: "#48c7a0", shadowOpacity: 0.18, shadowRadius: 10 },
   sidebarMainActionText: { color: "#07101d", fontSize: 13, fontWeight: "900" },
-  sidebarAction: { backgroundColor: "#12243a", borderColor: "#223d5a", borderRadius: 10, borderWidth: 1, gap: 2, paddingHorizontal: 11, paddingVertical: 9 },
+  sidebarAction: { backgroundColor: "#101d2c", borderColor: "#223950", borderRadius: 11, borderWidth: 1, gap: 3, paddingHorizontal: 12, paddingVertical: 11 },
   sidebarActionActive: { backgroundColor: "#18394a", borderColor: "#2a6e70" },
   sidebarActionText: { color: "#d9e9f8", fontSize: 13, fontWeight: "800" },
   sidebarActionMeta: { color: "#8ca4bd", fontSize: 11 },
   sidebarHint: { color: "#768da6", fontSize: 11, lineHeight: 16, paddingTop: 4 },
   sidebarPanel: { marginBottom: 0, maxHeight: 360 },
-  chatColumn: { backgroundColor: "#0b1727", borderColor: "#1b3049", borderRadius: 18, borderWidth: 1, flex: 1, gap: 10, minHeight: 0, minWidth: 0, padding: 14 },
-  chatHeader: { alignItems: "center", borderBottomColor: "#1a3048", borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingBottom: 12 },
+  chatColumn: { backgroundColor: "#091320", borderColor: "#182a3e", borderRadius: 22, borderWidth: 1, flex: 1, gap: 12, minHeight: 0, minWidth: 0, padding: 18 },
+  chatHeader: { alignItems: "center", borderBottomColor: "#182b40", borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingBottom: 15 },
+  chatHeaderIdentity: { alignItems: "center", flexDirection: "row", flexShrink: 1, gap: 11 },
+  chatHeaderOrb: { alignItems: "center", backgroundColor: "#102d36", borderColor: "#23615f", borderRadius: 13, borderWidth: 1, height: 38, justifyContent: "center", width: 38 },
+  chatHeaderOrbText: { color: "#7ce7c5", fontSize: 18, fontWeight: "800" },
   chatHeaderKicker: { color: "#63e6be", fontSize: 10, fontWeight: "900", letterSpacing: 1.3 },
   chatHeaderTitle: { color: "#f4f7fb", fontSize: 18, fontWeight: "900", marginTop: 3 },
   chatHeaderMeta: { color: "#8197ae", fontSize: 11, marginTop: 3 },
   chatHeaderActions: { alignItems: "center", flexDirection: "row", gap: 6 },
-  headerButton: { borderColor: "#2b4865", borderRadius: 9, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 7 },
+  headerButton: { backgroundColor: "#0e1c2b", borderColor: "#2b4865", borderRadius: 10, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 8 },
   headerButtonText: { color: "#b9d8f5", fontSize: 11, fontWeight: "800" },
   centered: { alignItems: "center", backgroundColor: "#08111f", flex: 1, gap: 12, justifyContent: "center" },
   loginCard: { alignSelf: "center", backgroundColor: "#101c2d", borderColor: "#1e3048", borderRadius: 24, borderWidth: 1, gap: 14, marginTop: 70, maxWidth: 480, padding: 28, width: "100%" },
@@ -800,21 +843,31 @@ const styles = StyleSheet.create({
   historyItem: { borderBottomColor: "#1e3048", borderBottomWidth: 1, paddingVertical: 9 },
   historyItemTitle: { color: "#f4f7fb", fontSize: 14, fontWeight: "800" },
   historyItemMeta: { color: "#9cabc0", fontSize: 12, marginTop: 3 },
-  runBar: { alignItems: "center", borderBottomColor: "#1e3048", borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingBottom: 8 },
-  refreshText: { color: "#63e6be", fontWeight: "700" },
+  runBar: { alignItems: "center", borderBottomColor: "#182b40", borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingBottom: 10 },
+  runStatus: { alignItems: "center", flexDirection: "row", gap: 8 },
+  runDot: { backgroundColor: "#60758e", borderRadius: 4, height: 8, width: 8 },
+  runDotBusy: { backgroundColor: "#f2c879" },
+  runStatusText: { color: "#8fa4b9", fontSize: 12, fontWeight: "700" },
+  refreshText: { color: "#7ce7c5", fontWeight: "800" },
   approvalCard: { backgroundColor: "#332b18", borderColor: "#8a6d2f", borderRadius: 16, borderWidth: 1, gap: 8, marginBottom: 10, padding: 14 },
   approvalTitle: { color: "#ffe7a3", fontSize: 16, fontWeight: "800" },
   approvalArguments: { color: "#e8d8ad", fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", fontSize: 12 },
   approvalActions: { flexDirection: "row", gap: 8 },
-  messageList: { flexGrow: 1, gap: 12, paddingBottom: 16, paddingTop: 12 },
-  emptyState: { alignItems: "center", gap: 8, marginTop: 110, paddingHorizontal: 24 },
-  emptyTitle: { color: "#f4f7fb", fontSize: 20, fontWeight: "800" },
-  bubble: { borderRadius: 16, maxWidth: "88%", padding: 14 },
-  userBubble: { alignSelf: "flex-end", backgroundColor: "#164f52" },
-  assistantBubble: { alignSelf: "flex-start", backgroundColor: "#101c2d", borderColor: "#1e3048", borderWidth: 1 },
+  messageList: { flexGrow: 1, gap: 14, paddingBottom: 20, paddingTop: 16 },
+  emptyState: { alignItems: "center", gap: 10, marginTop: 100, paddingHorizontal: 24 },
+  emptyBadge: { backgroundColor: "#0c2829", borderColor: "#1d5d58", borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 },
+  emptyBadgeText: { color: "#83dfc1", fontSize: 9, fontWeight: "900", letterSpacing: 1.2 },
+  emptyTitle: { color: "#f4f8fc", fontSize: 24, fontWeight: "900", letterSpacing: -0.4 },
+  emptyTips: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", marginTop: 4 },
+  emptyTip: { color: "#6f879e", fontSize: 11 },
+  bubble: { borderRadius: 18, maxWidth: "86%", padding: 16 },
+  userBubble: { alignSelf: "flex-end", backgroundColor: "#164c50", borderBottomRightRadius: 5 },
+  assistantBubble: { alignSelf: "flex-start", backgroundColor: "#0e1b2a", borderColor: "#223950", borderWidth: 1, borderBottomLeftRadius: 5 },
   bubbleRole: { color: "#63e6be", fontSize: 11, fontWeight: "800", letterSpacing: 1, marginBottom: 4, textTransform: "uppercase" },
-  bubbleText: { color: "#f4f7fb", fontSize: 16, lineHeight: 23 },
-  attachmentText: { color: "#a9e8d2", fontSize: 12, marginTop: 6 },
+  bubbleText: { color: "#eef5fb", fontSize: 15, lineHeight: 23 },
+  thinkingRow: { alignItems: "center", flexDirection: "row", gap: 9, paddingVertical: 3 },
+  thinkingText: { color: "#91b5b1", fontSize: 13, fontStyle: "italic" },
+  attachmentText: { color: "#a9e8d2", fontSize: 12, marginTop: 8 },
   attachmentBar: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 },
   attachmentChip: { alignItems: "center", backgroundColor: "#102a35", borderColor: "#2a6e70", borderRadius: 10, borderWidth: 1, flexDirection: "row", maxWidth: "100%", paddingHorizontal: 9, paddingVertical: 6 },
   attachmentChipText: { color: "#c6f4e4", flexShrink: 1, fontSize: 12 },
@@ -825,14 +878,17 @@ const styles = StyleSheet.create({
   attachButtonText: { color: "#63e6be", fontSize: 12, fontWeight: "800" },
   mediaButton: { alignItems: "center", borderColor: "#2a6e70", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 42, paddingHorizontal: 9 },
   mediaButtonText: { color: "#a9e8d2", fontSize: 12, fontWeight: "800" },
-  composer: { backgroundColor: "#101c2d", borderColor: "#243b57", borderRadius: 18, borderWidth: 1, gap: 10, marginBottom: 18, padding: 12 },
+  composer: { backgroundColor: "#0c1827", borderColor: "#20364d", borderRadius: 18, borderWidth: 1, gap: 12, marginBottom: 4, padding: 14 },
+  composerHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
+  composerSubtext: { color: "#7189a0", fontSize: 11, marginTop: 3 },
+  composerModel: { backgroundColor: "#112c34", borderColor: "#24605d", borderRadius: 8, borderWidth: 1, color: "#8fe3c5", fontSize: 10, fontWeight: "900", paddingHorizontal: 9, paddingVertical: 6 },
   composerActions: { gap: 7 },
-  composerLabel: { color: "#8ea7c4", fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase" },
+  composerLabel: { color: "#8ea7c4", fontSize: 10, fontWeight: "900", letterSpacing: 1.2, textTransform: "uppercase" },
   actionGroup: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
-  actionButton: { alignItems: "center", backgroundColor: "#15283d", borderColor: "#31516f", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 38, paddingHorizontal: 10 },
+  actionButton: { alignItems: "center", backgroundColor: "#102237", borderColor: "#2b4b67", borderRadius: 10, borderWidth: 1, justifyContent: "center", minHeight: 38, paddingHorizontal: 11 },
   actionButtonText: { color: "#c5e5ff", fontSize: 12, fontWeight: "800" },
   composerInputRow: { alignItems: "flex-end", flexDirection: "row", gap: 8 },
-  promptInput: { backgroundColor: "#0b1728", borderColor: "#29405d", borderRadius: 12, borderWidth: 1, color: "#f4f7fb", flex: 1, fontSize: 16, maxHeight: 120, minHeight: 48, paddingHorizontal: 12, paddingVertical: 10 },
-  sendButton: { alignItems: "center", backgroundColor: "#63e6be", borderRadius: 10, justifyContent: "center", minHeight: 42, minWidth: 76, paddingHorizontal: 12 },
+  promptInput: { backgroundColor: "#07111e", borderColor: "#2a4862", borderRadius: 13, borderWidth: 1, color: "#f4f8fc", flex: 1, fontSize: 15, maxHeight: 120, minHeight: 52, paddingHorizontal: 14, paddingVertical: 11 },
+  sendButton: { alignItems: "center", backgroundColor: "#7ce7c5", borderRadius: 12, justifyContent: "center", minHeight: 46, minWidth: 86, paddingHorizontal: 14, shadowColor: "#48c7a0", shadowOpacity: 0.2, shadowRadius: 10 },
   sendButtonText: { color: "#08111f", fontWeight: "800" },
 });

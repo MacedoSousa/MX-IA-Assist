@@ -55,7 +55,9 @@ mx:
     # Gemma 4 E4B handles text, image and audio inputs locally; pull it before multimodal use.
     vision-model: ${OLLAMA_VISION_MODEL:gemma4:e4b}
     timeout-ms: ${OLLAMA_TIMEOUT_MS:300000}
-    keep-alive: ${OLLAMA_KEEP_ALIVE:10m}
+    keep-alive: ${OLLAMA_KEEP_ALIVE:1h}
+    fast-casual: ${OLLAMA_FAST_CASUAL:true}
+    warmup-enabled: ${OLLAMA_WARMUP_ENABLED:true}
     num-ctx: ${OLLAMA_NUM_CTX:8192}
     num-thread: ${OLLAMA_NUM_THREAD:0}
   media:

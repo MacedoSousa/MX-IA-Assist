@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -25,7 +26,7 @@ import java.util.stream.Stream;
 public class OllamaService {
 
     private static final Duration DEFAULT_REQUEST_TIMEOUT = Duration.ofSeconds(120);
-    private static final String DEFAULT_KEEP_ALIVE = "10m";
+    private static final String DEFAULT_KEEP_ALIVE = "1h";
     private static final int DEFAULT_CONTEXT_SIZE = 8192;
     private static final int DEFAULT_NUM_THREAD = 0;
 
@@ -37,6 +38,7 @@ public class OllamaService {
     private final String keepAlive;
     private final int contextSize;
     private final int numThread;
+    private final boolean fastCasual;
 
     public OllamaService() {
         this("http://localhost:11434", DEFAULT_REQUEST_TIMEOUT, "deepseek-r1:14b", DEFAULT_KEEP_ALIVE, DEFAULT_CONTEXT_SIZE, DEFAULT_NUM_THREAD);
@@ -51,11 +53,12 @@ public class OllamaService {
             @Value("${mx.ollama.url:http://localhost:11434}") String baseUrl,
             @Value("${mx.ollama.timeout-ms:120000}") long timeoutMs,
             @Value("${mx.ollama.model:deepseek-r1:14b}") String model,
-            @Value("${mx.ollama.keep-alive:10m}") String keepAlive,
+            @Value("${mx.ollama.keep-alive:1h}") String keepAlive,
             @Value("${mx.ollama.num-ctx:8192}") int contextSize,
-            @Value("${mx.ollama.num-thread:0}") int numThread
+            @Value("${mx.ollama.num-thread:0}") int numThread,
+            @Value("${mx.ollama.fast-casual:true}") boolean fastCasual
     ) {
-        this(baseUrl, Duration.ofMillis(timeoutMs), model, keepAlive, contextSize, numThread);
+        this(baseUrl, Duration.ofMillis(timeoutMs), model, keepAlive, contextSize, numThread, fastCasual);
     }
 
     public OllamaService(String baseUrl, Duration requestTimeout) {
@@ -78,6 +81,18 @@ public class OllamaService {
             int contextSize,
             int numThread
     ) {
+        this(baseUrl, requestTimeout, model, keepAlive, contextSize, numThread, true);
+    }
+
+    public OllamaService(
+            String baseUrl,
+            Duration requestTimeout,
+            String model,
+            String keepAlive,
+            int contextSize,
+            int numThread,
+            boolean fastCasual
+    ) {
         if (requestTimeout == null || requestTimeout.isZero() || requestTimeout.isNegative()) {
             throw new IllegalArgumentException("Ollama request timeout must be positive");
         }
@@ -99,6 +114,7 @@ public class OllamaService {
         this.keepAlive = keepAlive == null || keepAlive.isBlank() ? DEFAULT_KEEP_ALIVE : keepAlive.trim();
         this.contextSize = contextSize;
         this.numThread = numThread;
+        this.fastCasual = fastCasual;
     }
 
     public String generateText(String prompt) {
@@ -200,6 +216,7 @@ public class OllamaService {
         payload.put("keep_alive", keepAlive);
         Map<String, Object> options = new LinkedHashMap<>();
         options.put("num_ctx", contextSize);
+        payload.put("think", shouldThink(prompt, images));
         if (numThread > 0) {
             options.put("num_thread", numThread);
         }
@@ -216,6 +233,15 @@ public class OllamaService {
 
     private String normalizeModel(String requestedModel) {
         return requestedModel == null || requestedModel.isBlank() ? model : requestedModel.trim();
+    }
+
+    private boolean shouldThink(String prompt, List<ModelImage> images) {
+        if (!fastCasual || (images != null && !images.isEmpty())) return true;
+        String normalized = prompt.trim().toLowerCase(Locale.ROOT).replaceAll("[!,.?]+$", "");
+        return switch (normalized) {
+            case "oi", "olá", "ola", "oi mx", "olá mx", "ola mx", "hello", "hello mx", "hi", "hey", "bom dia", "boa tarde", "boa noite" -> false;
+            default -> true;
+        };
     }
 
     private void validatePrompt(String prompt) {
