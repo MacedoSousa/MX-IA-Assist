@@ -1,6 +1,6 @@
 # Índice do conhecimento importado
 
-Gerado em `2026-08-21T02:30:46.833338+00:00`.
+Gerado em `2026-08-21T05:15:43.407355+00:00`.
 
 | Tipo | Destino | SHA-256 | Seções |
 |---|---|---|---|
@@ -11,12 +11,26 @@ Gerado em `2026-08-21T02:30:46.833338+00:00`.
 | knowledge | `knowledge/estudos/catalogo_multidisciplinar_inicial.md` | `9b4ae60708d91a98…` | # Catálogo multidisciplinar inicial da biblioteca da squad; ## Objetivo; ## Tipos de conteúdo |
 | knowledge | `knowledge/estudos/catalogo_multidisciplinar_v1.jsonl` | `92462eef6e9d2bb7…` |  |
 | knowledge | `knowledge/estudos/catalogo_status.md` | `34f6c1c0b65a9dee…` | # Estado do inventário multidisciplinar; ## Escopo atual; ## Evidências já registradas |
+| knowledge | `knowledge/estudos/classificacao_fontes_direitos_uso.md` | `d6798e8f0ff8e5c2…` | # Classificação de fontes e direitos de uso; ## Objetivo; ## Classes de fonte |
 | knowledge | `knowledge/estudos/curriculo_ai_engineer_priorizado.md` | `9ce9e63a57a10144…` | # Currículo modular priorizado — AI Engineer; ## Objetivo; ## Módulos e prioridade |
 | knowledge | `knowledge/estudos/curriculo_ampliado_priorizado.md` | `082d1f6b213dd29b…` | # Currículo ampliado priorizado — MX e assistente pessoal local; ## Objetivo; ## Fase A — Fundamentos de dados e software |
-| knowledge | `knowledge/estudos/cursos.alura.com.br_course_ia-explorando-potencial-inteligencia-artificial-generativa.md` | `575a693afdbefb9f…` | # IA: explorando o potencial da inteligência artificial generativa \| Alura - Cursos online de tecnologia |
-| knowledge | `knowledge/estudos/cursos.alura.com.br_course_langchain-chatbots-rag.md` | `d8996d632b189eee…` | # Arquiteturas RAG com LLMs: embeddings, busca semântica e criação de agentes com LangChain \| Alura - Cursos online de tecnologia |
-| knowledge | `knowledge/estudos/cursos.alura.com.br_learning-guide_company.md` | `7923da44afffbfa7…` | # Trilhas da empresa \| Alura - Cursos online de tecnologia |
-| knowledge | `knowledge/estudos/integracao_modulos_com_mx.md` | `29476ebfc96c6dce…` | # Integração dos módulos AI Engineer com o projeto MX; ## Diretriz; ## Mapeamento de responsabilidades |
+| knowledge | `knowledge/estudos/dossie_detalhado_bigdata_aula1.md` | `f9996ab9d83f533f…` | # Dossiê detalhado — Big Data: introdução, Vs e velocidade dos dados; ## Identificação da fonte; ## 1. Objetivos e escopo |
+| knowledge | `knowledge/estudos/dossie_detalhado_bigdata_aula2.md` | `9ecdd266f1c82bf2…` | # Dossiê detalhado — Veracidade, valor, fontes e aplicações de Big Data; ## Identificação da fonte; ## 1. Objetivos e tese central |
+| knowledge | `knowledge/estudos/dossie_detalhado_bigdata_aula3.md` | `b6eca1f68ec49bf1…` | # Dossiê detalhado — Big Data com computação em nuvem; ## Identificação da fonte; ## 1. Tese central |
+| knowledge | `knowledge/estudos/dossie_detalhado_bigdata_aula4.md` | `2f0960e8c4d489b4…` | # Dossiê detalhado — IoT, Big Data, Hadoop e subprojetos; ## Identificação da fonte; ## 1. Tese central |
+| knowledge | `knowledge/estudos/dossie_detalhado_bigdata_aula5.md` | `3350e8e61ed2023d…` | # Dossiê detalhado — Mahout, Spark, Hadoop single-node e execução de jobs; ## Identificação da fonte; ## 1. Tese central |
+| knowledge | `knowledge/estudos/dossie_detalhado_computacao_paralela_distribuida1.md` | `ff10211f4dd3de26…` | # Dossiê detalhado — Fundamentos de Computação Paralela e Sistemas Distribuídos; ## Identificação da fonte; ## 1. Ideia central |
+| knowledge | `knowledge/estudos/dossie_detalhado_computacao_paralela_distribuida2.md` | `510d749a04829af7…` | # Dossiê detalhado — Comunicação entre Processos; ## Identificação da fonte; ## 1. Tese central |
+| knowledge | `knowledge/estudos/dossie_detalhado_computacao_paralela_distribuida3.md` | `a86e384636de9475…` | # Dossiê detalhado — Sistemas Operacionais, Componentes e Serviços; ## Identificação da fonte; ## 1. Tese central |
+| knowledge | `knowledge/estudos/dossie_detalhado_computacao_paralela_distribuida4.md` | `3cdaf31b66b5dc83…` | # Dossiê detalhado — Sistemas de Compartilhamento e Segurança em Sistemas Distribuídos; ## Identificação da fonte; ## 1. Visão geral |
+| knowledge | `knowledge/estudos/dossie_detalhado_computacao_paralela_distribuida5.md` | `c266987ef93ffb10…` | # Dossiê detalhado — Serviços de Nome, Tempo Global, Coordenação e Suporte; ## Identificação e rastreabilidade; ## 1. Tese central |
+| knowledge | `knowledge/estudos/dossie_detalhado_computacao_paralela_distribuida6.md` | `660e13ab8e01e08c…` | # Dossiê detalhado — Concorrência, Replicação e Design em Sistemas Distribuídos; ## Identificação e rastreabilidade; ## 1. Ideia central |
+| knowledge | `knowledge/estudos/dossie_detalhado_qualidade_software1.md` | `81cf4a48763fe1d1…` | # Dossiê detalhado — Motivação da Qualidade de Software; ## Identificação e rastreabilidade; ## 1. Conceito de qualidade |
+| knowledge | `knowledge/estudos/dossie_detalhado_qualidade_software2.md` | `64dff9da24ca616e…` | # Dossiê detalhado — CMM, Maturidade, Métricas e Garantia da Qualidade; ## Identificação e rastreabilidade; ## 1. Processo e maturidade |
+| knowledge | `knowledge/estudos/dossie_detalhado_qualidade_software3.md` | `fcce5443141acfca…` | # Dossiê detalhado — CMMI-DEV, Representações e Áreas de Processo; ## Identificação e rastreabilidade; ## 1. Finalidade do CMMI |
+| knowledge | `knowledge/estudos/dossie_detalhado_qualidade_software4.md` | `cb4db24e467fb9b9…` | # Dossiê detalhado — ISO, Ciclo de Vida e Avaliação de Processos; ## Identificação e rastreabilidade; ## 1. Organismos normativos |
+| knowledge | `knowledge/estudos/integracao_modulos_com_mx.md` | `0e79d44ad85c903b…` | # Integração dos módulos AI Engineer com o projeto MX; ## Diretriz; ## Mapeamento de responsabilidades |
+| knowledge | `knowledge/estudos/inventario_materiais_salvos.md` | `9ab8888c48cb622e…` | # Inventário dos materiais efetivamente salvos; ## Escopo; ## PDFs acadêmicos salvos |
 | knowledge | `knowledge/estudos/mapa_ai_engineer_inicial.md` | `dbb3cd4cca7901cd…` | # Mapa inicial — AI Engineer; ## Fonte consultada; ## Conteúdo visível no primeiro módulo |
 | knowledge | `knowledge/estudos/mapa_cursos_cloud_mlops_inicial.md` | `6cf74c28b6bdfac8…` | # Mapa inicial — Cloud, observabilidade e MLOps; ## Fonte; ## Cursos prioritários identificados |
 | knowledge | `knowledge/estudos/mapa_novo_curriculo_inicial.md` | `1a2f5d7aa0d2d664…` | # Mapa inicial do novo currículo; ## Bancos de dados; ## Ordem preliminar |

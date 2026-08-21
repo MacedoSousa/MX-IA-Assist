@@ -70,6 +70,12 @@ mx:
     max-bytes: ${MX_ATTACHMENTS_MAX_BYTES:26214400}
     max-text-bytes: ${MX_ATTACHMENTS_MAX_TEXT_BYTES:262144}
     max-vision-bytes: ${MX_ATTACHMENTS_MAX_VISION_BYTES:5242880}
+  self-analysis:
+    # Ativo no perfil local porque o usuário solicitou busca em tempo real; desligue via variável de ambiente.
+    external-search-enabled: ${MX_SELF_ANALYSIS_EXTERNAL_SEARCH_ENABLED:true}
+    search-endpoint: ${MX_SELF_ANALYSIS_SEARCH_ENDPOINT:https://api.duckduckgo.com}
+    max-results: ${MX_SELF_ANALYSIS_MAX_RESULTS:3}
+    audit-path: ${MX_SELF_ANALYSIS_AUDIT_PATH:/app/workspace/knowledge/runtime/self-analysis.jsonl}
   workspace:
     root: ${MX_WORKSPACE_ROOT:.}
     max-entries: ${MX_WORKSPACE_MAX_ENTRIES:500}

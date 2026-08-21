@@ -54,4 +54,32 @@ class StudyKnowledgeContextTest {
                 .contains("Combine-o com evidências")
                 .contains("orientação de teste");
     }
+
+    @Test
+    void shouldReportInsufficientCoverageForUnknownTopics() {
+        StudyKnowledgeContext context = new StudyKnowledgeContext("orientação local sobre testes");
+
+        assertThat(context.assessCoverage("astronomia observacional"))
+                .extracting(StudyKnowledgeContext.Coverage::sufficient)
+                .isEqualTo(false);
+    }
+
+    @Test
+    void shouldDeduplicateRuntimeEvidence() {
+        StudyKnowledgeContext context = new StudyKnowledgeContext("orientação local");
+
+        assertThat(context.learnExternal(
+                "https://example.org/a",
+                "Fonte A",
+                "Evidência externa sobre assunto novo",
+                java.util.Set.of("busca-externa")
+        )).isTrue();
+        assertThat(context.learnExternal(
+                "https://example.org/a",
+                "Fonte A",
+                "Evidência externa sobre assunto novo",
+                java.util.Set.of("busca-externa")
+        )).isFalse();
+        assertThat(context.chunkCount()).isEqualTo(1);
+    }
 }

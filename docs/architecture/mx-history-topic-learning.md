@@ -13,8 +13,15 @@ O MX continuará sendo o único ponto de comunicação do usuário. As skills pe
 | Idioma | Idioma detectado por heurística PT/EN e salvo na conversa. O perfil do usuário mantém preferência explícita quando declarada. |
 | Gírias e estilo | O perfil registra sinais normalizados de comunicação, sem enviar texto sensível bruto ao prompt; o contexto informa somente regras agregadas e não privilegiadas. |
 | Busca ativa | Antes de usar conhecimento, o roteador consulta o índice documental local e usa o resultado para reforçar a skill, sem executar instruções encontradas nos documentos. |
+| Autoanálise | A `GeneralSkill` mede a cobertura lexical local; somente abaixo do limiar configurado consulta o endpoint HTTPS allowlisted do DuckDuckGo, incorpora snippets como evidência não privilegiada em memória e registra auditoria JSONL sem salvar a pergunta bruta. |
 | Especialização | Cada skill declara triggers, domínios e capacidade; a decisão deve considerar confiança, domínio detectado e preferência do usuário, com fallback para `general`. |
 | Escalonamento local | Não será declarado autoscaling horizontal como se fosse cloud. O MX usa escalonamento vertical, fila limitada, paralelismo configurável, cache, keep-alive e perfil de modelo por hardware. |
+
+## Autoanálise e busca em tempo real
+
+O ciclo de autoanálise é deliberadamente conservador. Consultas com cobertura local suficiente não geram tráfego externo. Quando a cobertura é insuficiente, a consulta é normalizada, limitada e tem e-mails, URLs e tokens Bearer removidos antes do envio ao DuckDuckGo Instant Answer API. O cliente aceita somente o endpoint HTTPS `api.duckduckgo.com`, não segue URLs retornadas e descarta respostas malformadas.
+
+Os resultados são armazenados como chunks runtime deduplicados por SHA-256, limitados em quantidade e marcados como `busca-externa`. Eles podem reforçar o prompt, mas continuam sendo dados não privilegiados e nunca autorizam ferramentas ou mudanças de política. A auditoria registra somente o hash da pergunta, o score de cobertura, o número de resultados e a razão da decisão. A feature é desligável por `MX_SELF_ANALYSIS_EXTERNAL_SEARCH_ENABLED=false`, e o arquivo de auditoria fica no volume persistente `data/knowledge` do Compose.
 
 ## Segurança
 
@@ -38,4 +45,4 @@ Uma conversa criada pelo usuário A nunca aparece para o usuário B. O filtro po
 
 ## English summary
 
-MX remains the single user-facing coordinator. Conversation metadata stores a normalized topic and detected language, while paginated user-scoped APIs support browsing by topic. Local retrieval is active but untrusted document content is always treated as data, never as instructions. Local Docker scaling is described honestly as vertical tuning and bounded concurrency, not cloud-style autoscaling. The fast model remains the default until hardware benchmarks justify an optional high-capacity profile.
+MX remains the single user-facing coordinator. Conversation metadata stores a normalized topic and detected language, while paginated user-scoped APIs support browsing by topic. Local retrieval is active but untrusted document content is always treated as data, never as instructions. The self-analysis loop uses local coverage first and an HTTPS allowlisted DuckDuckGo fallback only when necessary; external snippets are sanitized, auditable, deduplicated runtime evidence and never instructions. Local Docker scaling is described honestly as vertical tuning and bounded concurrency, not cloud-style autoscaling. The fast model remains the default until hardware benchmarks justify an optional high-capacity profile.

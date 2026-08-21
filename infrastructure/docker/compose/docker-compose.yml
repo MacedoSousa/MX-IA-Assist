@@ -125,6 +125,10 @@ services:
       MX_AUDIO_TRANSCRIPTION_MODEL: ${MX_AUDIO_TRANSCRIPTION_MODEL:-base}
       MX_AUDIO_TRANSCRIPTION_TIMEOUT_SECONDS: ${MX_AUDIO_TRANSCRIPTION_TIMEOUT_SECONDS:-300}
       MX_AUDIO_TRANSCRIPTION_MAX_CHARS: ${MX_AUDIO_TRANSCRIPTION_MAX_CHARS:-50000}
+      MX_SELF_ANALYSIS_EXTERNAL_SEARCH_ENABLED: ${MX_SELF_ANALYSIS_EXTERNAL_SEARCH_ENABLED:-true}
+      MX_SELF_ANALYSIS_SEARCH_ENDPOINT: ${MX_SELF_ANALYSIS_SEARCH_ENDPOINT:-https://api.duckduckgo.com}
+      MX_SELF_ANALYSIS_MAX_RESULTS: ${MX_SELF_ANALYSIS_MAX_RESULTS:-3}
+      MX_SELF_ANALYSIS_AUDIT_PATH: /app/workspace/knowledge/runtime/self-analysis.jsonl
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q 'UP'"]
       interval: 10s
@@ -134,6 +138,7 @@ services:
     volumes:
       - ../../../logs:/app/logs
       - ../../../data/attachments:/app/workspace/attachments
+      - ../../../data/knowledge:/app/workspace/knowledge
 
   mx-web:
     build:

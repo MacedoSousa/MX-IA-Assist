@@ -62,11 +62,14 @@ def selected(source: Path, path: Path) -> bool:
         name in REQUIRED_NAMES
         or (name.startswith("modulo_") and path.suffix == ".md")
         or (name.startswith("mapa_") and path.suffix == ".md")
+        or (name.startswith("dossie_detalhado_") and path.suffix == ".md")
         or (rel.startswith("skills/") and path.suffix == ".md")
         or (rel.startswith("ml-evaluation/") and path.suffix in {".md", ".jsonl"})
         or name in {"curriculo_ampliado_priorizado.md", "curriculo_ai_engineer_priorizado.md"}
         or name in {
             "catalogo_status.md",
+            "inventario_materiais_salvos.md",
+            "classificacao_fontes_direitos_uso.md",
             "biblioteca_exercicios_autorais_v1.md",
             "biblioteca_exercicios_autorais_v2.md",
             "biblioteca_taxonomia.md",

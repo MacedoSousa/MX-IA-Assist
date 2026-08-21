@@ -3,7 +3,11 @@ package com.macedxs.mx.bootstrap;
 import com.macedxs.mx.agent.application.SkillRegistry;
 import com.macedxs.mx.agent.application.SkillRouter;
 import com.macedxs.mx.agent.skill.development.DevelopmentSkill;
+import com.macedxs.mx.agent.skill.general.DuckDuckGoSearchClient;
+import com.macedxs.mx.agent.skill.general.ExternalSearchClient;
 import com.macedxs.mx.agent.skill.general.GeneralSkill;
+import com.macedxs.mx.agent.skill.general.SelfAnalysisService;
+import com.macedxs.mx.agent.skill.general.StudyKnowledgeContext;
 import com.macedxs.mx.agent.skill.quality.QualitySkill;
 import com.macedxs.mx.agent.skill.infrastructure.InfrastructureSkill;
 import com.macedxs.mx.agent.skill.data.DataSkill;
@@ -29,6 +33,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
@@ -41,12 +46,43 @@ public class ConversationConfiguration {
     @Bean
     GeneralSkill generalSkill(
             @Qualifier("ollamaModelGateway") ModelGateway modelGateway,
-            UserPreferenceService userPreferenceService
+            UserPreferenceService userPreferenceService,
+            StudyKnowledgeContext studyKnowledgeContext,
+            SelfAnalysisService selfAnalysisService
     ) {
-        return new GeneralSkill(
-                modelGateway,
-                com.macedxs.mx.agent.skill.general.StudyKnowledgeContext.fromClasspath(),
-                userPreferenceService
+        return new GeneralSkill(modelGateway, studyKnowledgeContext, userPreferenceService, selfAnalysisService);
+    }
+
+    @Bean
+    StudyKnowledgeContext studyKnowledgeContext() {
+        return StudyKnowledgeContext.fromClasspath();
+    }
+
+    @Bean
+    ExternalSearchClient externalSearchClient(
+            @Value("${mx.self-analysis.search-endpoint:https://api.duckduckgo.com}") String endpoint
+    ) {
+        try {
+            return new DuckDuckGoSearchClient(URI.create(endpoint));
+        } catch (IllegalArgumentException exception) {
+            return (query, maxResults) -> java.util.List.of();
+        }
+    }
+
+    @Bean
+    SelfAnalysisService selfAnalysisService(
+            StudyKnowledgeContext studyKnowledgeContext,
+            ExternalSearchClient externalSearchClient,
+            @Value("${mx.self-analysis.external-search-enabled:false}") boolean enabled,
+            @Value("${mx.self-analysis.max-results:3}") int maxResults,
+            @Value("${mx.self-analysis.audit-path:workspace/knowledge/runtime/self-analysis.jsonl}") String auditPath
+    ) {
+        return new SelfAnalysisService(
+                studyKnowledgeContext,
+                externalSearchClient,
+                enabled,
+                maxResults,
+                Path.of(auditPath)
         );
     }
 

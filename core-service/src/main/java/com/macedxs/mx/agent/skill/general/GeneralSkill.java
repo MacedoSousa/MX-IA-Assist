@@ -31,13 +31,14 @@ public class GeneralSkill implements Skill {
     private final ModelGateway modelGateway;
     private final StudyKnowledgeContext studyKnowledgeContext;
     private final UserPreferenceService userPreferenceService;
+    private final SelfAnalysisService selfAnalysisService;
 
     public GeneralSkill(ModelGateway modelGateway) {
-        this(modelGateway, StudyKnowledgeContext.fromClasspath(), null);
+        this(modelGateway, StudyKnowledgeContext.fromClasspath(), null, null);
     }
 
     GeneralSkill(ModelGateway modelGateway, StudyKnowledgeContext studyKnowledgeContext) {
-        this(modelGateway, studyKnowledgeContext, null);
+        this(modelGateway, studyKnowledgeContext, null, null);
     }
 
     public GeneralSkill(
@@ -45,16 +46,26 @@ public class GeneralSkill implements Skill {
             StudyKnowledgeContext studyKnowledgeContext,
             UserPreferenceService userPreferenceService
     ) {
+        this(modelGateway, studyKnowledgeContext, userPreferenceService, null);
+    }
+
+    public GeneralSkill(
+            ModelGateway modelGateway,
+            StudyKnowledgeContext studyKnowledgeContext,
+            UserPreferenceService userPreferenceService,
+            SelfAnalysisService selfAnalysisService
+    ) {
         this.modelGateway = modelGateway;
         this.studyKnowledgeContext = studyKnowledgeContext;
         this.userPreferenceService = userPreferenceService;
+        this.selfAnalysisService = selfAnalysisService;
     }
 
     @Override
     public SkillDefinition definition() {
         return new SkillDefinition(
                 "general",
-                "1.2.0",
+                "1.3.0",
                 "Conversação geral e esclarecimento de solicitações",
                 Set.of(),
                 Set.of(),
@@ -66,6 +77,7 @@ public class GeneralSkill implements Skill {
     @Override
     public SkillResult execute(SkillRequest request, SkillExecutionContext context) {
         long startedAt = System.nanoTime();
+        SelfAnalysisService.AnalysisResult analysis = analyze(request.prompt());
         ModelGateway.ModelResponse response = modelGateway.complete(
                 new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt(), context.userId()))
         );
@@ -82,7 +94,9 @@ public class GeneralSkill implements Skill {
                 Map.of(
                         "model", response.model() == null ? "unknown" : response.model(),
                         "durationMs", response.durationMs(),
-                        "skillDurationMs", (System.nanoTime() - startedAt) / 1_000_000
+                        "skillDurationMs", (System.nanoTime() - startedAt) / 1_000_000,
+                        "externalSearch", analysis.searched(),
+                        "externalKnowledgeLearned", analysis.learned()
                 )
         );
     }
@@ -98,6 +112,7 @@ public class GeneralSkill implements Skill {
         }
 
         long startedAt = System.nanoTime();
+        SelfAnalysisService.AnalysisResult analysis = analyze(request.prompt());
         ModelGateway.ModelResponse response = streamingModelGateway.stream(
                 new ModelGateway.ModelRequest(context.userId(), buildPrompt(request.prompt(), context.userId())),
                 chunkConsumer
@@ -114,9 +129,19 @@ public class GeneralSkill implements Skill {
                 Map.of(
                         "model", response.model() == null ? "unknown" : response.model(),
                         "durationMs", response.durationMs(),
-                        "skillDurationMs", (System.nanoTime() - startedAt) / 1_000_000
+                        "skillDurationMs", (System.nanoTime() - startedAt) / 1_000_000,
+                        "externalSearch", analysis.searched(),
+                        "externalKnowledgeLearned", analysis.learned()
                 )
         );
+    }
+
+    private SelfAnalysisService.AnalysisResult analyze(String prompt) {
+        if (selfAnalysisService == null) {
+            return new SelfAnalysisService.AnalysisResult(false, 0,
+                    studyKnowledgeContext.assessCoverage(prompt), "autoanálise desativada no construtor");
+        }
+        return selfAnalysisService.analyze(prompt);
     }
 
     private String buildPrompt(String prompt, java.util.UUID userId) {

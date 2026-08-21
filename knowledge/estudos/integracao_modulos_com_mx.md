@@ -197,3 +197,72 @@ SecurityKeyPolicy
 ## Análise crítica estrutural
 
 Toda decisão deve responder se o problema é de domínio, contrato, dados, código, rede, infraestrutura, processo ou governança. Kubernetes não corrige acoplamento; criptografia não corrige autorização; pipeline não corrige testes ausentes; observabilidade não corrige ausência de operação; e uma linguagem nova não corrige modelagem ruim. O assistente deve explicitar a camada do problema, dependências, trade-offs, evidências, risco de lock-in e caminho de reversão antes de recomendar uma mudança.
+
+
+## Biblioteca multidisciplinar — gestão, negócios e áreas gerais
+
+A biblioteca da squad será tratada como uma camada de conhecimento organizada, não como um depósito indiscriminado de conteúdo. O catálogo conserva metadados e referências; a síntese original transforma conceitos em material de estudo; as skills transformam conhecimento em comportamento operacional; e os casos de avaliação verificam se a aplicação é coerente.
+
+| Área | Aplicação no MX e na squad | Evidência esperada |
+|---|---|---|
+| Empreendedorismo e produto | Hipóteses, proposta de valor, roadmap, descoberta e validação | Registro de hipótese, experimento, métrica e decisão |
+| Finanças e custos | Orçamento, TCO, custo de IA, capacidade e priorização | Fórmula, premissas, moeda, período e análise de sensibilidade |
+| Liderança e pessoas | Papéis, feedback, gestão de impedimentos e desenvolvimento | Acordos, decisões, feedback e indicadores de fluxo |
+| Comunicação e storytelling | ADRs, releases, documentação, incidentes e apresentações | Contexto, decisão, risco, responsável e próximo passo |
+| Educação corporativa | Onboarding, trilhas internas, revisão e avaliação | Objetivo, pré-requisito, exercício e critério de conclusão |
+| LGPD e governança | Minimização, retenção, autorização, auditoria e resposta a incidentes | Política versionada e evidência sem exposição de dados |
+| UX/UI e acessibilidade | Estados de IA, confirmação, erro, citação e uso inclusivo | Teste de usabilidade e critérios de acessibilidade |
+| Customer Success | Valor entregue, adoção, satisfação, resolução e retenção | Métricas de valor e feedback rastreável |
+
+### Contrato de conhecimento da squad
+
+```text
+KnowledgeItem
+- id
+- sourceType
+- sourceReference
+- title
+- domain
+- competence
+- prerequisites
+- originalSynthesis
+- authoredExercises
+- applicationContext
+- relatedSkill
+- evidenceRefs
+- version
+- collectedAt
+- reviewDueAt
+- usageRestrictions
+
+DecisionRecord
+- decisionId
+- context
+- problemLayer
+- alternatives
+- assumptions
+- costImpact
+- riskImpact
+- userImpact
+- selectedOption
+- evidenceRefs
+- owner
+- reviewDate
+- rollbackOrExitPlan
+```
+
+O assistente não deve apresentar uma síntese como fato normativo sem indicar sua origem e sua data de revisão. Conteúdos de finanças, legislação, saúde ou segurança exigem contexto, escopo e revisão humana apropriada; eles não devem ser transformados automaticamente em recomendações pessoais ou comandos de produção. A biblioteca apoia raciocínio e preparação, mas decisões críticas permanecem sujeitas a validação humana.
+
+### Integração com o ciclo Kanban
+
+Cada item de conhecimento pode percorrer `Backlog -> Em estudo -> Sintetizado -> Exercitado -> Avaliado -> Aprovado -> Em revisão`. A promoção para `Aprovado` exige síntese original, exercício ou projeto, evidência de avaliação, fonte registrada e ausência de conflito não resolvido. Itens com conteúdo desatualizado ou dependência alterada retornam para `Em revisão`.
+
+### Fluxo operacional
+
+```text
+Catálogo -> Classificação -> Síntese original -> Exercício autoral
+         -> Aplicação no MX -> Avaliação -> Skill ou ADR
+         -> Revisão periódica -> Nova versão
+```
+
+Esse fluxo conecta a biblioteca ao MX sem confundir conhecimento documental com pesos de modelo. O assistente pode consultar e aplicar os itens aprovados, mas deve relatar incerteza, solicitar confirmação para decisões de risco e registrar evidências de qualquer evolução.

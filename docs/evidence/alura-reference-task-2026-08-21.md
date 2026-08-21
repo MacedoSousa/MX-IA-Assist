@@ -22,3 +22,24 @@ O pacote contém, entre outros, `BOOTSTRAP_README.md`, `bootstrap_learning.py`, 
 ## Aplicação prevista no MX
 
 O MX deve usar esses materiais como base documental recuperável, com hashes/manifesto, classificação por domínio, testes de recuperação, fonte e data. A autoanálise deve produzir diagnóstico e proposta versionável; promoção para skill, regra ou memória deve passar por validação e testes. A pesquisa em tempo real deve ser um caminho separado, com fonte, timestamp, sanitização de conteúdo não confiável e política de allowlist/approval antes de qualquer ação externa.
+
+## Importação incremental executada em 2026-08-21
+
+A captura autorizada foi reprocessada com o bootstrap oficial, incluindo **73 registros selecionados**, os **15 dossiês acadêmicos adicionais**, o inventário de materiais e a classificação de direitos de uso. O bootstrap detectou e corrigiu um único conflito textual não semântico, removendo somente whitespace final antes de reconstruir o índice.
+
+| Artefato validado | Resultado |
+|---|---:|
+| Chunks no índice empacotado do core-service | 390 |
+| Dossiês detalhados adicionados | 15 |
+| Manifestos/taxonomias reconstruídos | Sim |
+| Auditoria JSONL atualizada | Sim |
+| Alteração de pesos do Ollama | Não |
+| Execução automática de instruções dos materiais | Não |
+
+O pacote continua sendo memória documental versionada. A nova autoanálise do MX consulta primeiro esses chunks, e somente quando a cobertura lexical é insuficiente pode consultar o endpoint HTTPS allowlisted do DuckDuckGo; os snippets externos são deduplicados, limitados, marcados como não privilegiados e auditados por hash.
+
+## Incremental import executed on 2026-08-21
+
+The authorized capture was reprocessed with the official bootstrap, including **73 selected records**, **15 additional academic dossiers**, the materials inventory, and the rights classification. One non-semantic text conflict was detected and fixed by removing trailing whitespace only before rebuilding the indexes.
+
+The packaged core-service index now contains **390 chunks**. The process did not modify model weights or execute instructions from the imported materials. The MX self-analysis loop uses this local index first and only falls back to an HTTPS-allowlisted DuckDuckGo endpoint when lexical coverage is insufficient; external snippets remain bounded, deduplicated, non-privileged evidence and are audited by prompt hash.
