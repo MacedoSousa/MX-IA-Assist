@@ -51,4 +51,4 @@
 
 - [x] Mapear contratos e regras que descartam contexto, impedem ferramentas ou criam estados inconsistentes.
 - [x] Corrigir desconexões de baixo risco entre chat, skills, IA, anexos, tarefas e execução de ferramentas.
-- [ ] Validar os fluxos críticos e publicar o diagnóstico de regras que exigem evolução arquitetural.
+- [x] Validar os fluxos críticos e publicar o diagnóstico de regras que exigem evolução arquitetural.

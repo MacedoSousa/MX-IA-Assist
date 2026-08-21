@@ -51,6 +51,8 @@ A suíte Maven foi executada com sucesso após as alterações. Foram incluídos
 | Delimitadores de memória no prompt | `SendMessageUseCaseTest` |
 | Negação de ferramenta fora da allowlist | `ToolExecutorTest` |
 
+Além da regressão automatizada, o contêiner `mx-core` foi reconstruído de forma isolada no host local com `--no-deps`, preservando os demais serviços. Após o reinício, o Docker reportou o estado `healthy` e o endpoint `GET /actuator/health` respondeu `{"status":"UP"}`.
+
 ## Evoluções arquiteturais que permanecem deliberadamente fora deste patch
 
 O roteamento ainda é baseado em triggers textuais e deverá evoluir para classificação semântica com avaliação rastreável. O contexto recente continua limitado por número de mensagens e deve migrar para orçamento por tokens, sumarização e recuperação semântica por usuário e conversa. Essas melhorias exigem desenho de dados, métricas de qualidade e validação de desempenho; não foram incluídas nesta correção de baixo risco.
