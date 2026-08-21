@@ -65,5 +65,5 @@
 
 - [x] Reproduzir a divergência entre o pedido no chat e os botões de geração de mídia.
 - [x] Corrigir a identificação de intenção e a delegação segura do chat para as capacidades de imagem, vídeo e documento.
-- [ ] Validar respostas, políticas e artefatos pelos dois caminhos de interação.
-- [ ] Publicar o diagnóstico e a correção sem alterar memórias ou anexos existentes.
+- [x] Validar respostas, políticas e artefatos pelos dois caminhos de interação.
+- [x] Publicar o diagnóstico e a correção sem alterar memórias ou anexos existentes.
