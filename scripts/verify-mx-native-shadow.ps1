@@ -3,6 +3,7 @@ param(
     [Parameter(Mandatory = $true)][string]$LoginEmail,
     [Parameter(Mandatory = $true)][string]$LoginPassword,
     [switch]$TestImageGeneration,
+    [switch]$TestVideoGeneration,
     [switch]$TestAttachmentUpload,
     [switch]$TestPdfGeneration,
     [string]$AttachmentPath = 'D:\MX\mx-attachment-context.pdf'
@@ -44,6 +45,18 @@ if ($TestImageGeneration) {
     $imageCreated = $null -ne $image.id
 }
 
+$videoCreated = $false
+if ($TestVideoGeneration) {
+    $videoBody = @{
+        prompt = 'A brass compass resting on a deep-blue linen desk pad, subtle camera movement, no text'
+        durationSeconds = 2
+        width = 512
+        height = 512
+    } | ConvertTo-Json -Compress
+    $video = Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/v1/media/videos" -Headers $headers -ContentType "application/json" -Body $videoBody -TimeoutSec 300
+    $videoCreated = $null -ne $video.id
+}
+
 $pdfCreated = $false
 if ($TestPdfGeneration) {
     $documentBody = @{
@@ -60,6 +73,7 @@ if ($TestPdfGeneration) {
     AttachmentStored = $attachmentStored
     ConversationCreated = $null -ne $reply.conversationId
     ImageCreated = $imageCreated
+    VideoCreated = $videoCreated
     PdfCreated = $pdfCreated
     ResponseProperties = ($reply.PSObject.Properties.Name -join ",")
 } | ConvertTo-Json -Compress

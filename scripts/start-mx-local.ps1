@@ -2,6 +2,8 @@
 param(
     [string]$Root = (Split-Path -Parent $PSScriptRoot),
     [switch]$WithImageGeneration,
+    [switch]$WithVideoGeneration,
+    [switch]$WithAudioTranscription,
     [switch]$OpenBrowser,
     [string]$OllamaUrl = 'http://127.0.0.1:11435',
     [int]$PostgresPort = 15432,
@@ -14,6 +16,23 @@ $ErrorActionPreference = 'Stop'
 $logs = Join-Path $Root 'logs'
 New-Item -ItemType Directory -Force -Path $logs | Out-Null
 
+function Resolve-MxFfmpeg {
+    $fromPath = Get-Command ffmpeg.exe -ErrorAction SilentlyContinue
+    if ($fromPath) { return $fromPath.Source }
+    $wingetPackages = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages'
+    if (Test-Path $wingetPackages) {
+        return Get-ChildItem -Path $wingetPackages -Recurse -Filter 'ffmpeg.exe' -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty FullName
+    }
+}
+
+function Resolve-MxWhisper {
+    $fromPath = Get-Command whisper.exe -ErrorAction SilentlyContinue
+    if ($fromPath) { return $fromPath.Source }
+    $candidate = Join-Path $env:APPDATA 'Python\Python312\Scripts\whisper.exe'
+    if (Test-Path $candidate) { return $candidate }
+}
+
 $env:OLLAMA_URL = $OllamaUrl
 $env:MX_POSTGRES_PORT = $PostgresPort
 $env:SERVER_PORT = $CorePort
@@ -24,6 +43,30 @@ if ($WithImageGeneration) {
     Write-Host "[INFO] Geração de imagens habilitada no endpoint local $ImageGenerationUrl."
 } else {
     $env:MX_IMAGE_GENERATION_ENABLED = 'false'
+}
+if ($WithVideoGeneration) {
+    if (-not $WithImageGeneration) {
+        $env:MX_IMAGE_GENERATION_ENABLED = 'true'
+        $env:MX_IMAGE_GENERATION_URL = $ImageGenerationUrl
+        Write-Host "[INFO] Geração de imagens também foi habilitada, pois é pré-requisito do vídeo."
+    }
+    $ffmpegCommand = Resolve-MxFfmpeg
+    if ([string]::IsNullOrWhiteSpace($ffmpegCommand)) { throw 'FFmpeg não encontrado. Instale-o e execute novamente.' }
+    $env:MX_VIDEO_GENERATION_ENABLED = 'true'
+    $env:MX_VIDEO_GENERATION_FFMPEG_COMMAND = $ffmpegCommand
+    Write-Host "[INFO] Geração de vídeo habilitada com FFmpeg em $ffmpegCommand."
+} else {
+    $env:MX_VIDEO_GENERATION_ENABLED = 'false'
+}
+if ($WithAudioTranscription) {
+    $whisperCommand = Resolve-MxWhisper
+    if ([string]::IsNullOrWhiteSpace($whisperCommand)) { throw 'Whisper não encontrado. Instale-o e execute novamente.' }
+    $env:MX_AUDIO_TRANSCRIPTION_ENABLED = 'true'
+    $env:MX_AUDIO_TRANSCRIPTION_COMMAND = $whisperCommand
+    $env:MX_AUDIO_TRANSCRIPTION_MODEL = 'base'
+    Write-Host "[INFO] Transcrição de áudio habilitada com Whisper em $whisperCommand."
+} else {
+    $env:MX_AUDIO_TRANSCRIPTION_ENABLED = 'false'
 }
 
 & (Join-Path $PSScriptRoot 'verify-mx-local.ps1') -Root $Root -RequireImageGeneration:$WithImageGeneration -OllamaUrl $OllamaUrl -PostgresPort $PostgresPort

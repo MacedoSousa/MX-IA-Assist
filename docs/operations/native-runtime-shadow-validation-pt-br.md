@@ -15,6 +15,7 @@ O MX Core nativo iniciou com sucesso na porta `18080` depois da restauração do
 | Conversa | Login autenticado e resposta de conversa pelo Core nativo | Aprovado |
 | Anexos | Upload e processamento de um PDF real de validação anexado à conversa | Aprovado |
 | Imagem | Geração autenticada pelo Core nativo com Forge temporário em `127.0.0.1:7860` | Aprovado |
+| Vídeo | Geração de clipe MP4 curto com quadro Forge e FFmpeg nativo | Aprovado |
 | Documento | Geração de PDF com fonte Arial no Windows e armazenamento como anexo | Aprovado |
 | Pré-requisitos | Verificador detecta Ollama em LocalAppData, `pg_isready.exe` e PostgreSQL `15432` | Aprovado |
 
@@ -28,15 +29,15 @@ Os scripts `start-ollama-local.ps1`, `start-mx-local.ps1`, `run-backend.bat`, `v
 
 ## Limites antes do corte final
 
-O Docker permanece o caminho de produção e reversão até que os itens abaixo sejam concluídos. O Forge está funcionando apenas como componente transitório no contêiner da porta `7860`; portanto, o runtime ainda não é integralmente livre de Docker para imagens. FFmpeg e uma ferramenta local de transcrição Whisper não foram encontrados no PATH do Windows e precisam ser instalados e testados antes da promoção das funções de vídeo e áudio.
+O Docker permanece o caminho de produção e reversão até que os itens abaixo sejam concluídos. O Forge está funcionando apenas como componente transitório no contêiner da porta `7860`; portanto, o runtime ainda não é integralmente livre de Docker para imagens. O FFmpeg 9 foi instalado pelo gerenciador Windows e o vídeo curto foi gerado com sucesso pelo pipeline nativo. O Whisper local foi instalado para uso pelo launcher, mas ainda exige uma validação com gravação de fala real antes de ser promovido para a operação.
 
-Também permanecem pendentes a política de inicialização persistente do Core/Ollama/Expo, a revisão da exposição de rede do PostgreSQL nativo, a definição de Redis no runtime direto, os testes de Expo em rede local/Tailscale e o plano de corte com retorno documentado. O DSH continua isolado em `127.0.0.1:3080` e não é alterado por esta etapa.
+Também permanecem pendentes a política de inicialização persistente do Core/Expo, a revisão da exposição de rede do PostgreSQL nativo, a definição de Redis no runtime direto, os testes de Expo em rede local/Tailscale e o plano de corte com retorno documentado. O Ollama nativo já possui uma tarefa de inicialização reversível no logon. O DSH continua isolado em `127.0.0.1:3080` e não é alterado por esta etapa.
 
 ## Reprodução segura
 
 1. Mantenha os contêineres atuais ativos enquanto a validação ocorre.
 2. Confirme os pré-requisitos com `scripts/verify-mx-local.ps1 -OllamaUrl http://127.0.0.1:11435 -PostgresPort 15432`.
-3. Para validar o Core isoladamente, execute `scripts/local/start-mx-core-shadow.ps1 -WithImageGeneration` e consulte `http://127.0.0.1:18080/actuator/health`.
-4. Use `scripts/verify-mx-native-shadow.ps1` com credenciais passadas em parâmetros locais para exercitar login, conversa, PDF, anexo e imagem. Não registre senhas em arquivos nem no histórico de comandos compartilhado.
+3. Para validar o Core isoladamente, execute `scripts/local/start-mx-core-shadow.ps1 -WithVideoGeneration` e consulte `http://127.0.0.1:18080/actuator/health`.
+4. Use `scripts/verify-mx-native-shadow.ps1` com credenciais passadas em parâmetros locais para exercitar login, conversa, PDF, anexo, imagem e vídeo. Não registre senhas em arquivos nem no histórico de comandos compartilhado.
 
 O corte para a porta de produção somente deve ocorrer depois que todos os limites desta seção tiverem evidência de aceite.

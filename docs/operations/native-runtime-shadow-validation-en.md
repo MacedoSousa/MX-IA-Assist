@@ -15,6 +15,7 @@ The native MX Core started successfully on port `18080` after PostgreSQL restora
 | Conversation | Authenticated login and conversation response through native Core | Passed |
 | Attachments | Upload and processing of a real validation PDF attached to a conversation | Passed |
 | Image | Authenticated generation through native Core using temporary Forge at `127.0.0.1:7860` | Passed |
+| Video | Short MP4 clip generated with a Forge keyframe and native FFmpeg | Passed |
 | Document | PDF generation with Windows Arial font and attachment storage | Passed |
 | Prerequisites | Verifier detects Ollama in LocalAppData, `pg_isready.exe`, and PostgreSQL `15432` | Passed |
 
@@ -28,9 +29,9 @@ The native MX Core started successfully on port `18080` after PostgreSQL restora
 
 ## Remaining cutover boundaries
 
-Docker remains the production and rollback route until the following items are complete. Forge is still a transitional container component at port `7860`, so image generation is not yet Docker-free. FFmpeg and a local Whisper transcription tool were not found on the Windows PATH and must be installed and tested before promoting video and audio features.
+Docker remains the production and rollback route until the following items are complete. Forge is still a transitional container component at port `7860`, so image generation is not yet Docker-free. FFmpeg 9 was installed through the Windows package manager and the native video pipeline generated a short clip successfully. Local Whisper was installed for the launcher, but still needs validation with real speech before production promotion.
 
-Persistent startup for Core/Ollama/Expo, the native PostgreSQL network exposure policy, the direct-runtime Redis decision, Expo testing over LAN/Tailscale, and the documented cutover-and-return plan also remain open. DSH stays isolated at `127.0.0.1:3080` and was not changed by this work.
+Persistent startup for Core/Expo, the native PostgreSQL network exposure policy, the direct-runtime Redis decision, Expo testing over LAN/Tailscale, and the documented cutover-and-return plan also remain open. Native Ollama now has a reversible logon-start task. DSH stays isolated at `127.0.0.1:3080` and was not changed by this work.
 
 ## Safe reproduction
 

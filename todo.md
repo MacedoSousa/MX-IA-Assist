@@ -83,5 +83,5 @@
 - [x] Corrigir a inicialização Flyway com privilégios mínimos para a conta de aplicação no banco restaurado.
 - [x] Confirmar healthcheck, login, conversa, PDF anexado, imagem e documento no Core nativo em `18080`.
 - [x] Tornar as portas do PostgreSQL/Ollama explícitas nos launchers e no verificador Windows.
-- [ ] Substituir ou formalizar a dependência transitória do Forge em Docker e validar áudio/vídeo com ferramentas nativas.
-- [ ] Configurar inicialização persistente e endurecer a exposição de rede antes do corte da produção Docker.
+- [ ] Substituir ou formalizar a dependência transitória do Forge em Docker e validar transcrição com fala real; FFmpeg e vídeo nativo já foram verificados.
+- [ ] Configurar inicialização persistente para Core/Expo e endurecer a exposição de rede antes do corte da produção Docker; Ollama possui tarefa reversível no logon.
