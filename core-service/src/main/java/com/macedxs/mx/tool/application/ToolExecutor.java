@@ -94,7 +94,7 @@ public class ToolExecutor {
         ExecutionRun run = ExecutionRun.receive(
                 UUID.randomUUID(),
                 context.userId(),
-                context.correlationId(),
+                UUID.randomUUID(),
                 request.toolName()
         );
         run.route(context.skillName());

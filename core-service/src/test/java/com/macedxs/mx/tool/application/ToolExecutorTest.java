@@ -77,6 +77,7 @@ class ToolExecutorTest {
         assertThat(saved.get().status()).isEqualTo(RunStatus.AWAITING_APPROVAL);
         assertThat(saved.get().pendingApproval()).isEqualTo("workspace.write_file");
         assertThat(saved.get().pendingApprovalArguments()).contains("\"path\":\"notes.txt\"");
+        assertThat(saved.get().correlationId()).isNotEqualTo(context.correlationId());
         assertThat(saved.get().approvalNonceHash()).isNotBlank();
         assertThat(executed).isFalse();
     }
