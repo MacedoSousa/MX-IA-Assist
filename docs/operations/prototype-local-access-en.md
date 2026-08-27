@@ -19,7 +19,7 @@ The entire MX environment is a **local prototype**. No port, container, script, 
 
 The native shadow Core at `18080` is the validation environment connected to native PostgreSQL and Ollama. The API has no public root route and remains authenticated, so a browser shows a default error page when `/` is requested. This is not an outage when `/actuator/health` returns `UP`.
 
-The Docker environment is preserved only as a prototype reference and rollback path. It must not be described as production or removed before the remaining validations are complete. Future centralization will use a single local launcher/panel with healthchecks and reversible actions, without launching arbitrary commands or publishing content.
+The primary prototype usage path is the **UI on `8082` connected to the reference Docker Core on `8080`**, with persistence in the preserved Docker PostgreSQL instance. The native Core on `18080` remains shadow-only for validation. This prevents mixing the two databases during migration. The Docker environment must not be described as production or removed before remaining validations are complete.
 
 ## Prototype central control
 
@@ -29,11 +29,12 @@ The Docker environment is preserved only as a prototype reference and rollback p
 cd D:\MX
 .\scripts\mx-prototype-control.ps1
 .\scripts\mx-prototype-control.ps1 -Action OpenMx
+.\scripts\mx-prototype-control.ps1 -Action OpenGuestConsole
 .\scripts\mx-prototype-control.ps1 -Action StartShadow
 .\scripts\mx-prototype-control.ps1 -Action StopShadow
 ```
 
-`OpenMx` opens only `http://127.0.0.1:8082`. `StartShadow` and `StopShadow` operate exclusively on the process listening on port `18080`; the former does not restart an already healthy Core. None of these actions starts, stops, rebuilds, or removes Docker, modifies PostgreSQL, accesses secrets, changes memory/attachments/workspaces, or publishes content.
+`OpenMx` opens only `http://127.0.0.1:8082`, the primary prototype route. `OpenGuestConsole` opens an ephemeral local chat using `qwen3:8b`, without signup and without access to Core, data, attachments, RAG, or tools. `StartShadow` and `StopShadow` operate exclusively on the process listening on port `18080`; the former does not restart an already healthy Core. None of these actions starts, stops, rebuilds, or removes Docker, modifies PostgreSQL, accesses secrets, changes memory/attachments/workspaces, or publishes content.
 
 ## UI login correction
 

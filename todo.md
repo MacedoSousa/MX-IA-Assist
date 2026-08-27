@@ -120,3 +120,9 @@
 - [x] Capturar a causa sanitizada da falha de login relatada pelo usuário e validar o vínculo entre a UI, proxy, Core e banco do caminho Docker.
 - [x] Comparar as contas e esquemas dos bancos Docker e nativo sem expor e-mails, hashes ou senhas, corrigindo somente a rota/configuração que divergir.
 - [x] Definir e validar um modo CMD local sem cadastro, limitado a conversa efêmera e sem acesso a memória, anexos, runs, arquivos ou ações sensíveis.
+
+### Consolidação de pendências
+
+- [x] Inventariar todos os marcadores não concluídos em `todo.md` e nos documentos técnicos/operacionais, removendo apenas duplicidades comprovadas.
+- [x] Converter o inventário em uma sequência P0–P2 com evidências, dependências e critérios de aceite para cada incremento reversível.
+- [ ] Executar os incrementos pendentes por prioridade, publicando somente código, testes e documentação sem dados operacionais ou segredos.

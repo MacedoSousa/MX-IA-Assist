@@ -236,7 +236,7 @@ export type GeneratedMediaInput = {
 };
 
 export type ChatV1Response = {
-  status: "COMPLETED";
+  status: ExecutionRunStatus;
   correlationId: string | null;
   conversationId: string;
   userMessageId: string;
@@ -610,6 +610,12 @@ export class MxApiClient {
           handlers.onToken?.(payload as ChatV1StreamToken);
           break;
         case "completed":
+          completed = payload as ChatV1Response;
+          handlers.onCompleted?.(completed);
+          break;
+        case "approval_required":
+          // A aprovação é uma conclusão válida do stream: o Core já persistiu
+          // a run como AWAITING_APPROVAL e o cliente deve exibir o painel seguro.
           completed = payload as ChatV1Response;
           handlers.onCompleted?.(completed);
           break;

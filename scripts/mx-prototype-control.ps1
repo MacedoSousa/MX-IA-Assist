@@ -4,7 +4,7 @@ It never reads secret files, invokes free-form commands, alters Docker, publishe
 or touches databases, backups, attachments, memory, or workspaces.
 #>
 param(
-    [ValidateSet('Status', 'OpenMx', 'StartShadow', 'StopShadow')]
+    [ValidateSet('Status', 'OpenMx', 'OpenGuestConsole', 'StartShadow', 'StopShadow')]
     [string]$Action = 'Status',
     [switch]$WithImageGeneration,
     [switch]$WithVideoGeneration
@@ -13,6 +13,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = 'D:\MX'
 $mxUiUrl = 'http://127.0.0.1:8082'
+$coreReferenceHealthUrl = 'http://127.0.0.1:8080/actuator/health'
 $shadowHealthUrl = 'http://127.0.0.1:18080/actuator/health'
 
 function Get-HttpStatus([string]$Url) {
@@ -56,9 +57,16 @@ function Get-PrototypeStatus {
     $dockerAvailable = $null -ne (Get-Command 'docker.exe' -ErrorAction SilentlyContinue)
     [PSCustomObject]@{
         mode = 'PROTOTYPE'
+        primaryAccess = [PSCustomObject]@{
+            label = 'MX UI com Core Docker de referência'
+            url = $mxUiUrl
+            coreHealthUrl = $coreReferenceHealthUrl
+            persistence = 'PostgreSQL Docker preservado'
+            note = 'O Core nativo em 18080 é shadow e não é a rota de uso diário.'
+        }
         mxUi = [PSCustomObject]@{ url = $mxUiUrl; status = Get-HttpStatus "$mxUiUrl/" }
         coreShadow = [PSCustomObject]@{ healthUrl = $shadowHealthUrl; status = Get-HttpStatus $shadowHealthUrl; pid = Get-ListenerPid 18080 }
-        coreReference = [PSCustomObject]@{ url = 'http://127.0.0.1:8080'; status = Get-HttpStatus 'http://127.0.0.1:8080/'; pid = Get-ListenerPid 8080 }
+        coreReference = [PSCustomObject]@{ healthUrl = $coreReferenceHealthUrl; status = Get-HttpStatus $coreReferenceHealthUrl; pid = Get-ListenerPid 8080 }
         ollamaNative = [PSCustomObject]@{ url = 'http://127.0.0.1:11435'; status = Get-HttpStatus 'http://127.0.0.1:11435/api/tags' }
         forgeTransient = [PSCustomObject]@{ url = 'http://127.0.0.1:7860'; status = Get-HttpStatus 'http://127.0.0.1:7860/' }
         dshLoopback = [PSCustomObject]@{ url = 'http://127.0.0.1:3080'; status = Get-HttpStatus 'http://127.0.0.1:3080/' }
@@ -75,6 +83,12 @@ switch ($Action) {
         }
         Start-Process $mxUiUrl
         Write-Output "MX_UI_OPENED=$mxUiUrl"
+    }
+    'OpenGuestConsole' {
+        $console = Join-Path $root 'scripts\mx-local-chat.ps1'
+        if (-not (Test-Path -LiteralPath $console)) { throw 'Console local convidado não encontrado.' }
+        Start-Process powershell.exe -ArgumentList @('-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $console, '-Model', 'qwen3:8b')
+        Write-Output 'MX_GUEST_CONSOLE_OPENED=qwen3:8b'
     }
     'StartShadow' {
         if ((Get-HttpStatus $shadowHealthUrl) -eq '200') {
