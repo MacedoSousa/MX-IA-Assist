@@ -31,6 +31,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DevelopmentSkillTest {
 
     @Test
+    void shouldExposeOnlyNamedWorkspaceRecipesAtProposalAutonomy() {
+        var definition = new DevelopmentSkill(new FakeModelGateway("Resposta sem tool.")).definition();
+
+        assertThat(definition.maximumAutonomy()).isEqualTo(AutonomyLevel.PROPOSE);
+        assertThat(definition.allowedTools()).containsExactlyInAnyOrder(
+                "workspace.read_file",
+                "workspace.list",
+                "workspace.write_file",
+                "workspace.initialize_static_project",
+                "workspace.preview_static"
+        );
+    }
+
+    @Test
     void shouldExecuteAnExplicitReadOnlyToolAndGiveTheResultBackToTheModel() {
         AtomicBoolean executed = new AtomicBoolean(false);
         ToolRegistry registry = new ToolRegistry();
@@ -79,12 +93,37 @@ class DevelopmentSkillTest {
         assertThat(store.saved).isNotNull();
     }
 
+    @Test
+    void shouldProposeStaticPreviewAndNeverStartItBeforeApproval() {
+        AtomicBoolean executed = new AtomicBoolean(false);
+        CapturingStore store = new CapturingStore();
+        ToolRegistry registry = new ToolRegistry();
+        registry.register(tool("workspace.preview_static", ToolEffect.WRITE, AutonomyLevel.EXECUTE_WITH_APPROVAL, executed));
+        FakeModelGateway gateway = new FakeModelGateway(
+                "[MX_TOOL_CALL]{\"toolName\":\"workspace.preview_static\",\"arguments\":{\"project\":\"portal-local\"}}[/MX_TOOL_CALL]"
+        );
+
+        var result = new DevelopmentSkill(
+                gateway,
+                new ToolExecutor(registry, new PolicyEngine(), store, Duration.ofMinutes(5))
+        ).execute(
+                new SkillRequest("Prepare um preview local do portal"),
+                new SkillExecutionContext(UUID.randomUUID(), UUID.randomUUID(), AutonomyLevel.PROPOSE)
+        );
+
+        assertThat(result.metadata()).containsEntry("approvalRequired", true);
+        assertThat(result.metadata()).containsEntry("toolName", "workspace.preview_static");
+        assertThat(executed).isFalse();
+        assertThat(store.saved).isNotNull();
+    }
+
     private static Tool tool(String name, ToolEffect effect, AutonomyLevel minimumAutonomy, AtomicBoolean executed) {
         return new Tool() {
             @Override
             public ToolDefinition definition() {
+                Set<String> requiredArguments = name.equals("workspace.preview_static") ? Set.of("project") : Set.of("path");
                 return new ToolDefinition(name, "1.0.0", name, effect, minimumAutonomy,
-                        Duration.ofSeconds(5), Set.of("path"));
+                        Duration.ofSeconds(5), requiredArguments);
             }
 
             @Override
