@@ -38,6 +38,8 @@ import com.macedxs.mx.tool.application.ToolExecutor;
 import com.macedxs.mx.tool.application.ToolRegistry;
 import com.macedxs.mx.tool.workspace.WorkspaceListTool;
 import com.macedxs.mx.tool.workspace.WorkspaceReadFileTool;
+import com.macedxs.mx.tool.workspace.WorkspaceInitializeStaticProjectTool;
+import com.macedxs.mx.tool.workspace.WorkspaceStaticPreviewRequestTool;
 import com.macedxs.mx.media.service.DocumentGenerationService;
 import com.macedxs.mx.media.service.ImageGenerationService;
 import com.macedxs.mx.media.service.VideoGenerationService;
@@ -296,16 +298,34 @@ public class ConversationConfiguration {
     }
 
     @Bean
+    WorkspaceInitializeStaticProjectTool workspaceInitializeStaticProjectTool(
+            @Value("${mx.workspace.root:.}") String workspaceRoot
+    ) {
+        return new WorkspaceInitializeStaticProjectTool(Path.of(workspaceRoot));
+    }
+
+    @Bean
+    WorkspaceStaticPreviewRequestTool workspaceStaticPreviewRequestTool(
+            @Value("${mx.workspace.root:.}") String workspaceRoot
+    ) {
+        return new WorkspaceStaticPreviewRequestTool(Path.of(workspaceRoot));
+    }
+
+    @Bean
     ToolRegistry toolRegistry(
             WorkspaceListTool workspaceListTool,
             WorkspaceReadFileTool workspaceReadFileTool,
             com.macedxs.mx.tool.workspace.WorkspaceWriteTool workspaceWriteTool,
+            WorkspaceInitializeStaticProjectTool workspaceInitializeStaticProjectTool,
+            WorkspaceStaticPreviewRequestTool workspaceStaticPreviewRequestTool,
             SelfExtensionSubmitTool selfExtensionSubmitTool
     ) {
         ToolRegistry registry = new ToolRegistry();
         registry.register(workspaceListTool);
         registry.register(workspaceReadFileTool);
         registry.register(workspaceWriteTool);
+        registry.register(workspaceInitializeStaticProjectTool);
+        registry.register(workspaceStaticPreviewRequestTool);
         registry.register(selfExtensionSubmitTool);
         return registry;
     }

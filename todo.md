@@ -98,4 +98,5 @@
 
 - [x] Retomar uma tool sensível registrada somente após aprovação com nonce, ownership e expiração válidos, persistindo evidência de conclusão ou falha.
 - [x] Serializar argumentos pendentes de tools em JSON estruturado, impedindo alteração de intenção no fluxo de aprovação.
-- [ ] Implementar receitas host-side nomeadas para bootstrap, validação estática, preview em loopback e encerramento explícito de processos, sem shell livre.
+- [x] Implementar receita de bootstrap estático e preview em loopback, com fila host-side, portas temporárias reservadas, logs e encerramento explícito, sem shell livre.
+- [ ] Implementar receitas distintas para validação estática e build de perfis permitidos, com staging, timeout e evidência antes de qualquer publicação.

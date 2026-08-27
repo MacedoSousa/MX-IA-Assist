@@ -61,11 +61,11 @@ public class DevelopmentSkill implements Skill {
     public SkillDefinition definition() {
         return new SkillDefinition(
                 "development",
-                "1.2.0",
+                "1.3.0",
                 "Desenvolvimento fullstack, arquitetura, debugging e testes",
                 Set.of("código", "codigo", "bug", "erro", "java", "spring", "maven", "teste", "arquitetura", "programar"),
-                Set.of("workspace.read_file", "workspace.list", "workspace.write_file"),
-                AutonomyLevel.EXECUTE_READ_ONLY,
+                Set.of("workspace.read_file", "workspace.list", "workspace.write_file", "workspace.initialize_static_project", "workspace.preview_static"),
+                AutonomyLevel.PROPOSE,
                 Duration.ofSeconds(90)
         );
     }

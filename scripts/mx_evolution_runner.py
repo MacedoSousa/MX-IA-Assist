@@ -15,6 +15,7 @@ import os
 import platform
 import re
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -46,6 +47,8 @@ SECRET_RE = re.compile(
 )
 SLUG_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+){0,5}")
 COMMIT_RE = re.compile(r"^[\wÀ-ÿ][\wÀ-ÿ ._:/()+'-]{2,119}$")
+WORKSPACE_PROJECT_RE = re.compile(r"[a-z0-9][a-z0-9-]{0,47}$")
+STATIC_PREVIEW_PORTS = range(48000, 48100)
 
 
 @dataclass(frozen=True)
@@ -437,6 +440,122 @@ def append_audit(root: Path, result: dict[str, Any]) -> None:
         }, ensure_ascii=False) + "\n")
 
 
+def workspace_preview_paths(root: Path) -> tuple[Path, Path, Path, Path]:
+    workspace = root / "workspaces"
+    base = workspace / ".mx" / "preview-requests"
+    return workspace, base / "pending", base / "running", base / "stopped"
+
+
+def safe_workspace_project(workspace: Path, project: Any) -> Path:
+    if not isinstance(project, str) or not WORKSPACE_PROJECT_RE.fullmatch(project):
+        raise RunnerError("workspace preview project is invalid")
+    workspace.mkdir(parents=True, exist_ok=True)
+    if workspace.is_symlink():
+        raise RunnerError("workspace root cannot be a symbolic link")
+    target = workspace / project
+    if target.is_symlink() or not target.is_dir() or not (target / "index.html").is_file():
+        raise RunnerError("workspace project is not a previewable static project")
+    resolved_workspace = workspace.resolve()
+    resolved_target = target.resolve()
+    if resolved_workspace not in resolved_target.parents:
+        raise RunnerError("workspace preview project escapes root")
+    return resolved_target
+
+
+def load_static_preview_request(job_path: Path, workspace: Path) -> tuple[str, Path, dict[str, Any]]:
+    try:
+        payload = json.loads(job_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RunnerError("workspace preview request is not valid JSON") from exc
+    request_id = payload.get("requestId")
+    if not isinstance(request_id, str) or not re.fullmatch(r"[0-9a-fA-F-]{36}", request_id):
+        raise RunnerError("workspace preview request id is invalid")
+    if payload.get("recipe") != "static-http" or payload.get("host") != "127.0.0.1" or payload.get("portRange") != "48000-48099":
+        raise RunnerError("workspace preview recipe is not allowed")
+    return request_id, safe_workspace_project(workspace, payload.get("project")), payload
+
+
+def free_static_preview_port() -> int:
+    for port in STATIC_PREVIEW_PORTS:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                probe.bind(("127.0.0.1", port))
+                return port
+            except OSError:
+                continue
+    raise RunnerError("no loopback preview port is available")
+
+
+def start_static_preview(root: Path) -> dict[str, Any]:
+    workspace, pending, running, _ = workspace_preview_paths(root)
+    pending.mkdir(parents=True, exist_ok=True)
+    jobs = sorted(pending.glob("*.json"))
+    if not jobs:
+        return {"status": "NO_PENDING_WORKSPACE_PREVIEW"}
+    job_path = jobs[0]
+    request_id, project_root, payload = load_static_preview_request(job_path, workspace)
+    running.mkdir(parents=True, exist_ok=True)
+    log_dir = workspace / ".mx" / "preview-requests" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    port = free_static_preview_port()
+    log_path = log_dir / f"{request_id}.log"
+    try:
+        with log_path.open("a", encoding="utf-8") as log:
+            process = subprocess.Popen(
+                [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", str(project_root)],
+                cwd=project_root,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+    except OSError as exc:
+        raise RunnerError("workspace preview process could not start") from exc
+    state = {
+        "requestId": request_id,
+        "recipe": "static-http",
+        "project": payload["project"],
+        "host": "127.0.0.1",
+        "port": port,
+        "url": f"http://127.0.0.1:{port}",
+        "pid": process.pid,
+        "startedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "log": str(log_path.relative_to(workspace)).replace("\\", "/"),
+    }
+    state_path = running / f"{request_id}.state.json"
+    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    job_path.replace(running / job_path.name)
+    return {"status": "STARTED", **state}
+
+
+def stop_static_preview(root: Path, request_id: str) -> dict[str, Any]:
+    if not re.fullmatch(r"[0-9a-fA-F-]{36}", request_id or ""):
+        raise RunnerError("workspace preview request id is invalid")
+    workspace, _, running, stopped = workspace_preview_paths(root)
+    state_path = running / f"{request_id}.state.json"
+    if not state_path.is_file():
+        return {"status": "PREVIEW_NOT_FOUND", "requestId": request_id}
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        pid = int(state["pid"])
+        if pid < 1:
+            raise ValueError
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        raise RunnerError("workspace preview state is invalid") from exc
+    if platform.system().lower().startswith("win"):
+        completed = subprocess.run(["taskkill.exe", "/PID", str(pid), "/T", "/F"], capture_output=True, text=True, check=False)
+    else:
+        completed = subprocess.run(["kill", "-TERM", str(pid)], capture_output=True, text=True, check=False)
+    stopped.mkdir(parents=True, exist_ok=True)
+    state["stoppedAt"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    state["stopExitCode"] = completed.returncode
+    state_path.replace(stopped / state_path.name)
+    running_job = running / f"{request_id}.json"
+    if running_job.exists():
+        running_job.replace(stopped / running_job.name)
+    return {"status": "STOPPED" if completed.returncode == 0 else "STOP_REQUEST_RECORDED", "requestId": request_id}
+
+
 def run_once(root: Path, args: argparse.Namespace) -> int:
     pending = root / "data" / "evolution" / "jobs" / "pending"
     pending.mkdir(parents=True, exist_ok=True)
@@ -462,6 +581,8 @@ def main() -> int:
     parser.add_argument("--root", type=Path, default=Path(os.getenv("MX_PROJECT_ROOT", project_root_from_script())))
     parser.add_argument("--once", action="store_true", help="process pending jobs once and exit")
     parser.add_argument("--watch", action="store_true", help="poll pending jobs continuously")
+    parser.add_argument("--workspace-preview-once", action="store_true", help="start one approved static workspace preview recipe")
+    parser.add_argument("--stop-workspace-preview", metavar="REQUEST_ID", help="stop one static workspace preview previously started by this runner")
     parser.add_argument("--interval-seconds", type=int, default=int(os.getenv("MX_EVOLUTION_INTERVAL_SECONDS", "10")))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--timeout-seconds", type=int, default=int(os.getenv("MX_EVOLUTION_TIMEOUT_SECONDS", "1800")))
@@ -473,6 +594,15 @@ def main() -> int:
     if not (root / ".git").exists():
         print("error: --root must point to an MX Git worktree", file=sys.stderr)
         return 2
+    if args.workspace_preview_once and args.stop_workspace_preview:
+        print("error: choose only one workspace preview operation", file=sys.stderr)
+        return 2
+    if args.workspace_preview_once:
+        print(json.dumps(start_static_preview(root), ensure_ascii=False))
+        return 0
+    if args.stop_workspace_preview:
+        print(json.dumps(stop_static_preview(root, args.stop_workspace_preview), ensure_ascii=False))
+        return 0
     if args.watch:
         while True:
             run_once(root, args)
