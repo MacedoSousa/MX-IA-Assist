@@ -1,7 +1,9 @@
 [CmdletBinding()]
 param(
     [string]$Root = (Split-Path -Parent $PSScriptRoot),
-    [switch]$RequireImageGeneration
+    [switch]$RequireImageGeneration,
+    [string]$OllamaUrl = 'http://127.0.0.1:11435',
+    [int]$PostgresPort = 15432
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,6 +19,22 @@ function Test-MxCommand {
 function Add-OllamaToPath {
     $candidate = Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama.exe'
     if ((Test-Path $candidate) -and -not (Get-Command ollama -ErrorAction SilentlyContinue)) {
+        $env:Path = "$(Split-Path -Parent $candidate);$env:Path"
+    }
+}
+
+function Add-PostgresToPath {
+    $programFiles = [Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)
+    if ([string]::IsNullOrWhiteSpace($programFiles)) { $programFiles = 'C:\Program Files' }
+    $preferred = Join-Path $programFiles 'PostgreSQL\16\bin\pg_isready.exe'
+    $candidate = if (Test-Path $preferred) {
+        $preferred
+    } else {
+        Get-ChildItem -Path (Join-Path $programFiles 'PostgreSQL') -Recurse -Filter 'pg_isready.exe' -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty FullName
+    }
+
+    if ($candidate -and -not (Get-Command pg_isready -ErrorAction SilentlyContinue)) {
         $env:Path = "$(Split-Path -Parent $candidate);$env:Path"
     }
 }
@@ -39,10 +57,13 @@ function Test-MxEndpoint {
 }
 
 Write-Host '=== Pré-requisitos do MX Local ==='
+if (-not [string]::IsNullOrWhiteSpace($env:OLLAMA_URL)) { $OllamaUrl = $env:OLLAMA_URL }
+if (-not [string]::IsNullOrWhiteSpace($env:MX_POSTGRES_PORT)) { $PostgresPort = [int]$env:MX_POSTGRES_PORT }
 Test-MxCommand java
 Test-MxCommand node
 Test-MxCommand npm
 Add-OllamaToPath
+Add-PostgresToPath
 Test-MxCommand ollama
 Test-MxCommand pg_isready
 
@@ -57,15 +78,15 @@ if (-not (Test-Path 'C:\Windows\Fonts\arial.ttf')) {
 }
 
 if (Get-Command pg_isready -ErrorAction SilentlyContinue) {
-    & pg_isready --host 127.0.0.1 --port 15432 --dbname mx | Out-Host
-    if ($LASTEXITCODE -ne 0) { $failures.Add('PostgreSQL indisponível em 127.0.0.1:15432') }
+    & pg_isready --host 127.0.0.1 --port $PostgresPort --dbname mx | Out-Host
+    if ($LASTEXITCODE -ne 0) { $failures.Add("PostgreSQL indisponível em 127.0.0.1:$PostgresPort") }
 }
-Test-MxEndpoint -Name 'Ollama' -Uri 'http://127.0.0.1:11434/api/tags' -Required
+Test-MxEndpoint -Name 'Ollama' -Uri "$OllamaUrl/api/tags" -Required
 Test-MxEndpoint -Name 'Forge' -Uri 'http://127.0.0.1:7860/sdapi/v1/sd-models' -Required:$RequireImageGeneration
 
 if ($failures.Count -gt 0) {
-    Write-Error ("Pré-requisitos pendentes:`n - " + ($failures -join "`n - "))
-    exit 1
+    foreach ($failure in $failures) { Write-Host "[FALHA] $failure" }
+    throw 'Pré-requisitos pendentes. Corrija os itens acima e execute novamente.'
 }
 
 Write-Host '[OK] Pré-requisitos mínimos disponíveis para iniciar o MX diretamente no Windows.'

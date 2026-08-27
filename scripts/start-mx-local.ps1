@@ -2,18 +2,35 @@
 param(
     [string]$Root = (Split-Path -Parent $PSScriptRoot),
     [switch]$WithImageGeneration,
-    [switch]$OpenBrowser
+    [switch]$OpenBrowser,
+    [string]$OllamaUrl = 'http://127.0.0.1:11435',
+    [int]$PostgresPort = 15432,
+    [int]$CorePort = 8080,
+    [string]$LanIp = '127.0.0.1',
+    [string]$ImageGenerationUrl = 'http://127.0.0.1:7860'
 )
 
 $ErrorActionPreference = 'Stop'
 $logs = Join-Path $Root 'logs'
 New-Item -ItemType Directory -Force -Path $logs | Out-Null
 
-& (Join-Path $PSScriptRoot 'verify-mx-local.ps1') -Root $Root -RequireImageGeneration:$WithImageGeneration
+$env:OLLAMA_URL = $OllamaUrl
+$env:MX_POSTGRES_PORT = $PostgresPort
+$env:SERVER_PORT = $CorePort
+$env:MX_LAN_IP = $LanIp
+if ($WithImageGeneration) {
+    $env:MX_IMAGE_GENERATION_ENABLED = 'true'
+    $env:MX_IMAGE_GENERATION_URL = $ImageGenerationUrl
+    Write-Host "[INFO] Geração de imagens habilitada no endpoint local $ImageGenerationUrl."
+} else {
+    $env:MX_IMAGE_GENERATION_ENABLED = 'false'
+}
+
+& (Join-Path $PSScriptRoot 'verify-mx-local.ps1') -Root $Root -RequireImageGeneration:$WithImageGeneration -OllamaUrl $OllamaUrl -PostgresPort $PostgresPort
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-if (Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue) {
-    Write-Host '[INFO] MX Core já está escutando na porta 8080.'
+if (Get-NetTCPConnection -LocalPort $CorePort -ErrorAction SilentlyContinue) {
+    Write-Host "[INFO] MX Core já está escutando na porta $CorePort."
 } else {
     $coreLog = Join-Path $logs 'mx-core-console.log'
     $coreErrorLog = Join-Path $logs 'mx-core-error.log'
@@ -24,7 +41,7 @@ if (Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue) {
 $deadline = (Get-Date).AddSeconds(90)
 while ((Get-Date) -lt $deadline) {
     try {
-        if ((Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8080/actuator/health' -TimeoutSec 3).StatusCode -eq 200) { break }
+        if ((Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$CorePort/actuator/health" -TimeoutSec 3).StatusCode -eq 200) { break }
     } catch { Start-Sleep -Seconds 2 }
 }
 if ((Get-Date) -ge $deadline) { throw 'MX Core não respondeu ao healthcheck dentro de 90 segundos.' }
@@ -34,9 +51,9 @@ if (Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue) {
 } else {
     $webLog = Join-Path $logs 'mx-web-console.log'
     $webErrorLog = Join-Path $logs 'mx-web-error.log'
-    Start-Process -FilePath (Join-Path $PSScriptRoot 'run-expo-web.bat') -WorkingDirectory $Root -RedirectStandardOutput $webLog -RedirectStandardError $webErrorLog
+    Start-Process -FilePath (Join-Path $PSScriptRoot 'run-expo-web.bat') -ArgumentList $LanIp -WorkingDirectory $Root -RedirectStandardOutput $webLog -RedirectStandardError $webErrorLog
     Write-Host "[INFO] Expo Web iniciado. Logs: $webLog e $webErrorLog"
 }
 
-Write-Host 'MX local iniciado: http://localhost:8081'
+Write-Host "MX local iniciado: http://$LanIp:8081"
 if ($OpenBrowser) { Start-Process 'http://localhost:8081' }

@@ -1,0 +1,42 @@
+# Validação do runtime nativo Windows — modo shadow
+
+**Data:** 27 de agosto de 2026  
+**Escopo:** validação paralela do MX Core executado diretamente no Windows, sem desligar ou recriar contêineres Docker.
+
+## Resultado
+
+O MX Core nativo iniciou com sucesso na porta `18080` depois da restauração do PostgreSQL e da concessão dos privilégios mínimos de schema, tabelas e sequências à conta de aplicação `mx`. O healthcheck retornou `UP`; o log confirma a conexão com `jdbc:postgresql://127.0.0.1:15432/mx`; e o launcher shadow força o Ollama nativo em `http://127.0.0.1:11435`.
+
+| Fluxo validado | Evidência | Resultado |
+|---|---|---|
+| Banco restaurado | PostgreSQL 16, instância paralela `15432`, conta `mx` autenticada | Aprovado |
+| Migrações | Flyway concluiu a inicialização do Core após grants de schema/objetos | Aprovado |
+| Saúde do Core | `GET /actuator/health` na porta `18080` | `UP` |
+| Conversa | Login autenticado e resposta de conversa pelo Core nativo | Aprovado |
+| Anexos | Upload e processamento de um PDF real de validação anexado à conversa | Aprovado |
+| Imagem | Geração autenticada pelo Core nativo com Forge temporário em `127.0.0.1:7860` | Aprovado |
+| Documento | Geração de PDF com fonte Arial no Windows e armazenamento como anexo | Aprovado |
+| Pré-requisitos | Verificador detecta Ollama em LocalAppData, `pg_isready.exe` e PostgreSQL `15432` | Aprovado |
+
+## Implementação registrada
+
+O script `initialize-mx-local-db.ps1` mantém o segredo somente no arquivo local ignorado pelo Git e aplica privilégios de menor alcance para o runtime: uso e criação no schema `public`, operações de dados nas tabelas existentes, uso de sequências e privilégios-padrão para objetos futuros criados pelo administrador da base. A aplicação não usa uma conta superusuária.
+
+Os scripts `start-ollama-local.ps1`, `start-mx-local.ps1`, `run-backend.bat`, `verify-mx-local.ps1`, `local/start-mx-core-shadow.ps1` e `verify-mx-native-shadow.ps1` suportam explicitamente o caminho nativo. O modo padrão local usa `11435`, PostgreSQL `15432` e permite substituições explícitas para reversão. O launcher principal só habilita o endpoint de imagem quando `-WithImageGeneration` é informado.
+
+> Nenhuma senha, token, dump de banco, anexo pessoal ou diretório de dados foi incluído no repositório durante a validação.
+
+## Limites antes do corte final
+
+O Docker permanece o caminho de produção e reversão até que os itens abaixo sejam concluídos. O Forge está funcionando apenas como componente transitório no contêiner da porta `7860`; portanto, o runtime ainda não é integralmente livre de Docker para imagens. FFmpeg e uma ferramenta local de transcrição Whisper não foram encontrados no PATH do Windows e precisam ser instalados e testados antes da promoção das funções de vídeo e áudio.
+
+Também permanecem pendentes a política de inicialização persistente do Core/Ollama/Expo, a revisão da exposição de rede do PostgreSQL nativo, a definição de Redis no runtime direto, os testes de Expo em rede local/Tailscale e o plano de corte com retorno documentado. O DSH continua isolado em `127.0.0.1:3080` e não é alterado por esta etapa.
+
+## Reprodução segura
+
+1. Mantenha os contêineres atuais ativos enquanto a validação ocorre.
+2. Confirme os pré-requisitos com `scripts/verify-mx-local.ps1 -OllamaUrl http://127.0.0.1:11435 -PostgresPort 15432`.
+3. Para validar o Core isoladamente, execute `scripts/local/start-mx-core-shadow.ps1 -WithImageGeneration` e consulte `http://127.0.0.1:18080/actuator/health`.
+4. Use `scripts/verify-mx-native-shadow.ps1` com credenciais passadas em parâmetros locais para exercitar login, conversa, PDF, anexo e imagem. Não registre senhas em arquivos nem no histórico de comandos compartilhado.
+
+O corte para a porta de produção somente deve ocorrer depois que todos os limites desta seção tiverem evidência de aceite.

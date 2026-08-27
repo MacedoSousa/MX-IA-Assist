@@ -27,10 +27,22 @@ BEGIN
 END
 `$`$;
 GRANT ALL PRIVILEGES ON DATABASE mx TO mx;
+\connect mx
+GRANT USAGE, CREATE ON SCHEMA public TO mx;
+GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON ALL TABLES IN SCHEMA public TO mx;
+GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO mx;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLES TO mx;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO mx;
 "@
 
     $sqlPath = Join-Path $env:TEMP 'mx-local-db-role.sql'
-    Set-Content -Path $sqlPath -Value $sql -Encoding utf8NoBOM
+    [System.IO.File]::WriteAllText(
+            $sqlPath,
+            $sql,
+            (New-Object System.Text.UTF8Encoding($false))
+    )
     & $psql -w -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $Port -U postgres -d postgres -f $sqlPath
     if ($LASTEXITCODE -ne 0) { throw 'Não foi possível criar a conta de aplicação MX.' }
     Remove-Item -Force $sqlPath -ErrorAction SilentlyContinue
@@ -38,11 +50,14 @@ GRANT ALL PRIVILEGES ON DATABASE mx TO mx;
     $localDirectory = Join-Path $Root 'scripts\local'
     New-Item -ItemType Directory -Force -Path $localDirectory | Out-Null
     $envPath = Join-Path $localDirectory 'mx-local.env'
-    @(
-        'SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:' + $Port + '/mx',
-        'SPRING_DATASOURCE_USERNAME=mx',
-        'SPRING_DATASOURCE_PASSWORD=' + $appPassword
-    ) | Set-Content -Path $envPath -Encoding ascii
+    $environmentText = "SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:$Port/mx`n" +
+            "SPRING_DATASOURCE_USERNAME=mx`n" +
+            "SPRING_DATASOURCE_PASSWORD=$appPassword`n"
+    [System.IO.File]::WriteAllText(
+            $envPath,
+            $environmentText,
+            (New-Object System.Text.UTF8Encoding($false))
+    )
     & icacls.exe $envPath /inheritance:r /grant:r "$env:USERNAME`:(R,W)" | Out-Null
     Write-Host "Conta de aplicação configurada e segredo local protegido em $envPath"
 }

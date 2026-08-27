@@ -21,7 +21,7 @@ management:
 
 mx:
   ollama:
-    url: ${OLLAMA_URL:http://127.0.0.1:11434}
+    url: ${OLLAMA_URL:http://127.0.0.1:11435}
   media:
     image-generation:
       enabled: ${MX_IMAGE_GENERATION_ENABLED:false}
