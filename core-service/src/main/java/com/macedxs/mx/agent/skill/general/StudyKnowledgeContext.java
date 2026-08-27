@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
@@ -31,31 +33,39 @@ public final class StudyKnowledgeContext {
     private static final int MAX_SELECTED_CHUNKS = 3;
     private static final int MAX_CONTEXT_CHARS = 3800;
     private static final Pattern TOKEN_SPLIT = Pattern.compile("[^\\p{L}\\p{Nd}]+", Pattern.UNICODE_CHARACTER_CLASS);
+    private static final String SHARED_OWNER = "shared-authorized";
 
     private final String summary;
     private volatile List<KnowledgeChunk> chunks;
     private final KnowledgeQueryExpander queryExpander;
+    private final SemanticEmbeddingClient semanticEmbeddingClient;
+    private final ConcurrentHashMap<String, double[]> vectorIndex = new ConcurrentHashMap<>();
 
     public StudyKnowledgeContext(String summary) {
-        this(summary, List.of());
+        this(summary, List.of(), null);
     }
 
-    private StudyKnowledgeContext(String summary, List<KnowledgeChunk> chunks) {
+    StudyKnowledgeContext(String summary, List<KnowledgeChunk> chunks, SemanticEmbeddingClient semanticEmbeddingClient) {
         this.summary = Objects.requireNonNull(summary, "summary").trim();
         this.chunks = List.copyOf(chunks);
         this.queryExpander = new KnowledgeQueryExpander();
+        this.semanticEmbeddingClient = semanticEmbeddingClient;
     }
 
     public static StudyKnowledgeContext fromClasspath() {
+        return fromClasspath(null);
+    }
+
+    public static StudyKnowledgeContext fromClasspath(SemanticEmbeddingClient semanticEmbeddingClient) {
         ClassLoader classLoader = StudyKnowledgeContext.class.getClassLoader();
         String summary = readResource(classLoader, SUMMARY_RESOURCE_PATH);
         List<KnowledgeChunk> chunks = readChunks(classLoader);
-        return new StudyKnowledgeContext(summary, chunks);
+        return new StudyKnowledgeContext(summary, chunks, semanticEmbeddingClient);
     }
 
     /** Mantém compatibilidade com consumidores antigos e retorna apenas fallback resumido. */
     public String promptContext() {
-        return promptContext("");
+        return promptContext(null, "");
     }
 
     /**
@@ -63,8 +73,12 @@ public final class StudyKnowledgeContext {
      * O índice fica carregado uma vez por instância do bean, reduzindo I/O e tamanho do prompt.
      */
     public String promptContext(String userPrompt) {
+        return promptContext(null, userPrompt);
+    }
+
+    public String promptContext(UUID ownerId, String userPrompt) {
         if (!chunks.isEmpty() && userPrompt != null && !userPrompt.isBlank()) {
-            List<ScoredChunk> ranked = rank(queryExpander.expand(userPrompt));
+            List<ScoredChunk> ranked = rank(userPrompt, queryExpander.expand(userPrompt), ownerKey(ownerId));
             if (!ranked.isEmpty()) {
                 String selected = formatSelected(ranked);
                 if (!selected.isBlank()) {
@@ -88,6 +102,10 @@ public final class StudyKnowledgeContext {
      * O limiar é conservador para que a busca externa seja acionada somente como fallback.
      */
     public Coverage assessCoverage(String userPrompt) {
+        return assessCoverage(null, userPrompt);
+    }
+
+    public Coverage assessCoverage(UUID ownerId, String userPrompt) {
         if (userPrompt == null || userPrompt.isBlank()) {
             return new Coverage(false, 0, 0, 0, "consulta vazia");
         }
@@ -95,7 +113,7 @@ public final class StudyKnowledgeContext {
         if (query.originalTokens().size() < 2) {
             return new Coverage(false, 0, 0, query.originalTokens().size(), "consulta curta");
         }
-        List<ScoredChunk> ranked = rank(query);
+        List<ScoredChunk> ranked = rank(userPrompt, query, ownerKey(ownerId));
         int bestScore = ranked.stream().mapToInt(ScoredChunk::score).max().orElse(0);
         String bestSource = ranked.isEmpty() ? "" : ranked.get(0).chunk().source();
         if (ranked.isEmpty() && !summary.isBlank()) {
@@ -108,7 +126,8 @@ public final class StudyKnowledgeContext {
                     -1,
                     "",
                     null,
-                    summary
+                    summary,
+                    SHARED_OWNER
             );
             bestScore = score(summaryChunk, query);
             bestSource = bestScore > 0 ? summaryChunk.source() : "";
@@ -122,10 +141,14 @@ public final class StudyKnowledgeContext {
      * A ausência de um chunk recuperado resulta em texto vazio para não sugerir evidência inexistente.
      */
     public String citationsFor(String userPrompt) {
+        return citationsFor(null, userPrompt);
+    }
+
+    public String citationsFor(UUID ownerId, String userPrompt) {
         if (chunks.isEmpty() || userPrompt == null || userPrompt.isBlank()) {
             return "";
         }
-        List<ScoredChunk> ranked = rank(queryExpander.expand(userPrompt));
+        List<ScoredChunk> ranked = rank(userPrompt, queryExpander.expand(userPrompt), ownerKey(ownerId));
         if (ranked.isEmpty()) {
             return "";
         }
@@ -150,12 +173,17 @@ public final class StudyKnowledgeContext {
      * conteúdo para impedir duplicação e facilitar auditoria sem guardar a consulta bruta.
      */
     public synchronized boolean learnExternal(String source, String heading, String text, Set<String> domains) {
+        return learnExternal(null, source, heading, text, domains);
+    }
+
+    public synchronized boolean learnExternal(UUID ownerId, String source, String heading, String text, Set<String> domains) {
         if (source == null || source.isBlank() || text == null || text.isBlank()) {
             return false;
         }
         String safeSource = source.trim();
         String safeText = truncate(text.trim(), 1800);
-        String id = "runtime-" + sha256(safeSource + "\n" + safeText);
+        String owner = ownerKey(ownerId);
+        String id = "runtime-" + sha256(owner + "\n" + safeSource + "\n" + safeText);
         if (chunks.stream().anyMatch(chunk -> chunk.id().equals(id))) {
             return false;
         }
@@ -169,7 +197,8 @@ public final class StudyKnowledgeContext {
                 -1,
                 "runtime",
                 null,
-                safeText
+                safeText,
+                owner
         ));
         if (updated.size() > 1200) {
             updated = new ArrayList<>(updated.subList(updated.size() - 1200, updated.size()));
@@ -231,16 +260,63 @@ public final class StudyKnowledgeContext {
         return value.trim().replaceAll("[\\r\\n;|\\[\\]]+", " ");
     }
 
-    private List<ScoredChunk> rank(KnowledgeQueryExpander.ExpandedQuery query) {
-        return chunks.stream()
-                .map(chunk -> new ScoredChunk(chunk, score(chunk, query)))
+    private List<ScoredChunk> rank(String userPrompt, KnowledgeQueryExpander.ExpandedQuery query, String owner) {
+        List<KnowledgeChunk> eligible = chunks.stream().filter(chunk -> isVisibleTo(chunk, owner)).toList();
+        var semanticScores = semanticScores(userPrompt, eligible);
+        return eligible.stream()
+                .map(chunk -> new ScoredChunk(chunk, score(chunk, query), semanticScores.getOrDefault(chunk.id(), 0)))
                 .filter(item -> item.score() > 0)
                 .sorted(Comparator.comparingInt(ScoredChunk::score).reversed()
                         .thenComparing(item -> item.chunk().id()))
                 .toList();
     }
 
+    private java.util.Map<String, Integer> semanticScores(String userPrompt, List<KnowledgeChunk> eligible) {
+        if (semanticEmbeddingClient == null || eligible.isEmpty() || userPrompt == null || userPrompt.isBlank()) return java.util.Map.of();
+        try {
+            List<KnowledgeChunk> missing = eligible.stream().filter(chunk -> !vectorIndex.containsKey(chunk.id())).toList();
+            List<String> request = new ArrayList<>();
+            request.add(embeddingText(userPrompt));
+            missing.forEach(chunk -> request.add(embeddingText(chunk.heading() + "\n" + chunk.text())));
+            List<double[]> vectors = semanticEmbeddingClient.embed(request);
+            if (vectors.size() != request.size()) return java.util.Map.of();
+            for (int index = 0; index < missing.size(); index++) vectorIndex.putIfAbsent(missing.get(index).id(), vectors.get(index + 1));
+            double[] queryVector = vectors.getFirst();
+            java.util.Map<String, Integer> scores = new java.util.LinkedHashMap<>();
+            for (KnowledgeChunk chunk : eligible) {
+                double similarity = cosine(queryVector, vectorIndex.get(chunk.id()));
+                if (similarity > 0) scores.put(chunk.id(), (int) Math.round(similarity * 30));
+            }
+            return scores;
+        } catch (RuntimeException ignored) {
+            return java.util.Map.of();
+        }
+    }
+
     private int score(KnowledgeChunk chunk, KnowledgeQueryExpander.ExpandedQuery query) {
+        return lexicalScore(chunk, query);
+    }
+
+    private String embeddingText(String value) {
+        return truncate(value == null ? "" : value.trim(), 6000);
+    }
+
+    private double cosine(double[] first, double[] second) {
+        if (first == null || second == null || first.length == 0 || first.length != second.length) return 0;
+        double dot = 0, firstNorm = 0, secondNorm = 0;
+        for (int index = 0; index < first.length; index++) { dot += first[index] * second[index]; firstNorm += first[index] * first[index]; secondNorm += second[index] * second[index]; }
+        return firstNorm == 0 || secondNorm == 0 ? 0 : dot / Math.sqrt(firstNorm * secondNorm);
+    }
+
+    private boolean isVisibleTo(KnowledgeChunk chunk, String owner) {
+        return SHARED_OWNER.equals(chunk.owner()) || chunk.owner().equals(owner);
+    }
+
+    private String ownerKey(UUID ownerId) {
+        return ownerId == null ? SHARED_OWNER : ownerId.toString();
+    }
+
+    private int lexicalScore(KnowledgeChunk chunk, KnowledgeQueryExpander.ExpandedQuery query) {
         if (query.expandedTokens().isEmpty()) {
             return 0;
         }
@@ -306,8 +382,9 @@ public final class StudyKnowledgeContext {
                             domains,
                             node.path("chunk_index").asInt(-1),
                             node.path("sha256").asText(""),
-                            node.hasNonNull("page") ? node.path("page").asInt() : null,
-                            text
+                    node.hasNonNull("page") ? node.path("page").asInt() : null,
+                    text,
+                    node.path("owner").asText(SHARED_OWNER)
                     ));
                 }
             }
@@ -337,7 +414,7 @@ public final class StudyKnowledgeContext {
         return value.substring(0, max).trim() + "\n[contexto resumido por limite de desempenho]";
     }
 
-    private record KnowledgeChunk(
+    record KnowledgeChunk(
             String id,
             String source,
             String destination,
@@ -346,11 +423,13 @@ public final class StudyKnowledgeContext {
             int chunkIndex,
             String sha256,
             Integer page,
-            String text
+            String text,
+            String owner
     ) {
     }
 
-    private record ScoredChunk(KnowledgeChunk chunk, int score) {
+    private record ScoredChunk(KnowledgeChunk chunk, int lexicalScore, int semanticScore) {
+        int score() { return lexicalScore + semanticScore; }
     }
 
     public record Coverage(

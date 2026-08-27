@@ -40,7 +40,9 @@ class DevelopmentSkillTest {
                 "workspace.list",
                 "workspace.write_file",
                 "workspace.initialize_static_project",
-                "workspace.preview_static"
+                "workspace.preview_static",
+                "workspace.validate_static",
+                "workspace.build_static"
         );
     }
 

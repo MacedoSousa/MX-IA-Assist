@@ -1,0 +1,17 @@
+---
+title: "Local access"
+description: "Prototype routes, login, and ephemeral console."
+---
+
+# Local access
+
+The primary path is `http://127.0.0.1:8082`. Before testing login, use `Ctrl + F5` to ensure the browser loads the current bundle and CORS policy. Credential failures return generic `401` feedback; passwords must never be sent to chat, scripts, commits, or logs.
+
+For a local no-account conversation, open PowerShell or CMD:
+
+```powershell
+cd D:\MX
+.\scripts\mx-local-chat.ps1 -Model qwen3:8b
+```
+
+This console is deliberately ephemeral: it does not use MX Core, sessions, history, memory, RAG, attachments, files, workspace, tools, or internet.

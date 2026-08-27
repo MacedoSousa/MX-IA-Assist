@@ -1,0 +1,18 @@
+---
+title: "MX: protótipo local"
+description: "Ponto de partida para operar o assistente MX de forma privada e local."
+---
+
+# MX: protótipo local
+
+O MX é um assistente pessoal **em prototipação**, executado localmente e pensado para conversas, conhecimento documental, arquivos, mídia e desenvolvimento assistido. Ele não deve ser apresentado como serviço de produção nem exposto publicamente por padrão.
+
+| Entrada | Uso recomendado |
+|---|---|
+| `http://127.0.0.1:8082` | Interface primária autenticada do protótipo. |
+| `scripts/mx-prototype-control.ps1` | Estado local e ações reversíveis permitidas. |
+| `scripts/mx-local-chat.ps1` | Conversa Ollama efêmera e sem cadastro. |
+
+> O Core shadow em `18080` é uma API de validação, não uma interface. Uma página Whitelabel nessa raiz é esperada.
+
+Consulte [Acesso local](./acesso-local) para as rotas corretas e [Mídia, RAG e workspace](./midia-rag-workspace) para os limites das capacidades integradas.

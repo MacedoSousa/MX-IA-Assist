@@ -1,0 +1,15 @@
+---
+title: "Media, RAG, and workspace"
+description: "Governed local capabilities and their boundaries."
+---
+
+# Media, RAG, and workspace
+
+| Area | Current capability | Boundary |
+|---|---|---|
+| Audio | CPU Whisper in Docker Core | Endpoint validation requires an authenticated session; CUDA is not validated. |
+| Image | Transitional Docker Forge | Internal API and healthcheck; no automatic publication. |
+| RAG | Lexical plus local Ollama embeddings | In-memory vector index, lexical fallback, and traceable citations. |
+| Workspace | Static HTML initialization, preview, validation, and build | Every sensitive action needs approval; no free shell, npm, Docker, or public ports. |
+
+Runtime external evidence receives its owner's identifier and cannot be retrieved by another session. Documentary chunks retain source, heading, chunk, SHA-256, and page when available.

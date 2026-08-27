@@ -1,0 +1,17 @@
+---
+title: "Acesso local"
+description: "Rotas de protótipo, login e console efêmero."
+---
+
+# Acesso local
+
+O caminho primário é a interface em `http://127.0.0.1:8082`. Antes de testar o login, faça `Ctrl + F5` para garantir que o navegador use o bundle e a política CORS atualizados. Erros de credencial agora são retornados como `401` com mensagem genérica; senhas não devem ser enviadas em chat, scripts, commits ou logs.
+
+Para uma conversa local sem conta, abra PowerShell ou CMD e execute:
+
+```powershell
+cd D:\MX
+.\scripts\mx-local-chat.ps1 -Model qwen3:8b
+```
+
+Esse console é propositalmente efêmero: não usa Core MX, sessão, histórico, memória, RAG, anexos, arquivos, workspace, tools ou internet.

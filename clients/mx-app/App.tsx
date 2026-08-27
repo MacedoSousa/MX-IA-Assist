@@ -30,6 +30,7 @@ import {
   type ExecutionRunStatusResponse,
   type UploadedAttachment,
 } from "./src/api/client";
+import { mergeRuns, newestUpdatedAt } from "./src/features/runs/run-state";
 import {
   clearSession,
   readAccessToken,
@@ -48,21 +49,6 @@ import {
 type ViewState = "checking" | "login" | "chat";
 
 type RenderMessage = ChatMessage & { id: string; attachmentNames?: string[] };
-
-function mergeRuns(current: ExecutionRunStatusResponse[], incoming: ExecutionRunStatusResponse[]) {
-  const byId = new Map(current.map((run) => [run.runId, run]));
-  incoming.forEach((run) => byId.set(run.runId, run));
-  return Array.from(byId.values()).sort(
-    (left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt),
-  );
-}
-
-function newestUpdatedAt(runs: ExecutionRunStatusResponse[], current?: string): string | undefined {
-  return runs.reduce<string | undefined>((latest, run) => {
-    if (!latest || Date.parse(run.updatedAt) > Date.parse(latest)) return run.updatedAt;
-    return latest;
-  }, current);
-}
 
 export default function App() {
   const [viewState, setViewState] = useState<ViewState>("checking");

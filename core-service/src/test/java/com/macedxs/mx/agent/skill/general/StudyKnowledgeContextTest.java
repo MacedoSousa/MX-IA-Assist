@@ -2,6 +2,10 @@ package com.macedxs.mx.agent.skill.general;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class StudyKnowledgeContextTest {
@@ -134,5 +138,29 @@ class StudyKnowledgeContextTest {
                 java.util.Set.of("busca-externa")
         )).isFalse();
         assertThat(context.chunkCount()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldUseSemanticVectorsWhenLexicalOverlapIsAbsent() {
+        SemanticEmbeddingClient embeddings = inputs -> inputs.stream()
+                .map(value -> value.contains("conceito relacionado") ? new double[]{1, 0} : new double[]{0, 1})
+                .toList();
+        StudyKnowledgeContext context = new StudyKnowledgeContext("resumo", List.of(
+                new StudyKnowledgeContext.KnowledgeChunk("semantic-1", "fonte", "origem", "Conceito relacionado", List.of(), -1, "a".repeat(64), null, "texto sem termos literais", "shared-authorized")
+        ), embeddings);
+
+        assertThat(context.promptContext("consulta sem sinonimo"))
+                .contains("Conceito relacionado")
+                .contains("Citação:");
+    }
+
+    @Test
+    void shouldKeepRuntimeExternalEvidenceScopedToItsOwner() {
+        StudyKnowledgeContext context = new StudyKnowledgeContext("resumo");
+        UUID owner = UUID.randomUUID();
+        assertThat(context.learnExternal(owner, "fonte", "evidência privada", "conteúdo exclusivo verificável", Set.of("runtime"))).isTrue();
+
+        assertThat(context.promptContext(UUID.randomUUID(), "conteúdo exclusivo verificável")).doesNotContain("evidência privada");
+        assertThat(context.promptContext(owner, "conteúdo exclusivo verificável")).contains("evidência privada");
     }
 }

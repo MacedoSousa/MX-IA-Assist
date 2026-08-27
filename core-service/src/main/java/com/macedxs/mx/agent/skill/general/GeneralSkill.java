@@ -79,7 +79,7 @@ public class GeneralSkill implements Skill {
     @Override
     public SkillResult execute(SkillRequest request, SkillExecutionContext context) {
         long startedAt = System.nanoTime();
-        SelfAnalysisService.AnalysisResult analysis = analyze(request.prompt());
+        SelfAnalysisService.AnalysisResult analysis = analyze(context.userId(), request.prompt());
         ModelGateway.ModelResponse response = modelGateway.complete(
                 new ModelGateway.ModelRequest(
                         context.userId(),
@@ -92,7 +92,7 @@ public class GeneralSkill implements Skill {
         if (response == null || response.answer() == null || response.answer().isBlank()) {
             throw new ModelGenerationException("General skill returned an empty answer");
         }
-        String answer = appendCitations(response.answer(), request.prompt());
+        String answer = appendCitations(response.answer(), context.userId(), request.prompt());
 
         return new SkillResult(
                 definition().name(),
@@ -120,7 +120,7 @@ public class GeneralSkill implements Skill {
         }
 
         long startedAt = System.nanoTime();
-        SelfAnalysisService.AnalysisResult analysis = analyze(request.prompt());
+        SelfAnalysisService.AnalysisResult analysis = analyze(context.userId(), request.prompt());
         ModelGateway.ModelResponse response = streamingModelGateway.stream(
                 new ModelGateway.ModelRequest(
                         context.userId(),
@@ -133,7 +133,7 @@ public class GeneralSkill implements Skill {
         if (response == null || response.answer() == null || response.answer().isBlank()) {
             throw new ModelGenerationException("General skill returned an empty answer");
         }
-        String answer = appendCitations(response.answer(), request.prompt());
+        String answer = appendCitations(response.answer(), context.userId(), request.prompt());
         if (answer.length() > response.answer().trim().length()) {
             chunkConsumer.accept(answer.substring(response.answer().trim().length()));
         }
@@ -153,12 +153,12 @@ public class GeneralSkill implements Skill {
         );
     }
 
-    private SelfAnalysisService.AnalysisResult analyze(String prompt) {
+    private SelfAnalysisService.AnalysisResult analyze(java.util.UUID userId, String prompt) {
         if (selfAnalysisService == null) {
             return new SelfAnalysisService.AnalysisResult(false, 0,
-                    studyKnowledgeContext.assessCoverage(prompt), "autoanálise desativada no construtor");
+                    studyKnowledgeContext.assessCoverage(userId, prompt), "autoanálise desativada no construtor");
         }
-        return selfAnalysisService.analyze(prompt);
+        return selfAnalysisService.analyze(userId, prompt);
     }
 
     private String buildPrompt(String prompt, java.util.UUID userId) {
@@ -170,13 +170,13 @@ public class GeneralSkill implements Skill {
                 // Preferimos responder sem personalização a interromper a conversa por falha de memória.
             }
         }
-        return SYSTEM_PROMPT + studyKnowledgeContext.promptContext(prompt) +
+        return SYSTEM_PROMPT + studyKnowledgeContext.promptContext(userId, prompt) +
                 (adaptiveContext.isBlank() ? "" : "\n\n" + adaptiveContext) +
                 "\n\nSolicitação do usuário:\n" + prompt;
     }
 
-    private String appendCitations(String answer, String userPrompt) {
-        String citations = studyKnowledgeContext.citationsFor(userPrompt);
+    private String appendCitations(String answer, java.util.UUID userId, String userPrompt) {
+        String citations = studyKnowledgeContext.citationsFor(userId, userPrompt);
         String normalizedAnswer = answer.trim();
         return citations.isBlank() ? normalizedAnswer : normalizedAnswer + "\n\n" + citations;
     }

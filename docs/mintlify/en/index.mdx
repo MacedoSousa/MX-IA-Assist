@@ -1,0 +1,16 @@
+---
+title: "MX: local prototype"
+description: "Starting point for operating the MX assistant privately and locally."
+---
+
+# MX: local prototype
+
+MX is a **prototype** personal assistant that runs locally and supports conversation, documentary knowledge, files, media, and assisted development. It is not a production service and must not be publicly exposed by default.
+
+| Entry point | Recommended use |
+|---|---|
+| `http://127.0.0.1:8082` | Primary authenticated prototype UI. |
+| `scripts/mx-prototype-control.ps1` | Local status and permitted reversible actions. |
+| `scripts/mx-local-chat.ps1` | Ephemeral, no-signup Ollama conversation. |
+
+> Shadow Core at `18080` is a validation API, not a UI. A Whitelabel root page is expected.

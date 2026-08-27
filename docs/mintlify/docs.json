@@ -1,0 +1,40 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "MX — Protótipo Local",
+  "colors": {
+    "primary": "#0f3a5b",
+    "light": "#58d6b0",
+    "dark": "#0f3a5b"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Português",
+        "groups": [
+          {
+            "group": "Começar",
+            "pages": ["pt-br/index", "pt-br/acesso-local"]
+          },
+          {
+            "group": "Capacidades",
+            "pages": ["pt-br/midia-rag-workspace", "pt-br/seguranca-e-limites"]
+          }
+        ]
+      },
+      {
+        "tab": "English",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": ["en/index", "en/local-access"]
+          },
+          {
+            "group": "Capabilities",
+            "pages": ["en/media-rag-workspace", "en/security-and-boundaries"]
+          }
+        ]
+      }
+    ]
+  }
+}

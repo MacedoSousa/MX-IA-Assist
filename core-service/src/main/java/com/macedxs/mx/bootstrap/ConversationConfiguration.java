@@ -15,6 +15,7 @@ import com.macedxs.mx.agent.skill.general.ExternalSearchClient;
 import com.macedxs.mx.agent.skill.general.GeneralSkill;
 import com.macedxs.mx.agent.skill.general.SelfAnalysisService;
 import com.macedxs.mx.agent.skill.general.StudyKnowledgeContext;
+import com.macedxs.mx.agent.skill.general.OllamaEmbeddingClient;
 import com.macedxs.mx.agent.skill.game.GameDevelopmentSkill;
 import com.macedxs.mx.agent.skill.media.MediaSkill;
 import com.macedxs.mx.agent.skill.quality.QualitySkill;
@@ -40,6 +41,7 @@ import com.macedxs.mx.tool.workspace.WorkspaceListTool;
 import com.macedxs.mx.tool.workspace.WorkspaceReadFileTool;
 import com.macedxs.mx.tool.workspace.WorkspaceInitializeStaticProjectTool;
 import com.macedxs.mx.tool.workspace.WorkspaceStaticPreviewRequestTool;
+import com.macedxs.mx.tool.workspace.WorkspaceStaticRecipeRequestTool;
 import com.macedxs.mx.media.service.DocumentGenerationService;
 import com.macedxs.mx.media.service.ImageGenerationService;
 import com.macedxs.mx.media.service.VideoGenerationService;
@@ -75,8 +77,18 @@ public class ConversationConfiguration {
     }
 
     @Bean
-    StudyKnowledgeContext studyKnowledgeContext() {
-        return StudyKnowledgeContext.fromClasspath();
+    StudyKnowledgeContext studyKnowledgeContext(
+            @Value("${mx.rag.semantic.enabled:false}") boolean semanticEnabled,
+            @Value("${ollama.url:http://localhost:11434}") String ollamaUrl,
+            @Value("${mx.rag.semantic.model:nomic-embed-text}") String embeddingModel,
+            @Value("${mx.rag.semantic.timeout-ms:15000}") long embeddingTimeoutMs
+    ) {
+        if (!semanticEnabled) return StudyKnowledgeContext.fromClasspath();
+        try {
+            return StudyKnowledgeContext.fromClasspath(new OllamaEmbeddingClient(URI.create(ollamaUrl), embeddingModel, Duration.ofMillis(embeddingTimeoutMs)));
+        } catch (IllegalArgumentException exception) {
+            return StudyKnowledgeContext.fromClasspath();
+        }
     }
 
     @Bean
@@ -312,12 +324,30 @@ public class ConversationConfiguration {
     }
 
     @Bean
+    WorkspaceStaticRecipeRequestTool workspaceStaticValidationRequestTool(
+            @Value("${mx.workspace.root:.}") String workspaceRoot
+    ) {
+        return new WorkspaceStaticRecipeRequestTool(Path.of(workspaceRoot), WorkspaceStaticRecipeRequestTool.VALIDATE_NAME,
+                "static-validate", "Enfileira validação estática em staging após aprovação humana.");
+    }
+
+    @Bean
+    WorkspaceStaticRecipeRequestTool workspaceStaticBuildRequestTool(
+            @Value("${mx.workspace.root:.}") String workspaceRoot
+    ) {
+        return new WorkspaceStaticRecipeRequestTool(Path.of(workspaceRoot), WorkspaceStaticRecipeRequestTool.BUILD_NAME,
+                "static-build", "Enfileira build estático em staging após aprovação humana.");
+    }
+
+    @Bean
     ToolRegistry toolRegistry(
             WorkspaceListTool workspaceListTool,
             WorkspaceReadFileTool workspaceReadFileTool,
             com.macedxs.mx.tool.workspace.WorkspaceWriteTool workspaceWriteTool,
             WorkspaceInitializeStaticProjectTool workspaceInitializeStaticProjectTool,
             WorkspaceStaticPreviewRequestTool workspaceStaticPreviewRequestTool,
+            WorkspaceStaticRecipeRequestTool workspaceStaticValidationRequestTool,
+            WorkspaceStaticRecipeRequestTool workspaceStaticBuildRequestTool,
             SelfExtensionSubmitTool selfExtensionSubmitTool
     ) {
         ToolRegistry registry = new ToolRegistry();
@@ -326,6 +356,8 @@ public class ConversationConfiguration {
         registry.register(workspaceWriteTool);
         registry.register(workspaceInitializeStaticProjectTool);
         registry.register(workspaceStaticPreviewRequestTool);
+        registry.register(workspaceStaticValidationRequestTool);
+        registry.register(workspaceStaticBuildRequestTool);
         registry.register(selfExtensionSubmitTool);
         return registry;
     }

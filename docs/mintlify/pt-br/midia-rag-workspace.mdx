@@ -1,0 +1,15 @@
+---
+title: "Mídia, RAG e workspace"
+description: "Capacidades locais governadas e respectivas fronteiras."
+---
+
+# Mídia, RAG e workspace
+
+| Área | Capacidade atual | Fronteira |
+|---|---|---|
+| Áudio | Whisper em CPU no Core Docker | A validação do endpoint requer sessão autenticada; CUDA não está validado. |
+| Imagem | Forge Docker transitório | API interna e healthcheck; não há publicação automática. |
+| RAG | Lexical mais embeddings Ollama locais | Índice vetorial em memória, fallback lexical e citações rastreáveis. |
+| Workspace | Inicialização, preview, validação e build HTML estáticos | Cada ação sensível requer aprovação; não há shell livre, npm, Docker ou portas públicas. |
+
+Evidência externa aprendida durante uma sessão recebe o identificador do proprietário e não pode ser recuperada por outra sessão. Os trechos documentais preservam fonte, seção, chunk, SHA-256 e página quando disponível.

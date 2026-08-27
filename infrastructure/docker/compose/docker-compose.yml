@@ -42,8 +42,8 @@ services:
     container_name: mx-ollama
     restart: unless-stopped
     stop_grace_period: 60s
-    ports:
-      - "127.0.0.1:11434:11434"
+    # The Docker model service remains available only to MX containers. The
+    # native Ollama owns its loopback port for the guest console and shadow path.
     # Use the single NVIDIA GPU when Docker Desktop exposes WSL2 GPU-PV.
     # The service remains CPU-capable if the host is started without GPU support.
     deploy:
@@ -180,6 +180,9 @@ services:
       OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-gemma4:e4b}
       OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-8192}
       OLLAMA_NUM_THREAD: ${OLLAMA_NUM_THREAD:-0}
+      MX_RAG_SEMANTIC_ENABLED: ${MX_RAG_SEMANTIC_ENABLED:-true}
+      MX_RAG_SEMANTIC_MODEL: ${MX_RAG_SEMANTIC_MODEL:-nomic-embed-text}
+      MX_RAG_SEMANTIC_TIMEOUT_MS: ${MX_RAG_SEMANTIC_TIMEOUT_MS:-15000}
       MX_ATTACHMENTS_ROOT: /app/workspace/attachments
       MX_ATTACHMENTS_MAX_BYTES: ${MX_ATTACHMENTS_MAX_BYTES:-26214400}
       MX_ATTACHMENTS_MAX_TEXT_BYTES: ${MX_ATTACHMENTS_MAX_TEXT_BYTES:-262144}
@@ -189,9 +192,10 @@ services:
       MX_MEDIA_IMAGEGENERATION_MAXPIXELS: ${MX_MEDIA_IMAGEGENERATION_MAXPIXELS:-1048576}
       MX_MEDIA_IMAGEGENERATION_STEPS: ${MX_MEDIA_IMAGEGENERATION_STEPS:-24}
       MX_DOCUMENT_GENERATION_ENABLED: ${MX_DOCUMENT_GENERATION_ENABLED:-true}
-      MX_AUDIO_TRANSCRIPTION_ENABLED: ${MX_AUDIO_TRANSCRIPTION_ENABLED:-false}
+      # Whisper stays on CPU to avoid competing for the 8 GB GPU with Ollama/Forge.
+      MX_AUDIO_TRANSCRIPTION_ENABLED: ${MX_AUDIO_TRANSCRIPTION_ENABLED:-true}
       MX_AUDIO_TRANSCRIPTION_COMMAND: ${MX_AUDIO_TRANSCRIPTION_COMMAND:-whisper}
-      MX_AUDIO_TRANSCRIPTION_MODEL: ${MX_AUDIO_TRANSCRIPTION_MODEL:-base}
+      MX_AUDIO_TRANSCRIPTION_MODEL: ${MX_AUDIO_TRANSCRIPTION_MODEL:-tiny}
       MX_AUDIO_TRANSCRIPTION_TIMEOUT_SECONDS: ${MX_AUDIO_TRANSCRIPTION_TIMEOUT_SECONDS:-300}
       MX_AUDIO_TRANSCRIPTION_MAX_CHARS: ${MX_AUDIO_TRANSCRIPTION_MAX_CHARS:-50000}
       MX_SELF_ANALYSIS_EXTERNAL_SEARCH_ENABLED: ${MX_SELF_ANALYSIS_EXTERNAL_SEARCH_ENABLED:-true}
@@ -214,6 +218,7 @@ services:
       - ../../../data/attachments:/app/workspace/attachments
       - ../../../data/knowledge:/app/workspace/knowledge
       - ../../../data/evolution:/app/workspace/evolution
+      - ../../../data/whisper-cache:/root/.cache/whisper
 
   mx-web:
     build:

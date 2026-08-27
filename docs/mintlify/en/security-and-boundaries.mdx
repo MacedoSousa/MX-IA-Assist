@@ -1,0 +1,10 @@
+---
+title: "Security and boundaries"
+description: "Operational principles of the local prototype."
+---
+
+# Security and boundaries
+
+MX uses allowlists, non-privileged context, human approval with nonce, ownership, expiration, and run auditing for write effects. The assistant never receives unrestricted terminal/CMD, does not select public ports, and does not publish projects automatically.
+
+Docker and persistent data remain prototype reference and rollback. Any database migration, GPU driver restart, or network exposure needs a separate step with backup and explicit validation.

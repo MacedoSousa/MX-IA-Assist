@@ -83,16 +83,20 @@
 - [x] Corrigir a inicialização Flyway com privilégios mínimos para a conta de aplicação no banco restaurado.
 - [x] Confirmar healthcheck, login, conversa, PDF anexado, imagem e documento no Core nativo em `18080`.
 - [x] Tornar as portas do PostgreSQL/Ollama explícitas nos launchers e no verificador Windows.
-- [ ] Substituir ou formalizar a dependência transitória do Forge em Docker e validar transcrição com fala real; FFmpeg e vídeo nativo já foram verificados.
+- [x] Validar transcrição Whisper em CPU com áudio autorizado real, saída sanitizada e limpeza de temporários; CUDA segue explicitamente não validado.
+- [x] Formalizar o Forge como dependência Docker transitória, com healthcheck, atualização automática desabilitada e fronteira de API interna; migração nativa permanece decisão futura.
+- [ ] Validar pela UI autenticada a transcrição integrada do Core Docker com Whisper em CPU, sem criar ou registrar credencial de teste.
 - [ ] Configurar inicialização persistente para Core/Expo e endurecer a exposição de rede antes do corte da produção Docker; Ollama possui tarefa reversível no logon.
-- [ ] Corrigir a inicialização NVML do driver NVIDIA e validar PyTorch CUDA antes de habilitar Whisper acelerado por GPU; o fallback CPU está instalado.
+- [x] Diagnosticar NVML/PyTorch: GPU reconhecida pelo Windows, mas `nvidia-smi` falha e o PyTorch local é CPU-only; Whisper segue em CPU.
+- [ ] Em janela de manutenção, reinstalar o driver NVIDIA assinado, reiniciar o Windows e revalidar NVML/PyTorch CUDA antes de habilitar Whisper acelerado por GPU.
 
 ### Evolução RAG documental
 
 - [x] Exibir citações rastreáveis com origem, seção, trecho, hash da versão e indicação honesta de página ausente.
 - [x] Cobrir `rag-001`, `rag-002` e `rag-003` com testes automatizados e smoke test no Core nativo.
 - [x] Incluir QualitySkill e especialistas de estudos no contrato de contexto e resposta com fontes.
-- [ ] Evoluir do ranking lexical para recuperação semântica com embeddings, vector store, reranking e filtro de proprietário, mantendo o contrato de citação.
+- [x] Evoluir o ranking lexical com embeddings locais, índice vetorial em memória, reranking por cosseno e filtro de proprietário, mantendo o contrato de citação.
+- [ ] Avaliar e implementar, se justificado, vector store persistente por proprietário com versão do embedding, reindexação auditável, retenção aprovada e métricas de relevância.
 
 ### Workspace governado
 

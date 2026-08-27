@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Orquestra a cobertura local e uma busca pública somente como fallback.
@@ -59,7 +60,11 @@ public final class SelfAnalysisService {
     }
 
     public AnalysisResult analyze(String userPrompt) {
-        StudyKnowledgeContext.Coverage coverage = knowledgeContext.assessCoverage(userPrompt);
+        return analyze(null, userPrompt);
+    }
+
+    public AnalysisResult analyze(UUID ownerId, String userPrompt) {
+        StudyKnowledgeContext.Coverage coverage = knowledgeContext.assessCoverage(ownerId, userPrompt);
         if (coverage.sufficient()) {
             AnalysisResult result = new AnalysisResult(false, 0, coverage, "cobertura local suficiente");
             audit(result, userPrompt);
@@ -92,7 +97,7 @@ public final class SelfAnalysisService {
             }
             String evidence = (hit.title() == null ? "" : hit.title().trim()) + "\n" +
                     (hit.snippet() == null ? "" : hit.snippet().trim());
-            if (knowledgeContext.learnExternal(
+            if (knowledgeContext.learnExternal(ownerId,
                     "busca-externa:" + hit.url().trim(),
                     hit.title(),
                     evidence,

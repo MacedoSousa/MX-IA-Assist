@@ -49,6 +49,11 @@ SLUG_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+){0,5}")
 COMMIT_RE = re.compile(r"^[\wÀ-ÿ][\wÀ-ÿ ._:/()+'-]{2,119}$")
 WORKSPACE_PROJECT_RE = re.compile(r"[a-z0-9][a-z0-9-]{0,47}$")
 STATIC_PREVIEW_PORTS = range(48000, 48100)
+STATIC_RECIPE_NAMES = {"static-validate", "static-build"}
+STATIC_RECIPE_PROFILE = "static-html-v1"
+STATIC_RECIPE_MAX_FILES = 500
+STATIC_RECIPE_MAX_BYTES = 5 * 1024 * 1024
+STATIC_RECIPE_TIMEOUT_SECONDS = 20
 
 
 @dataclass(frozen=True)
@@ -446,6 +451,12 @@ def workspace_preview_paths(root: Path) -> tuple[Path, Path, Path, Path]:
     return workspace, base / "pending", base / "running", base / "stopped"
 
 
+def workspace_recipe_paths(root: Path) -> tuple[Path, Path, Path, Path]:
+    workspace = root / "workspaces"
+    base = workspace / ".mx" / "recipe-requests"
+    return workspace, base / "pending", base / "completed", base / "failed"
+
+
 def safe_workspace_project(workspace: Path, project: Any) -> Path:
     if not isinstance(project, str) or not WORKSPACE_PROJECT_RE.fullmatch(project):
         raise RunnerError("workspace preview project is invalid")
@@ -460,6 +471,110 @@ def safe_workspace_project(workspace: Path, project: Any) -> Path:
     if resolved_workspace not in resolved_target.parents:
         raise RunnerError("workspace preview project escapes root")
     return resolved_target
+
+
+def static_project_files(project_root: Path, deadline: float) -> list[Path]:
+    files: list[Path] = []
+    total_bytes = 0
+    for candidate in project_root.rglob("*"):
+        if time.monotonic() > deadline:
+            raise RunnerError("workspace recipe timed out")
+        if candidate.is_symlink():
+            raise RunnerError("workspace project cannot contain symbolic links")
+        if not candidate.is_file():
+            continue
+        resolved = candidate.resolve()
+        if project_root not in resolved.parents:
+            raise RunnerError("workspace project file escapes root")
+        files.append(candidate)
+        total_bytes += candidate.stat().st_size
+        if len(files) > STATIC_RECIPE_MAX_FILES:
+            raise RunnerError("workspace project exceeds file limit")
+        if total_bytes > STATIC_RECIPE_MAX_BYTES:
+            raise RunnerError("workspace project exceeds byte limit")
+    return sorted(files)
+
+
+def static_project_summary(project_root: Path, deadline: float) -> dict[str, Any]:
+    index = project_root / "index.html"
+    if not index.is_file() or index.is_symlink():
+        raise RunnerError("workspace project is not a static HTML project")
+    html = index.read_text(encoding="utf-8")
+    normalized = html.lstrip().lower()
+    if not normalized.startswith("<!doctype html") or "<html" not in normalized:
+        raise RunnerError("static index must declare an HTML document")
+    files = static_project_files(project_root, deadline)
+    return {
+        "fileCount": len(files),
+        "totalBytes": sum(path.stat().st_size for path in files),
+        "files": files,
+        "indexSha256": sha256_bytes(index.read_bytes()),
+    }
+
+
+def load_static_recipe_request(job_path: Path, workspace: Path) -> tuple[str, str, Path, dict[str, Any]]:
+    try:
+        payload = json.loads(job_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RunnerError("workspace recipe request is not valid JSON") from exc
+    request_id = payload.get("requestId")
+    if not isinstance(request_id, str) or not re.fullmatch(r"[0-9a-fA-F-]{36}", request_id):
+        raise RunnerError("workspace recipe request id is invalid")
+    recipe = payload.get("recipe")
+    if recipe not in STATIC_RECIPE_NAMES or payload.get("profile") != STATIC_RECIPE_PROFILE:
+        raise RunnerError("workspace recipe is not allowed")
+    return request_id, recipe, safe_workspace_project(workspace, payload.get("project")), payload
+
+
+def process_static_recipe(root: Path) -> dict[str, Any]:
+    workspace, pending, completed, failed = workspace_recipe_paths(root)
+    pending.mkdir(parents=True, exist_ok=True)
+    jobs = sorted(pending.glob("*.json"))
+    if not jobs:
+        return {"status": "NO_PENDING_WORKSPACE_RECIPE"}
+    job_path = jobs[0]
+    try:
+        request_id, recipe, project_root, payload = load_static_recipe_request(job_path, workspace)
+        started_at = time.monotonic()
+        summary = static_project_summary(project_root, started_at + STATIC_RECIPE_TIMEOUT_SECONDS)
+        result: dict[str, Any] = {
+            "status": "VALIDATED" if recipe == "static-validate" else "BUILT",
+            "requestId": request_id,
+            "recipe": recipe,
+            "profile": STATIC_RECIPE_PROFILE,
+            "project": payload["project"],
+            "fileCount": summary["fileCount"],
+            "totalBytes": summary["totalBytes"],
+            "indexSha256": summary["indexSha256"],
+            "durationMs": int((time.monotonic() - started_at) * 1000),
+        }
+        if recipe == "static-build":
+            stage_root = workspace / ".mx" / "builds" / request_id / "site"
+            stage_root.mkdir(parents=True, exist_ok=False)
+            manifest: dict[str, str] = {}
+            for source in summary["files"]:
+                if time.monotonic() > started_at + STATIC_RECIPE_TIMEOUT_SECONDS:
+                    raise RunnerError("workspace recipe timed out")
+                relative = source.relative_to(project_root)
+                target = stage_root / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+                manifest[relative.as_posix()] = sha256_bytes(source.read_bytes())
+            manifest_path = stage_root.parent / "manifest.json"
+            manifest_path.write_text(json.dumps({"requestId": request_id, "profile": STATIC_RECIPE_PROFILE, "files": manifest}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            result["staging"] = str(stage_root.parent.relative_to(workspace)).replace("\\", "/")
+        completed.mkdir(parents=True, exist_ok=True)
+        job_path.replace(completed / job_path.name)
+        (completed / f"{request_id}.result.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        return result
+    except Exception as exc:
+        failed.mkdir(parents=True, exist_ok=True)
+        failed_path = failed / job_path.name
+        if job_path.exists():
+            job_path.replace(failed_path)
+        failure = {"status": "FAILED", "error": str(exc)[:500]}
+        failed_path.with_suffix(".result.json").write_text(json.dumps(failure, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        return failure
 
 
 def load_static_preview_request(job_path: Path, workspace: Path) -> tuple[str, Path, dict[str, Any]]:
@@ -582,6 +697,7 @@ def main() -> int:
     parser.add_argument("--once", action="store_true", help="process pending jobs once and exit")
     parser.add_argument("--watch", action="store_true", help="poll pending jobs continuously")
     parser.add_argument("--workspace-preview-once", action="store_true", help="start one approved static workspace preview recipe")
+    parser.add_argument("--workspace-recipe-once", action="store_true", help="run one approved static validation or build recipe")
     parser.add_argument("--stop-workspace-preview", metavar="REQUEST_ID", help="stop one static workspace preview previously started by this runner")
     parser.add_argument("--interval-seconds", type=int, default=int(os.getenv("MX_EVOLUTION_INTERVAL_SECONDS", "10")))
     parser.add_argument("--dry-run", action="store_true")
@@ -594,11 +710,14 @@ def main() -> int:
     if not (root / ".git").exists():
         print("error: --root must point to an MX Git worktree", file=sys.stderr)
         return 2
-    if args.workspace_preview_once and args.stop_workspace_preview:
-        print("error: choose only one workspace preview operation", file=sys.stderr)
+    if sum(bool(value) for value in (args.workspace_preview_once, args.workspace_recipe_once, args.stop_workspace_preview)) > 1:
+        print("error: choose only one workspace operation", file=sys.stderr)
         return 2
     if args.workspace_preview_once:
         print(json.dumps(start_static_preview(root), ensure_ascii=False))
+        return 0
+    if args.workspace_recipe_once:
+        print(json.dumps(process_static_recipe(root), ensure_ascii=False))
         return 0
     if args.stop_workspace_preview:
         print(json.dumps(stop_static_preview(root, args.stop_workspace_preview), ensure_ascii=False))

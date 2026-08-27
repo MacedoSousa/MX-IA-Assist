@@ -77,6 +77,8 @@ public class AudioTranscriptionService {
                     command,
                     stored.path().toString(),
                     "--model", model,
+                    "--device", "cpu",
+                    "--fp16", "False",
                     "--output_format", "txt",
                     "--output_dir", outputDirectory.toString()
             )).redirectErrorStream(true).start();

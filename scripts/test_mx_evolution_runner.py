@@ -122,5 +122,55 @@ class StaticWorkspacePreviewTests(unittest.TestCase):
         self.assertTrue(server_stopped, "o servidor de preview deve liberar a porta após a parada")
 
 
+class StaticWorkspaceRecipeTests(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        (self.root / ".git").mkdir()
+        self.project = self.root / "workspaces" / "valid-project"
+        self.project.mkdir(parents=True)
+        (self.project / "index.html").write_text("<!doctype html><html><body>build proof</body></html>", encoding="utf-8")
+        (self.project / "styles.css").write_text("body { color: #123; }", encoding="utf-8")
+        self.request_id = "22222222-2222-2222-2222-222222222222"
+        _, self.pending, self.completed, self.failed = RUNNER.workspace_recipe_paths(self.root)
+        self.pending.mkdir(parents=True)
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def _write_request(self, **overrides: object) -> Path:
+        payload: dict[str, object] = {
+            "requestId": self.request_id,
+            "recipe": "static-validate",
+            "profile": "static-html-v1",
+            "project": "valid-project",
+        }
+        payload.update(overrides)
+        path = self.pending / f"{self.request_id}.json"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return path
+
+    def test_rejects_unknown_recipe_and_project_traversal(self) -> None:
+        unknown = self._write_request(recipe="shell")
+        with self.assertRaisesRegex(RUNNER.RunnerError, "not allowed"):
+            RUNNER.load_static_recipe_request(unknown, self.root / "workspaces")
+        traversal = self._write_request(project="../outside")
+        with self.assertRaisesRegex(RUNNER.RunnerError, "project is invalid"):
+            RUNNER.load_static_recipe_request(traversal, self.root / "workspaces")
+
+    def test_validates_and_builds_only_static_project_in_staging(self) -> None:
+        self._write_request()
+        validated = RUNNER.process_static_recipe(self.root)
+        self.assertEqual("VALIDATED", validated["status"])
+        self.assertEqual(2, validated["fileCount"])
+        self._write_request(recipe="static-build")
+        built = RUNNER.process_static_recipe(self.root)
+        self.assertEqual("BUILT", built["status"])
+        staged = self.root / "workspaces" / built["staging"]
+        self.assertTrue((staged / "site" / "index.html").is_file())
+        self.assertTrue((staged / "manifest.json").is_file())
+
+
 if __name__ == "__main__":
     unittest.main()

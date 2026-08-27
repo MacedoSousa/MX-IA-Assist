@@ -1,0 +1,10 @@
+---
+title: "Segurança e limites"
+description: "Princípios operacionais do protótipo local."
+---
+
+# Segurança e limites
+
+O MX usa allowlists, contexto não privilegiado, aprovação humana por nonce, ownership, expiração e auditoria de runs para efeitos de escrita. O assistente não recebe terminal/CMD irrestrito, não escolhe portas públicas e não publica projetos automaticamente.
+
+Docker e dados persistentes continuam como referência e rollback de protótipo. Qualquer migração de banco, reinicialização de driver GPU ou exposição de rede requer uma etapa separada, com backup e validação explícitos.

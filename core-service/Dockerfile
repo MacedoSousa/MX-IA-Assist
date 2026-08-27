@@ -4,13 +4,16 @@ WORKDIR /app
 
 COPY . .
 
-RUN ./mvnw clean package -DskipTests
+RUN ./mvnw -B -DskipTests -Dmaven.wagon.http.retryHandler.count=5 clean package
 
 
 FROM eclipse-temurin:21-jre
 
+ARG WHISPER_VERSION=20250625
+
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg fonts-dejavu \
+    && apt-get install -y --no-install-recommends ffmpeg fonts-dejavu python3 python3-pip \
+    && pip3 install --break-system-packages --no-cache-dir "openai-whisper==${WHISPER_VERSION}" \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
