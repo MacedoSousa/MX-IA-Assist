@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Root = (Split-Path -Parent $PSScriptRoot),
+    [string]$Root = 'D:\MX',
     [switch]$RequireImageGeneration,
     [string]$OllamaUrl = 'http://127.0.0.1:11435',
     [int]$PostgresPort = 15432

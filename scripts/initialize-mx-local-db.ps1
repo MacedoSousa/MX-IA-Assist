@@ -4,7 +4,7 @@ param(
     [SecureString]$PostgresSuperPassword,
     [ValidateRange(1, 65535)]
     [int]$Port = 15432,
-    [string]$Root = (Split-Path -Parent $PSScriptRoot)
+    [string]$Root = 'D:\MX'
 )
 
 $ErrorActionPreference = 'Stop'

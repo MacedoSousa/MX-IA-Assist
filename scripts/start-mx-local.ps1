@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Root = (Split-Path -Parent $PSScriptRoot),
+    [string]$Root = 'D:\MX',
     [switch]$WithImageGeneration,
     [switch]$WithVideoGeneration,
     [switch]$WithAudioTranscription,
@@ -69,7 +69,7 @@ if ($WithAudioTranscription) {
     $env:MX_AUDIO_TRANSCRIPTION_ENABLED = 'false'
 }
 
-& (Join-Path $PSScriptRoot 'verify-mx-local.ps1') -Root $Root -RequireImageGeneration:$WithImageGeneration -OllamaUrl $OllamaUrl -PostgresPort $PostgresPort
+& (Join-Path $Root 'scripts\verify-mx-local.ps1') -Root $Root -RequireImageGeneration:$WithImageGeneration -OllamaUrl $OllamaUrl -PostgresPort $PostgresPort
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 if (Get-NetTCPConnection -LocalPort $CorePort -ErrorAction SilentlyContinue) {
@@ -77,7 +77,7 @@ if (Get-NetTCPConnection -LocalPort $CorePort -ErrorAction SilentlyContinue) {
 } else {
     $coreLog = Join-Path $logs 'mx-core-console.log'
     $coreErrorLog = Join-Path $logs 'mx-core-error.log'
-    Start-Process -FilePath (Join-Path $PSScriptRoot 'run-backend.bat') -WorkingDirectory $Root -RedirectStandardOutput $coreLog -RedirectStandardError $coreErrorLog
+    Start-Process -FilePath (Join-Path $Root 'scripts\run-backend.bat') -WorkingDirectory $Root -RedirectStandardOutput $coreLog -RedirectStandardError $coreErrorLog
     Write-Host "[INFO] MX Core iniciado. Logs: $coreLog e $coreErrorLog"
 }
 
@@ -94,7 +94,7 @@ if (Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue) {
 } else {
     $webLog = Join-Path $logs 'mx-web-console.log'
     $webErrorLog = Join-Path $logs 'mx-web-error.log'
-    Start-Process -FilePath (Join-Path $PSScriptRoot 'run-expo-web.bat') -ArgumentList $LanIp -WorkingDirectory $Root -RedirectStandardOutput $webLog -RedirectStandardError $webErrorLog
+    Start-Process -FilePath (Join-Path $Root 'scripts\run-expo-web.bat') -ArgumentList $LanIp -WorkingDirectory $Root -RedirectStandardOutput $webLog -RedirectStandardError $webErrorLog
     Write-Host "[INFO] Expo Web iniciado. Logs: $webLog e $webErrorLog"
 }
 

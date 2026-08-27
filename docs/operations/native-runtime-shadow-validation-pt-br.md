@@ -33,6 +33,10 @@ O Docker permanece o caminho de produção e reversão até que os itens abaixo 
 
 Também permanecem pendentes a política de inicialização persistente do Core/Expo, a revisão da exposição de rede do PostgreSQL nativo, a definição de Redis no runtime direto, os testes de Expo em rede local/Tailscale e o plano de corte com retorno documentado. O Ollama nativo já possui uma tarefa de inicialização reversível no logon. O DSH continua isolado em `127.0.0.1:3080` e não é alterado por esta etapa.
 
+### Observação de aceleração de áudio
+
+O adaptador NVIDIA GeForce RTX 2060 SUPER foi reconhecido pelo Windows, mas `nvidia-smi` retornou `Failed to initialize NVML: Unknown Error`. A verificação versionada `verify-whisper-runtime.py` confirmou PyTorch `2.13.0+cpu` e CUDA indisponível. Por isso, a transcrição permanece funcional como fallback de CPU e não foi feita uma instalação CUDA especulativa. A atualização ou correção do driver NVIDIA, seguida da verificação NVML e da instalação oficial de PyTorch CUDA compatível, é pré-requisito para ativar GPU no Whisper.
+
 ## Reprodução segura
 
 1. Mantenha os contêineres atuais ativos enquanto a validação ocorre.
