@@ -42,7 +42,7 @@ During the test, PostgreSQL persistence revealed that the approval run reused th
 
 ## Remaining cutover boundaries
 
-Docker remains the production and rollback route until the following items are complete. Forge is still a transitional container component at port `7860`, so image generation is not yet Docker-free. FFmpeg 9 was installed through the Windows package manager and the native video pipeline generated a short clip successfully. Local Whisper was installed for the launcher, but still needs validation with real speech before production promotion.
+Docker remains the **prototype** reference and rollback route until the following items are complete. Forge is still a transitional container component at port `7860`, so image generation is not yet Docker-free. FFmpeg 9 was installed through the Windows package manager and the native video pipeline generated a short clip successfully. Local Whisper was installed for the launcher, but still needs validation with real speech before any broader prototype use.
 
 Persistent startup for Core/Expo, the native PostgreSQL network exposure policy, the direct-runtime Redis decision, Expo testing over LAN/Tailscale, and the documented cutover-and-return plan also remain open. Native Ollama now has a reversible logon-start task. DSH stays isolated at `127.0.0.1:3080` and was not changed by this work.
 

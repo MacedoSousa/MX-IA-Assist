@@ -42,7 +42,7 @@ Durante esse teste, a persistência PostgreSQL revelou que a run de aprovação 
 
 ## Limites antes do corte final
 
-O Docker permanece o caminho de produção e reversão até que os itens abaixo sejam concluídos. O Forge está funcionando apenas como componente transitório no contêiner da porta `7860`; portanto, o runtime ainda não é integralmente livre de Docker para imagens. O FFmpeg 9 foi instalado pelo gerenciador Windows e o vídeo curto foi gerado com sucesso pelo pipeline nativo. O Whisper local foi instalado para uso pelo launcher, mas ainda exige uma validação com gravação de fala real antes de ser promovido para a operação.
+O Docker permanece como referência e caminho de reversão do **protótipo** até que os itens abaixo sejam concluídos. O Forge está funcionando apenas como componente transitório no contêiner da porta `7860`; portanto, o runtime ainda não é integralmente livre de Docker para imagens. O FFmpeg 9 foi instalado pelo gerenciador Windows e o vídeo curto foi gerado com sucesso pelo pipeline nativo. O Whisper local foi instalado para uso pelo launcher, mas ainda exige uma validação com gravação de fala real antes de ser promovido para a operação.
 
 Também permanecem pendentes a política de inicialização persistente do Core/Expo, a revisão da exposição de rede do PostgreSQL nativo, a definição de Redis no runtime direto, os testes de Expo em rede local/Tailscale e o plano de corte com retorno documentado. O Ollama nativo já possui uma tarefa de inicialização reversível no logon. O DSH continua isolado em `127.0.0.1:3080` e não é alterado por esta etapa.
 

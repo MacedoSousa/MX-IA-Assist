@@ -102,3 +102,9 @@
 - [x] Corrigir a colisão entre a run de conversa e a run de aprovação, garantindo `correlationId` exclusivo na persistência PostgreSQL.
 - [x] Cobrir a regressão de correlação da run de aprovação e repetir o smoke autenticado de criação/preview com chave de idempotência inédita.
 - [ ] Implementar receitas distintas para validação estática e build de perfis permitidos, com staging, timeout e evidência antes de qualquer publicação.
+
+### Uso centralizado do protótipo
+
+- [x] Diagnosticar a resposta da rota raiz do Core shadow e documentar o endpoint técnico correto, sem apresentá-lo como interface de usuário.
+- [x] Criar um ponto de controle local único para o protótipo, com estados, healthchecks e ações reversíveis permitidas.
+- [ ] Validar o acesso pelo cliente funcional antes de qualquer decisão sobre promoção ou corte do Docker.
