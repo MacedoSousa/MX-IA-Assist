@@ -29,7 +29,9 @@ public class OllamaService {
     private static final String DEFAULT_KEEP_ALIVE = "1h";
     private static final int DEFAULT_CONTEXT_SIZE = 8192;
     private static final int DEFAULT_NUM_THREAD = 0;
+    private static final int GROUNDED_RAG_MAX_OUTPUT_TOKENS = 320;
     private static final String DOCUMENT_OUTPUT_MARKER = "[MX_DOCUMENT_OUTPUT]";
+    private static final String GROUNDED_RAG_MARKER = "Trechos relevantes do conhecimento documental de estudos";
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -217,6 +219,9 @@ public class OllamaService {
         payload.put("keep_alive", keepAlive);
         Map<String, Object> options = new LinkedHashMap<>();
         options.put("num_ctx", contextSize);
+        if (isGroundedRagPrompt(prompt)) {
+            options.put("num_predict", GROUNDED_RAG_MAX_OUTPUT_TOKENS);
+        }
         payload.put("think", shouldThink(prompt, images));
         if (numThread > 0) {
             options.put("num_thread", numThread);
@@ -239,11 +244,16 @@ public class OllamaService {
     private boolean shouldThink(String prompt, List<ModelImage> images) {
         if (!fastCasual || (images != null && !images.isEmpty())) return true;
         if (prompt.contains(DOCUMENT_OUTPUT_MARKER)) return false;
+        if (isGroundedRagPrompt(prompt)) return false;
         String normalized = prompt.trim().toLowerCase(Locale.ROOT).replaceAll("[!,.?]+$", "");
         return switch (normalized) {
             case "oi", "olá", "ola", "oi mx", "olá mx", "ola mx", "hello", "hello mx", "hi", "hey", "bom dia", "boa tarde", "boa noite" -> false;
             default -> true;
         };
+    }
+
+    private boolean isGroundedRagPrompt(String prompt) {
+        return prompt != null && prompt.contains(GROUNDED_RAG_MARKER);
     }
 
     private void validatePrompt(String prompt) {

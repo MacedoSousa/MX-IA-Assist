@@ -6,6 +6,7 @@ param(
     [switch]$TestVideoGeneration,
     [switch]$TestAttachmentUpload,
     [switch]$TestPdfGeneration,
+    [switch]$TestRagCitation,
     [string]$AttachmentPath = 'D:\MX\mx-attachment-context.pdf'
 )
 
@@ -24,8 +25,14 @@ if ($TestAttachmentUpload) {
     if ($attachmentStored) { [void]$attachmentIds.Add([string]$attachmentId) }
 }
 $idempotencyKey = if ($attachmentStored) { 'native-shadow-attachment-smoke-20260827' } else { 'native-shadow-smoke-20260827' }
+$chatPrompt = if ($TestRagCitation) {
+    'Explique RAG documental e avaliação de qualidade usando o conhecimento local. Inclua a citação rastreável fornecida pelo contexto e não invente páginas.'
+} else {
+    'Responda somente: MX nativo pronto.'
+}
+if ($TestRagCitation) { $idempotencyKey = "native-shadow-rag-citation-$([Guid]::NewGuid().ToString('N'))" }
 $messageBody = @{
-    prompt = "Responda somente: MX nativo pronto."
+    prompt = $chatPrompt
     idempotencyKey = $idempotencyKey
     attachmentIds = $attachmentIds
 } | ConvertTo-Json -Compress
@@ -68,6 +75,11 @@ if ($TestPdfGeneration) {
     $pdfCreated = $null -ne $document.id
 }
 
+$ragCitationPreserved = $TestRagCitation -and $reply.answer -match 'Citação:' -and $reply.answer -match 'versão=sha256:'
+if ($TestRagCitation -and -not $ragCitationPreserved) {
+    throw 'A resposta RAG não preservou a citação rastreável esperada.'
+}
+
 [PSCustomObject]@{
     LoginEmail = $login.email
     AttachmentStored = $attachmentStored
@@ -75,5 +87,6 @@ if ($TestPdfGeneration) {
     ImageCreated = $imageCreated
     VideoCreated = $videoCreated
     PdfCreated = $pdfCreated
+    RagCitationPreserved = $ragCitationPreserved
     ResponseProperties = ($reply.PSObject.Properties.Name -join ",")
 } | ConvertTo-Json -Compress

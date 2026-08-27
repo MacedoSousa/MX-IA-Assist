@@ -62,6 +62,21 @@ class DomainSpecialistSkillTest {
         assertThat(gateway.lastPrompt).contains("vertical slice", "loop principal", "Solicitação do usuário");
     }
 
+    @Test
+    void shouldAppendVersionedCitationToSpecialistAnswersGroundedInStudies() {
+        TeachingSkill skill = new TeachingSkill(
+                new CapturingGateway(),
+                com.macedxs.mx.agent.skill.general.StudyKnowledgeContext.fromClasspath()
+        );
+
+        var result = skill.execute(request("Explique RAG documental e avaliação de qualidade."), context());
+
+        assertThat(result.answer())
+                .contains("Resposta especializada")
+                .contains("Citação:")
+                .contains("versão=sha256:");
+    }
+
     private static SkillRequest request(String prompt) {
         return new SkillRequest(prompt);
     }

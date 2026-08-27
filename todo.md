@@ -86,3 +86,10 @@
 - [ ] Substituir ou formalizar a dependência transitória do Forge em Docker e validar transcrição com fala real; FFmpeg e vídeo nativo já foram verificados.
 - [ ] Configurar inicialização persistente para Core/Expo e endurecer a exposição de rede antes do corte da produção Docker; Ollama possui tarefa reversível no logon.
 - [ ] Corrigir a inicialização NVML do driver NVIDIA e validar PyTorch CUDA antes de habilitar Whisper acelerado por GPU; o fallback CPU está instalado.
+
+### Evolução RAG documental
+
+- [x] Exibir citações rastreáveis com origem, seção, trecho, hash da versão e indicação honesta de página ausente.
+- [x] Cobrir `rag-001`, `rag-002` e `rag-003` com testes automatizados e smoke test no Core nativo.
+- [x] Incluir QualitySkill e especialistas de estudos no contrato de contexto e resposta com fontes.
+- [ ] Evoluir do ranking lexical para recuperação semântica com embeddings, vector store, reranking e filtro de proprietário, mantendo o contrato de citação.

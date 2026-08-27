@@ -153,8 +153,11 @@ public class ConversationConfiguration {
     }
 
     @Bean
-    QualitySkill qualitySkill(@Qualifier("ollamaModelGateway") ModelGateway modelGateway) {
-        return new QualitySkill(modelGateway);
+    QualitySkill qualitySkill(
+            @Qualifier("ollamaModelGateway") ModelGateway modelGateway,
+            StudyKnowledgeContext studyKnowledgeContext
+    ) {
+        return new QualitySkill(modelGateway, studyKnowledgeContext);
     }
 
     @Bean

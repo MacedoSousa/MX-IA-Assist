@@ -50,10 +50,33 @@ class QualitySkillTest {
         );
 
         assertThat(result.skillName()).isEqualTo("quality");
-        assertThat(result.answer()).isEqualTo("Diagnóstico de qualidade");
+        assertThat(result.answer())
+                .startsWith("Diagnóstico de qualidade")
+                .contains("Fontes documentais do MX:");
         assertThat(result.complete()).isTrue();
         assertThat(result.correlationId()).isEqualTo(correlationId);
         assertThat(result.metadata()).containsEntry("autonomy", "EXECUTE_READ_ONLY");
+    }
+
+    @Test
+    void shouldAppendVersionedStudyCitationsForRagAndQualityRequests() {
+        ModelGateway gateway = mock(ModelGateway.class);
+        when(gateway.complete(org.mockito.ArgumentMatchers.any(ModelGateway.ModelRequest.class)))
+                .thenReturn(new ModelGateway.ModelResponse("Diagnóstico fundamentado", "qwen", 18));
+        QualitySkill skill = new QualitySkill(
+                gateway,
+                com.macedxs.mx.agent.skill.general.StudyKnowledgeContext.fromClasspath()
+        );
+
+        SkillResult result = skill.execute(
+                new SkillRequest("Explique RAG documental e avaliação de qualidade."),
+                new SkillExecutionContext(UUID.randomUUID(), UUID.randomUUID(), AutonomyLevel.EXECUTE_READ_ONLY)
+        );
+
+        assertThat(result.answer())
+                .contains("Diagnóstico fundamentado")
+                .contains("Citação:")
+                .contains("versão=sha256:");
     }
 
     @Test

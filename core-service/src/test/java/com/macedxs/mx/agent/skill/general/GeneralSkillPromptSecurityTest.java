@@ -37,4 +37,20 @@ class GeneralSkillPromptSecurityTest {
                 .contains("Solicitação do usuário:")
                 .contains(injection);
     }
+
+    @Test
+    void shouldAppendRetrievalCitationsToGroundedAnswers() {
+        ModelGateway gateway = request -> new ModelGateway.ModelResponse("RAG recupera evidências relevantes.", "test-model", 1);
+        GeneralSkill skill = new GeneralSkill(gateway, StudyKnowledgeContext.fromClasspath());
+
+        var result = skill.execute(
+                new SkillRequest("Explique RAG documental e avaliação de qualidade."),
+                new SkillExecutionContext(UUID.randomUUID(), UUID.randomUUID(), AutonomyLevel.RESPOND)
+        );
+
+        assertThat(result.answer())
+                .contains("RAG recupera evidências relevantes.")
+                .contains("Citação:")
+                .contains("versão=sha256:");
+    }
 }

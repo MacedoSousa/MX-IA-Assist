@@ -36,6 +36,59 @@ class StudyKnowledgeContextTest {
     }
 
     @Test
+    void shouldIncludeReproducibleCitationMetadataForVersionedStudyChunks() {
+        StudyKnowledgeContext context = StudyKnowledgeContext.fromClasspath();
+
+        String promptContext = context.promptContext("Como aplicar RAG documental com avaliação de qualidade?");
+
+        assertThat(promptContext)
+                .contains("Citação:")
+                .contains("origem=")
+                .contains("trecho=")
+                .contains("versão=sha256:");
+    }
+
+    @Test
+    void shouldAvoidInventingPageNumbersWhenTheImportedChunkHasNoPageMetadata() {
+        StudyKnowledgeContext context = StudyKnowledgeContext.fromClasspath();
+
+        String promptContext = context.promptContext("Como aplicar RAG documental com avaliação de qualidade?");
+
+        assertThat(promptContext).contains("página=não informada");
+    }
+
+    @Test
+    void rag001ShouldReturnAValidDocumentCitationForCoveredStudyContent() {
+        StudyKnowledgeContext context = StudyKnowledgeContext.fromClasspath();
+
+        String promptContext = context.promptContext("Explique RAG documental e avaliação de qualidade.");
+
+        assertThat(promptContext)
+                .contains("Fonte:")
+                .contains("Citação:")
+                .containsPattern("versão=sha256:[a-f0-9]{64}");
+    }
+
+    @Test
+    void rag002ShouldReportInsufficientEvidenceForAnUnknownTopic() {
+        StudyKnowledgeContext context = new StudyKnowledgeContext("orientação local sobre testes");
+
+        StudyKnowledgeContext.Coverage coverage = context.assessCoverage("astronomia observacional planetária");
+
+        assertThat(coverage.sufficient()).isFalse();
+        assertThat(coverage.bestSource()).isBlank();
+    }
+
+    @Test
+    void rag003ShouldPreserveTheCurrentChunkVersionHashInTheCitation() {
+        StudyKnowledgeContext context = StudyKnowledgeContext.fromClasspath();
+
+        String promptContext = context.promptContext("Como usar RAG documental para buscar evidências?");
+
+        assertThat(promptContext).containsPattern("versão=sha256:[a-f0-9]{64}");
+    }
+
+    @Test
     void shouldFallbackToTheStudySummaryWhenThePromptIsEmpty() {
         StudyKnowledgeContext context = new StudyKnowledgeContext("orientação de teste");
 

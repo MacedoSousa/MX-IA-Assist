@@ -22,6 +22,7 @@ management:
 mx:
   ollama:
     url: ${OLLAMA_URL:http://127.0.0.1:11435}
+    num-ctx: ${MX_OLLAMA_NUM_CTX:4096}
   media:
     image-generation:
       enabled: ${MX_IMAGE_GENERATION_ENABLED:false}
