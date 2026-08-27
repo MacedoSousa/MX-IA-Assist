@@ -102,6 +102,11 @@ class VideoGenerationServiceTest {
     }
 
     private Path fakeFfmpeg(Path tempDir) throws Exception {
+        if (System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("win")) {
+            Path executable = tempDir.resolve("fake-ffmpeg.cmd");
+            Files.writeString(executable, "@echo off\r\nset output=\r\n:args\r\nif \"%~1\"==\"\" goto write\r\nset output=%~1\r\nshift\r\ngoto args\r\n:write\r\necho fake-mp4>\"%output%\"\r\n");
+            return executable;
+        }
         Path executable = tempDir.resolve("fake-ffmpeg.sh");
         Files.writeString(executable, "#!/bin/sh\noutput=\"\"\nfor arg in \"$@\"; do output=\"$arg\"; done\nprintf 'fake-mp4' > \"$output\"\n");
         assertThat(executable.toFile().setExecutable(true)).isTrue();
