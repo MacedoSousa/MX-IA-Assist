@@ -108,3 +108,9 @@
 - [x] Diagnosticar a resposta da rota raiz do Core shadow e documentar o endpoint técnico correto, sem apresentá-lo como interface de usuário.
 - [x] Criar um ponto de controle local único para o protótipo, com estados, healthchecks e ações reversíveis permitidas.
 - [ ] Validar o acesso pelo cliente funcional antes de qualquer decisão sobre promoção ou corte do Docker.
+
+### Login do cliente MX
+
+- [x] Mapear a URL de API e o fluxo de autenticação efetivamente usados pela interface em `8082`.
+- [x] Corrigir a divergência entre cliente, Core de referência e Core shadow sem alterar contas, senhas ou dados persistidos.
+- [ ] Validar login e sessão pelo cliente funcional com credencial fornecida localmente, sem registrar segredo em scripts ou logs.

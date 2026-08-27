@@ -9,6 +9,7 @@ import com.macedxs.mx.identity.dto.RegisterResponse;
 import com.macedxs.mx.identity.entity.UserEntity;
 import com.macedxs.mx.identity.entity.UserSession;
 import com.macedxs.mx.identity.service.AuthService;
+import com.macedxs.mx.identity.service.InvalidCredentialsException;
 import com.macedxs.mx.identity.service.JwtService;
 import com.macedxs.mx.identity.service.RefreshTokenService;
 import com.macedxs.mx.identity.service.SessionService;
@@ -16,9 +17,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -80,6 +83,15 @@ public class AuthController {
                 session.getId(),
                 issuedRefreshToken.value()
         );
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, String>> invalidCredentials() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of(
+                        "code", "MX_INVALID_CREDENTIALS",
+                        "message", "Credenciais inválidas."
+                ));
     }
 
     @PostMapping("/refresh")

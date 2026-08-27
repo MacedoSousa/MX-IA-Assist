@@ -51,18 +51,18 @@ public class AuthService {
     @Transactional
     public UserEntity authenticate(String email, String password) {
         if (email == null || email.isBlank()) {
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidCredentialsException();
         }
 
         UserEntity user = userRepository.findByEmail(email.trim().toLowerCase())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(InvalidCredentialsException::new);
 
         if (!Boolean.TRUE.equals(user.getActive())) {
-            throw new RuntimeException("User is inactive");
+            throw new InvalidCredentialsException();
         }
 
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidCredentialsException();
         }
 
         user.setLastLogin(LocalDateTime.now());

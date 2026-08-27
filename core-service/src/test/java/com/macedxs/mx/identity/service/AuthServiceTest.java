@@ -34,7 +34,7 @@ class AuthServiceTest {
         authService.register("Kevelin", "kevelin@example.com", "Another123!");
 
         assertThatThrownBy(() -> authService.authenticate("kevelin@example.com", "wrong-pass"))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessageContaining("Invalid credentials");
     }
 
@@ -45,7 +45,7 @@ class AuthServiceTest {
         authService.save(user);
 
         assertThatThrownBy(() -> authService.authenticate("inactive@example.com", "Strong123!"))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("inactive");
+                .isInstanceOf(InvalidCredentialsException.class)
+                .hasMessageContaining("Invalid credentials");
     }
 }

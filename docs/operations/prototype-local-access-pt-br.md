@@ -34,3 +34,9 @@ cd D:\MX
 ```
 
 `OpenMx` abre somente `http://127.0.0.1:8082`. `StartShadow` e `StopShadow` atuam exclusivamente sobre o processo que escuta a porta `18080`; o primeiro não reinicia um Core já saudável. Nenhuma dessas ações inicia, para, recria ou remove Docker, modifica PostgreSQL, acessa segredos, altera memória/anexos/workspaces ou publica conteúdo.
+
+## Correção de login da interface
+
+A interface em `8082` é atendida por Nginx. O cliente web agora força chamadas relativas para `/api`, usando o proxy do mesmo host até o Core e evitando uma URL de build `localhost:8080`, que falha quando o acesso ocorre por outra origem, dispositivo ou navegador. O fallback do Dockerfile também foi removido.
+
+Falhas de autenticação passaram a retornar `401` com um corpo JSON controlado (`MX_INVALID_CREDENTIALS` e a mensagem genérica `Credenciais inválidas.`). Isso evita erro interno `500`, não revela se um usuário existe ou está inativo e permite ao cliente apresentar uma orientação útil sem expor detalhes internos. O Core e a UI foram reconstruídos sem recriar volumes ou serviços de dados; o teste por conta deliberadamente inexistente confirmou `401` e a mensagem segura através de `8082`.

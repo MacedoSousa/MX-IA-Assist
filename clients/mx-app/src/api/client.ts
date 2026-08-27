@@ -15,6 +15,11 @@ function resolveDefaultApiUrl(): string {
 }
 
 function configuredApiUrl(): string {
+  // The browser must always use Nginx's same-origin /api proxy. A build-time
+  // localhost URL breaks LAN/mobile access and is rejected by Core CORS.
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return "";
+  }
   return process.env.EXPO_PUBLIC_MX_API_URL?.trim() || resolveDefaultApiUrl();
 }
 
@@ -741,7 +746,7 @@ export class MxApiClient {
       throw new MxApiError(
         response.status,
         payload?.code ?? "MX_API_ERROR",
-        payload?.message ?? "Não foi possível concluir a operação.",
+        payload?.message ?? payload?.detail ?? "Não foi possível concluir a operação.",
         payload?.correlationId,
       );
     }
