@@ -93,3 +93,9 @@
 - [x] Cobrir `rag-001`, `rag-002` e `rag-003` com testes automatizados e smoke test no Core nativo.
 - [x] Incluir QualitySkill e especialistas de estudos no contrato de contexto e resposta com fontes.
 - [ ] Evoluir do ranking lexical para recuperação semântica com embeddings, vector store, reranking e filtro de proprietário, mantendo o contrato de citação.
+
+### Workspace governado
+
+- [x] Retomar uma tool sensível registrada somente após aprovação com nonce, ownership e expiração válidos, persistindo evidência de conclusão ou falha.
+- [x] Serializar argumentos pendentes de tools em JSON estruturado, impedindo alteração de intenção no fluxo de aprovação.
+- [ ] Implementar receitas host-side nomeadas para bootstrap, validação estática, preview em loopback e encerramento explícito de processos, sem shell livre.

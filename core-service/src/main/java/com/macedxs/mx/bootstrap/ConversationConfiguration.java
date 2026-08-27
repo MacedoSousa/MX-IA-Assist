@@ -26,6 +26,7 @@ import com.macedxs.mx.conversation.application.port.ConversationStore;
 import com.macedxs.mx.conversation.application.port.ModelGateway;
 import com.macedxs.mx.core.application.MxCoreService;
 import com.macedxs.mx.core.application.run.ApproveExecutionRunUseCase;
+import com.macedxs.mx.core.application.run.ApprovedToolExecutionUseCase;
 import com.macedxs.mx.core.application.run.CancelExecutionRunUseCase;
 import com.macedxs.mx.core.application.run.ExecutionRunStore;
 import com.macedxs.mx.core.application.run.GetExecutionRunUseCase;
@@ -244,6 +245,14 @@ public class ConversationConfiguration {
     @Bean
     ApproveExecutionRunUseCase approveExecutionRunUseCase(ExecutionRunStore executionRunStore) {
         return new ApproveExecutionRunUseCase(executionRunStore);
+    }
+
+    @Bean
+    ApprovedToolExecutionUseCase approvedToolExecutionUseCase(
+            ExecutionRunStore executionRunStore,
+            ToolExecutor toolExecutor
+    ) {
+        return new ApprovedToolExecutionUseCase(executionRunStore, toolExecutor);
     }
 
     @Bean

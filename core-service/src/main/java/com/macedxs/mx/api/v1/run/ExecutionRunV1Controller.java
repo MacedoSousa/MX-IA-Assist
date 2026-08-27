@@ -1,6 +1,7 @@
 package com.macedxs.mx.api.v1.run;
 
 import com.macedxs.mx.core.application.run.ApproveExecutionRunUseCase;
+import com.macedxs.mx.core.application.run.ApprovedToolExecutionUseCase;
 import com.macedxs.mx.core.application.run.CancelExecutionRunUseCase;
 import com.macedxs.mx.core.application.run.ExecutionRunApprovalException;
 import com.macedxs.mx.core.application.run.GetExecutionRunUseCase;
@@ -33,6 +34,7 @@ public class ExecutionRunV1Controller {
     private final GetExecutionRunUseCase getExecutionRunUseCase;
     private final ListExecutionRunsUseCase listExecutionRunsUseCase;
     private final ApproveExecutionRunUseCase approveExecutionRunUseCase;
+    private final ApprovedToolExecutionUseCase approvedToolExecutionUseCase;
     private final CancelExecutionRunUseCase cancelExecutionRunUseCase;
     private final RejectExecutionRunUseCase rejectExecutionRunUseCase;
     private final UserRepository userRepository;
@@ -43,7 +45,7 @@ public class ExecutionRunV1Controller {
             RejectExecutionRunUseCase rejectExecutionRunUseCase,
             UserRepository userRepository
     ) {
-        this(getExecutionRunUseCase, null, approveExecutionRunUseCase, null, rejectExecutionRunUseCase, userRepository);
+        this(getExecutionRunUseCase, null, approveExecutionRunUseCase, null, rejectExecutionRunUseCase, null, userRepository);
     }
 
     @Autowired
@@ -53,6 +55,7 @@ public class ExecutionRunV1Controller {
             ApproveExecutionRunUseCase approveExecutionRunUseCase,
             CancelExecutionRunUseCase cancelExecutionRunUseCase,
             RejectExecutionRunUseCase rejectExecutionRunUseCase,
+            ApprovedToolExecutionUseCase approvedToolExecutionUseCase,
             UserRepository userRepository
     ) {
         this.getExecutionRunUseCase = getExecutionRunUseCase;
@@ -60,6 +63,7 @@ public class ExecutionRunV1Controller {
         this.approveExecutionRunUseCase = approveExecutionRunUseCase;
         this.cancelExecutionRunUseCase = cancelExecutionRunUseCase;
         this.rejectExecutionRunUseCase = rejectExecutionRunUseCase;
+        this.approvedToolExecutionUseCase = approvedToolExecutionUseCase;
         this.userRepository = userRepository;
     }
 
@@ -100,7 +104,12 @@ public class ExecutionRunV1Controller {
         UserEntity user = currentUser();
         try {
             String nonce = request == null ? null : request.approvalNonce();
-            return approveExecutionRunUseCase.execute(user.getId(), runId, nonce)
+            if (approvedToolExecutionUseCase == null) {
+                return approveExecutionRunUseCase.execute(user.getId(), runId, nonce)
+                        .map(snapshot -> ResponseEntity.ok(ExecutionRunV1Response.from(snapshot)))
+                        .orElseGet(() -> ResponseEntity.notFound().build());
+            }
+            return approvedToolExecutionUseCase.execute(user.getId(), runId, nonce)
                     .map(snapshot -> ResponseEntity.ok(ExecutionRunV1Response.from(snapshot)))
                     .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (ExecutionRunApprovalException exception) {

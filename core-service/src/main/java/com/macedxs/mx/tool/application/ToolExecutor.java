@@ -1,5 +1,7 @@
 package com.macedxs.mx.tool.application;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.macedxs.mx.agent.application.AutonomyLevel;
 import com.macedxs.mx.core.application.run.ApprovalNonce;
 import com.macedxs.mx.core.application.run.ExecutionRun;
@@ -13,6 +15,8 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 public class ToolExecutor {
+
+    private static final ObjectMapper SNAPSHOT_MAPPER = new ObjectMapper();
 
     private final ToolRegistry registry;
     private final PolicyEngine policyEngine;
@@ -106,6 +110,10 @@ public class ToolExecutor {
     }
 
     private String snapshotArguments(Map<String, Object> arguments) {
-        return new TreeMap<>(arguments).toString();
+        try {
+            return SNAPSHOT_MAPPER.writeValueAsString(new TreeMap<>(arguments));
+        } catch (JsonProcessingException exception) {
+            throw new IllegalArgumentException("Tool arguments cannot be snapshotted", exception);
+        }
     }
 }
