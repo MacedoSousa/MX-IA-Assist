@@ -36,7 +36,9 @@ As tools `workspace.initialize_static_project` e `workspace.preview_static` são
 
 Os testes Python exercitam JSON inválido, traversal, host remoto, faixa de portas alterada e o ciclo iniciar/parar. A suíte do Core no Windows também foi executada em diretório temporário por existir uma ACL legada em `D:\MX\core-service\target` que impede a limpeza de alguns arquivos gerados pelo usuário não elevado. A correção não alterou essa ACL, nem fonte ou dados: o launcher shadow já usa uma pasta temporária independente, e os testes usaram a mesma estratégia de saída isolada.
 
-O último cenário pendente dessa capacidade é o smoke autenticado da UI/API: gerar uma run por uma sessão real, aprová-la com nonce e confirmar `COMPLETED` no banco, seguido de preview enfileirado. Ele não foi automatizado com credenciais salvas, para não colocar senha, token ou sessão administrativa em scripts, histórico ou logs.
+O smoke autenticado da UI/API foi concluído em sessão temporária: a `workspace.initialize_static_project` e a `workspace.preview_static` foram propostas pela `DevelopmentSkill`, aprovadas por nonce e concluídas com status `COMPLETED`. O runner serviu o projeto de prova somente em loopback, confirmou HTTP `200` e o encerrou explicitamente. A limpeza posterior confirmou ausência de credencial, projeto de prova, estado associado e listener de preview.
+
+Durante esse teste, a persistência PostgreSQL revelou que a run de aprovação reutilizava a `correlationId` da run de conversa, violando a restrição de unicidade. O `ToolExecutor` foi corrigido para gerar uma correlação independente para cada run de aprovação; a regressão automatizada e o smoke final validaram o comportamento. Credenciais e tokens continuaram apenas em memória e foram removidos ao término.
 
 ## Limites antes do corte final
 

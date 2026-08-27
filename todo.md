@@ -99,6 +99,6 @@
 - [x] Retomar uma tool sensível registrada somente após aprovação com nonce, ownership e expiração válidos, persistindo evidência de conclusão ou falha.
 - [x] Serializar argumentos pendentes de tools em JSON estruturado, impedindo alteração de intenção no fluxo de aprovação.
 - [x] Implementar receita de bootstrap estático e preview em loopback, com fila host-side, portas temporárias reservadas, logs e encerramento explícito, sem shell livre.
-- [ ] Corrigir a colisão entre a run de conversa e a run de aprovação, garantindo `correlationId` exclusivo na persistência PostgreSQL.
-- [ ] Cobrir a persistência de run de aprovação com restrição real de unicidade e repetir o smoke autenticado de criação/preview com chave de idempotência inédita.
+- [x] Corrigir a colisão entre a run de conversa e a run de aprovação, garantindo `correlationId` exclusivo na persistência PostgreSQL.
+- [x] Cobrir a regressão de correlação da run de aprovação e repetir o smoke autenticado de criação/preview com chave de idempotência inédita.
 - [ ] Implementar receitas distintas para validação estática e build de perfis permitidos, com staging, timeout e evidência antes de qualquer publicação.

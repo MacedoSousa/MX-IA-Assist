@@ -36,7 +36,9 @@ The native MX Core started successfully on port `18080` after PostgreSQL restora
 
 Python tests exercise invalid JSON, traversal, a remote host, an altered port range, and the start/stop lifecycle. The Windows Core suite was also run in a temporary directory because a legacy ACL in `D:\MX\core-service\target` prevents a non-elevated user from cleaning some generated files. The fix did not alter that ACL, source, or data: the shadow launcher already uses an independent temporary directory, and the tests used the same isolated-output approach.
 
-The remaining scenario for this capability is an authenticated UI/API smoke: create a run through a real session, approve it with its nonce, confirm `COMPLETED` in storage, then process a queued preview. It was not automated with stored credentials, so no password, token, or administrative session is placed in scripts, command history, or logs.
+The authenticated UI/API smoke completed through a temporary session: `workspace.initialize_static_project` and `workspace.preview_static` were proposed by `DevelopmentSkill`, approved with their nonces, and completed with `COMPLETED` status. The runner served the proof project only on loopback, confirmed HTTP `200`, and stopped it explicitly. Post-run cleanup confirmed the absence of the credential, proof project, associated state, and preview listener.
+
+During the test, PostgreSQL persistence revealed that the approval run reused the conversation run's `correlationId`, violating the uniqueness constraint. `ToolExecutor` was corrected to generate an independent correlation for each approval run; the automated regression and final smoke validated the behavior. Credentials and tokens remained in memory only and were removed after completion.
 
 ## Remaining cutover boundaries
 
