@@ -1,0 +1,38 @@
+# Perfil de execução direta no Windows. Use com SPRING_PROFILES_ACTIVE=dev,local-windows.
+# Segredos devem vir de variáveis do sistema ou de arquivo local ignorado pelo Git.
+logging:
+  file:
+    name: ${MX_LOG_FILE:D:/MX/logs/mx-core.log}
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5432/mx}
+    username: ${SPRING_DATASOURCE_USERNAME:mx}
+    password: ${SPRING_DATASOURCE_PASSWORD:mx_dev_password}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+management:
+  health:
+    redis:
+      enabled: ${MX_REDIS_HEALTH_ENABLED:false}
+
+mx:
+  ollama:
+    url: ${OLLAMA_URL:http://127.0.0.1:11434}
+  media:
+    image-generation:
+      enabled: ${MX_IMAGE_GENERATION_ENABLED:false}
+      url: ${MX_IMAGE_GENERATION_URL:http://127.0.0.1:7860}
+    document-generation:
+      pdf-font-path: ${MX_DOCUMENT_GENERATION_PDF_FONT_PATH:C:/Windows/Fonts/arial.ttf}
+  attachments:
+    root: ${MX_ATTACHMENTS_ROOT:D:/MX/data/attachments}
+  self-analysis:
+    audit-path: ${MX_SELF_ANALYSIS_AUDIT_PATH:D:/MX/data/knowledge/runtime/self-analysis.jsonl}
+  workspace:
+    root: ${MX_WORKSPACE_ROOT:D:/MX/workspaces}
+  evolution:
+    root: ${MX_EVOLUTION_ROOT:D:/MX/data/evolution}

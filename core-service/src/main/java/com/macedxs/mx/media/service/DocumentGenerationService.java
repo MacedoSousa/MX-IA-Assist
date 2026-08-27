@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -50,16 +51,37 @@ public class DocumentGenerationService {
     private static final int MAX_PROMPT_LENGTH = 4_000;
     private static final int MAX_TITLE_LENGTH = 120;
     private static final int MAX_MODEL_OUTPUT_LENGTH = 120_000;
-    private static final Path PDF_FONT_PATH = Path.of("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+    private static final Path LINUX_PDF_FONT_PATH = Path.of("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+    private static final Path WINDOWS_PDF_FONT_PATH = Path.of("C:/Windows/Fonts/arial.ttf");
 
     private final AttachmentService attachmentService;
     private final ModelGateway modelGateway;
     private final boolean enabled;
+    private final Path pdfFontPath;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public DocumentGenerationService(
             AttachmentService attachmentService,
             @Qualifier("mxCoreModelGateway") ModelGateway modelGateway,
-            @Value("${mx.media.document-generation.enabled:true}") boolean enabled
+            @Value("${mx.media.document-generation.enabled:true}") boolean enabled,
+            @Value("${mx.media.document-generation.pdf-font-path:}") String pdfFontPath
+    ) {
+        this(attachmentService, modelGateway, enabled, configuredFontPath(pdfFontPath));
+    }
+
+    DocumentGenerationService(
+            AttachmentService attachmentService,
+            ModelGateway modelGateway,
+            boolean enabled
+    ) {
+        this(attachmentService, modelGateway, enabled, configuredFontPath(""));
+    }
+
+    DocumentGenerationService(
+            AttachmentService attachmentService,
+            ModelGateway modelGateway,
+            boolean enabled,
+            Path pdfFontPath
     ) {
         if (attachmentService == null || modelGateway == null) {
             throw new IllegalArgumentException("Document generation dependencies are required");
@@ -67,6 +89,7 @@ public class DocumentGenerationService {
         this.attachmentService = attachmentService;
         this.modelGateway = modelGateway;
         this.enabled = enabled;
+        this.pdfFontPath = pdfFontPath == null ? configuredFontPath("") : pdfFontPath.toAbsolutePath().normalize();
     }
 
     public AttachmentEntity generate(UUID userId, String prompt, String title, DocumentFormat requestedFormat) {
@@ -154,11 +177,11 @@ public class DocumentGenerationService {
     }
 
     private byte[] renderPdf(String markdown) throws IOException {
-        if (!java.nio.file.Files.isRegularFile(PDF_FONT_PATH)) {
-            throw new IllegalStateException("PDF font is unavailable in the MX Core runtime");
+        if (!Files.isRegularFile(pdfFontPath)) {
+            throw new IllegalStateException("PDF font is unavailable in the MX Core runtime: " + pdfFontPath);
         }
         try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            PDFont font = PDType0Font.load(document, PDF_FONT_PATH.toFile());
+            PDFont font = PDType0Font.load(document, pdfFontPath.toFile());
             List<String> lines = wrap(markdown, font, 10, 500);
             for (int start = 0; start < lines.size(); start += 48) {
                 PDPage page = new PDPage(PDRectangle.A4);
@@ -220,5 +243,12 @@ public class DocumentGenerationService {
         return normalized.length() <= MAX_MODEL_OUTPUT_LENGTH
                 ? normalized
                 : normalized.substring(0, MAX_MODEL_OUTPUT_LENGTH) + "\n\n[Saída truncada pelo limite de segurança do MX.]";
+    }
+
+    private static Path configuredFontPath(String configuredPath) {
+        if (configuredPath != null && !configuredPath.isBlank()) {
+            return Path.of(configuredPath.trim());
+        }
+        return Files.isRegularFile(WINDOWS_PDF_FONT_PATH) ? WINDOWS_PDF_FONT_PATH : LINUX_PDF_FONT_PATH;
     }
 }

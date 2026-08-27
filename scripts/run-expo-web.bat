@@ -14,7 +14,7 @@ if errorlevel 1 (
 
 echo MX Expo Web: iniciando pela LAN...
 echo URL esperada: http://%LAN_IP%:8081
-call npx expo start --web --lan
+call npx expo start --web --lan --port 8081
 set "EXIT_CODE=%errorlevel%"
 echo MX Expo Web encerrado com codigo %EXIT_CODE%.
 exit /b %EXIT_CODE%

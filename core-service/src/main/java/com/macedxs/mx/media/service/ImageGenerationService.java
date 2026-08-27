@@ -23,6 +23,10 @@ import java.util.UUID;
 @Service
 public class ImageGenerationService {
 
+    public record GenerationOptions(String negativePrompt, Long seed, Double cfgScale) {
+        public static final GenerationOptions DEFAULT = new GenerationOptions(null, null, null);
+    }
+
     private final AttachmentService attachmentService;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -77,7 +81,11 @@ public class ImageGenerationService {
     }
 
     public AttachmentEntity generate(UUID userId, String prompt, int width, int height) {
-        byte[] png = render(userId, prompt, width, height);
+        return generate(userId, prompt, width, height, GenerationOptions.DEFAULT);
+    }
+
+    public AttachmentEntity generate(UUID userId, String prompt, int width, int height, GenerationOptions options) {
+        byte[] png = render(userId, prompt, width, height, options);
         return attachmentService.store(
                 userId,
                 "mx-generated-" + UUID.randomUUID() + ".png",
@@ -92,6 +100,10 @@ public class ImageGenerationService {
      * podem usar o resultado sem criar um anexo intermediário exposto ao usuário.
      */
     public byte[] render(UUID userId, String prompt, int width, int height) {
+        return render(userId, prompt, width, height, GenerationOptions.DEFAULT);
+    }
+
+    public byte[] render(UUID userId, String prompt, int width, int height, GenerationOptions options) {
         if (userId == null) {
             throw new IllegalArgumentException("User is required");
         }
@@ -105,8 +117,20 @@ public class ImageGenerationService {
             throw new IllegalStateException("Local image generation is disabled; configure a local Stable Diffusion endpoint first");
         }
 
+        GenerationOptions normalizedOptions = options == null ? GenerationOptions.DEFAULT : options;
+        validateOptions(normalizedOptions);
+
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("prompt", prompt.trim());
+        if (normalizedOptions.negativePrompt() != null && !normalizedOptions.negativePrompt().isBlank()) {
+            payload.put("negative_prompt", normalizedOptions.negativePrompt().trim());
+        }
+        if (normalizedOptions.seed() != null) {
+            payload.put("seed", normalizedOptions.seed());
+        }
+        if (normalizedOptions.cfgScale() != null) {
+            payload.put("cfg_scale", normalizedOptions.cfgScale());
+        }
         payload.put("width", width);
         payload.put("height", height);
         payload.put("steps", steps);
@@ -139,5 +163,17 @@ public class ImageGenerationService {
     private String stripDataUri(String value) {
         int comma = value.indexOf(',');
         return comma >= 0 ? value.substring(comma + 1) : value;
+    }
+
+    private void validateOptions(GenerationOptions options) {
+        if (options.negativePrompt() != null && options.negativePrompt().length() > 2_000) {
+            throw new IllegalArgumentException("Image negative prompt cannot exceed 2000 characters");
+        }
+        if (options.seed() != null && options.seed() < -1) {
+            throw new IllegalArgumentException("Image seed must be -1 or a non-negative number");
+        }
+        if (options.cfgScale() != null && (options.cfgScale() < 1.0 || options.cfgScale() > 30.0)) {
+            throw new IllegalArgumentException("Image guidance scale must be between 1 and 30");
+        }
     }
 }

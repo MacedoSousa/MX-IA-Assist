@@ -67,3 +67,12 @@
 - [x] Corrigir a identificação de intenção e a delegação segura do chat para as capacidades de imagem, vídeo e documento.
 - [x] Validar respostas, políticas e artefatos pelos dois caminhos de interação.
 - [x] Publicar o diagnóstico e a correção sem alterar memórias ou anexos existentes.
+
+## Evolução local, skills e ambiente de desenvolvimento
+
+- [ ] Auditar o runtime atual e definir a migração controlada dos serviços MX para execução direta no Windows, com inicialização automática, logs e reversão documentada.
+- [ ] Projetar um workspace local restrito para arquivos, terminal, execução de builds, prévia de projetos e coleta de evidências, preservando aprovação para operações de escrita ou publicação.
+- [ ] Mapear o conhecimento autorizado disponível e definir skills para criação de jogos, documentos, imagens detalhadas e conversas com melhor planejamento e revisão.
+- [ ] Avaliar integrações locais complementares, incluindo Obsidian, ferramentas de desenvolvimento e automações compatíveis com o hardware atual.
+- [ ] Refatorar o WebUI em módulos e rotas funcionais, tomando o portfólio local como referência visual e conectando as ações à API do MX Core.
+- [ ] Validar a execução direta, segurança do workspace, fluxos de criação e experiência responsiva; publicar o roadmap e as correções aprovadas.

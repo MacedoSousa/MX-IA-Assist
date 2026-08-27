@@ -13,6 +13,8 @@
 !.env.example
 **/env/.env
 **/env/*.local
+scripts/local/*.ps1
+scripts/local/*.env
 
 # Builds Java/Maven
 **/target/

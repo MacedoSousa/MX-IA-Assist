@@ -6,6 +6,8 @@ import com.macedxs.mx.identity.repository.UserRepository;
 import com.macedxs.mx.media.service.ImageGenerationService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -35,7 +37,12 @@ public class ImageGenerationV1Controller {
                 currentUser().getId(),
                 request.prompt(),
                 request.width(),
-                request.height()
+                request.height(),
+                new ImageGenerationService.GenerationOptions(
+                        request.negativePrompt(),
+                        request.seed(),
+                        request.cfgScale()
+                )
         )));
     }
 
@@ -57,7 +64,14 @@ public class ImageGenerationV1Controller {
             int width,
             @Min(value = 64, message = "Image height must be at least 64")
             @Max(value = 2048, message = "Image height cannot exceed 2048")
-            int height
+            int height,
+            @Size(max = 2000, message = "Image negative prompt cannot exceed 2000 characters")
+            String negativePrompt,
+            @Min(value = -1, message = "Image seed must be -1 or a non-negative number")
+            Long seed,
+            @DecimalMin(value = "1.0", message = "Image guidance scale must be at least 1")
+            @DecimalMax(value = "30.0", message = "Image guidance scale cannot exceed 30")
+            Double cfgScale
     ) {
         public ImageGenerationRequest {
             if (width == 0) width = 768;

@@ -206,6 +206,9 @@ export type ImageGenerationInput = {
   prompt: string;
   width?: number;
   height?: number;
+  negativePrompt?: string;
+  seed?: number;
+  cfgScale?: number;
 };
 
 export type VideoGenerationInput = {
@@ -455,6 +458,9 @@ export class MxApiClient {
         prompt: input.prompt,
         width: input.width ?? 768,
         height: input.height ?? 768,
+        negativePrompt: input.negativePrompt,
+        seed: input.seed,
+        cfgScale: input.cfgScale,
       }),
     });
   }

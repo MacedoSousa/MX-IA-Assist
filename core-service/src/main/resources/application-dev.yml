@@ -85,6 +85,8 @@ mx:
       timeout-seconds: ${MX_VIDEO_GENERATION_TIMEOUT_SECONDS:180}
     document-generation:
       enabled: ${MX_DOCUMENT_GENERATION_ENABLED:true}
+      # Empty value auto-selects Arial on Windows or DejaVu Sans on Linux.
+      pdf-font-path: ${MX_DOCUMENT_GENERATION_PDF_FONT_PATH:}
     audio-transcription:
       enabled: ${MX_AUDIO_TRANSCRIPTION_ENABLED:false}
       command: ${MX_AUDIO_TRANSCRIPTION_COMMAND:whisper}
