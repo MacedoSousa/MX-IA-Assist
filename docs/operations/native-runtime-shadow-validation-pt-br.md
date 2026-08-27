@@ -18,6 +18,9 @@ O MX Core nativo iniciou com sucesso na porta `18080` depois da restauração do
 | Vídeo | Geração de clipe MP4 curto com quadro Forge e FFmpeg nativo | Aprovado |
 | Documento | Geração de PDF com fonte Arial no Windows e armazenamento como anexo | Aprovado |
 | Pré-requisitos | Verificador detecta Ollama em LocalAppData, `pg_isready.exe` e PostgreSQL `15432` | Aprovado |
+| Workspace governado | Bootstrap HTML estático e solicitação de preview somente após aprovação; servidor temporário apenas em `127.0.0.1:48000–48099` | Aprovado por testes e prova controlada |
+| Runner de preview | Prova descartável respondeu em `127.0.0.1:48000` e foi encerrada pelo identificador de solicitação | Aprovado |
+| Regressão do Core no Windows | Suíte Maven concluída usando saída temporária limpa, depois de sincronizar fixtures de vídeo e expectativas de auditoria | Aprovado |
 
 ## Implementação registrada
 
@@ -26,6 +29,14 @@ O script `initialize-mx-local-db.ps1` mantém o segredo somente no arquivo local
 Os scripts `start-ollama-local.ps1`, `start-mx-local.ps1`, `run-backend.bat`, `verify-mx-local.ps1`, `local/start-mx-core-shadow.ps1` e `verify-mx-native-shadow.ps1` suportam explicitamente o caminho nativo. O modo padrão local usa `11435`, PostgreSQL `15432` e permite substituições explícitas para reversão. O launcher principal só habilita o endpoint de imagem quando `-WithImageGeneration` é informado.
 
 > Nenhuma senha, token, dump de banco, anexo pessoal ou diretório de dados foi incluído no repositório durante a validação.
+
+### Workspace governado e evidência de preview
+
+As tools `workspace.initialize_static_project` e `workspace.preview_static` são operações `WRITE` registradas, com slug restrito, workspace isolado, ausência de links simbólicos e autonomia máxima `EXECUTE_WITH_APPROVAL`. A `DevelopmentSkill` apenas propõe as tools; o `ToolExecutor` persiste os argumentos em JSON e o caso de uso de aprovação reexecuta somente a tool originalmente registrada. O runner host-side aceita exclusivamente a receita declarativa `static-http`, revalida host loopback e a faixa de portas, e não aceita comandos arbitrários, Docker, npm ou publicação.
+
+Os testes Python exercitam JSON inválido, traversal, host remoto, faixa de portas alterada e o ciclo iniciar/parar. A suíte do Core no Windows também foi executada em diretório temporário por existir uma ACL legada em `D:\MX\core-service\target` que impede a limpeza de alguns arquivos gerados pelo usuário não elevado. A correção não alterou essa ACL, nem fonte ou dados: o launcher shadow já usa uma pasta temporária independente, e os testes usaram a mesma estratégia de saída isolada.
+
+O último cenário pendente dessa capacidade é o smoke autenticado da UI/API: gerar uma run por uma sessão real, aprová-la com nonce e confirmar `COMPLETED` no banco, seguido de preview enfileirado. Ele não foi automatizado com credenciais salvas, para não colocar senha, token ou sessão administrativa em scripts, histórico ou logs.
 
 ## Limites antes do corte final
 

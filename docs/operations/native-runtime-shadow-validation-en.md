@@ -18,6 +18,9 @@ The native MX Core started successfully on port `18080` after PostgreSQL restora
 | Video | Short MP4 clip generated with a Forge keyframe and native FFmpeg | Passed |
 | Document | PDF generation with Windows Arial font and attachment storage | Passed |
 | Prerequisites | Verifier detects Ollama in LocalAppData, `pg_isready.exe`, and PostgreSQL `15432` | Passed |
+| Governed workspace | Static HTML bootstrap and preview request only after approval; temporary server restricted to `127.0.0.1:48000–48099` | Passed through tests and controlled proof |
+| Preview runner | Disposable proof responded on `127.0.0.1:48000` and was stopped by its request identifier | Passed |
+| Windows Core regression | Maven suite completed using a clean temporary output after synchronizing video fixtures and audit expectations | Passed |
 
 ## Recorded implementation
 
@@ -26,6 +29,14 @@ The native MX Core started successfully on port `18080` after PostgreSQL restora
 `start-ollama-local.ps1`, `start-mx-local.ps1`, `run-backend.bat`, `verify-mx-local.ps1`, `local/start-mx-core-shadow.ps1`, and `verify-mx-native-shadow.ps1` now explicitly support the native path. Native defaults use `11435` and PostgreSQL `15432`, while retaining explicit override points for rollback. The main launcher enables image generation only when `-WithImageGeneration` is supplied.
 
 > No password, token, database dump, personal attachment, or persistent data directory was committed during this validation.
+
+### Governed workspace and preview evidence
+
+`workspace.initialize_static_project` and `workspace.preview_static` are registered `WRITE` tools with a restricted slug, isolated workspace, no symbolic links, and a maximum autonomy of `EXECUTE_WITH_APPROVAL`. `DevelopmentSkill` can only propose the tools; `ToolExecutor` persists arguments as JSON and the approval use case re-executes only the originally registered tool. The host-side runner accepts only the declarative `static-http` recipe, revalidates the loopback host and port range, and accepts no arbitrary commands, Docker, npm, or publishing.
+
+Python tests exercise invalid JSON, traversal, a remote host, an altered port range, and the start/stop lifecycle. The Windows Core suite was also run in a temporary directory because a legacy ACL in `D:\MX\core-service\target` prevents a non-elevated user from cleaning some generated files. The fix did not alter that ACL, source, or data: the shadow launcher already uses an independent temporary directory, and the tests used the same isolated-output approach.
+
+The remaining scenario for this capability is an authenticated UI/API smoke: create a run through a real session, approve it with its nonce, confirm `COMPLETED` in storage, then process a queued preview. It was not automated with stored credentials, so no password, token, or administrative session is placed in scripts, command history, or logs.
 
 ## Remaining cutover boundaries
 
