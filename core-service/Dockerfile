@@ -2,6 +2,7 @@ FROM eclipse-temurin:21-jdk AS build
 
 WORKDIR /app
 
+ARG MX_BUILD_REV=dev
 COPY . .
 
 RUN ./mvnw -B -DskipTests -Dmaven.wagon.http.retryHandler.count=5 clean package

@@ -27,7 +27,7 @@ class MediaSkillTest {
         VideoGenerationService videoService = mock(VideoGenerationService.class);
         DocumentGenerationService documentService = mock(DocumentGenerationService.class);
         AttachmentEntity artifact = artifact("mx-generated-image.png", "image/png");
-        when(imageService.generate(any(), eq("Gere uma imagem de um hamster em um carro"), eq(768), eq(768)))
+        when(imageService.generate(any(), eq("Gere uma imagem de um hamster em um carro"), eq(640), eq(640)))
                 .thenReturn(artifact);
 
         UUID userId = UUID.randomUUID();
@@ -39,7 +39,7 @@ class MediaSkillTest {
                 new SkillExecutionContext(userId, correlationId, AutonomyLevel.EXECUTE_AUTONOMOUSLY)
         );
 
-        verify(imageService).generate(userId, "Gere uma imagem de um hamster em um carro", 768, 768);
+        verify(imageService).generate(userId, "Gere uma imagem de um hamster em um carro", 640, 640);
         assertThat(result.skillName()).isEqualTo("media");
         assertThat(result.answer()).contains("mx-generated-image.png");
         assertThat(result.metadata()).containsEntry("mediaType", "IMAGE");

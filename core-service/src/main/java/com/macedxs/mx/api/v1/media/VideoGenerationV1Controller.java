@@ -64,9 +64,9 @@ public class VideoGenerationV1Controller {
             int height
     ) {
         public VideoGenerationRequest {
-            if (durationSeconds == 0) durationSeconds = 6;
-            if (width == 0) width = 1280;
-            if (height == 0) height = 720;
+            if (durationSeconds == 0) durationSeconds = 5;
+            if (width == 0) width = 768;
+            if (height == 0) height = 432;
         }
     }
 }

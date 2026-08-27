@@ -59,8 +59,8 @@ public class MediaSkill implements Skill {
         MediaIntentDetector.MediaType mediaType = MediaIntentDetector.detect(request.prompt())
                 .orElseThrow(() -> new IllegalArgumentException("Media skill requires an explicit generation request"));
         AttachmentEntity artifact = switch (mediaType) {
-            case IMAGE -> imageGenerationService.generate(context.userId(), request.prompt(), 768, 768);
-            case VIDEO -> videoGenerationService.generate(context.userId(), request.prompt(), 6, 1024, 576);
+            case IMAGE -> imageGenerationService.generate(context.userId(), request.prompt(), 640, 640);
+            case VIDEO -> videoGenerationService.generate(context.userId(), request.prompt(), 5, 768, 432);
             case DOCUMENT -> documentGenerationService.get().generate(
                     context.userId(), request.prompt(), "mx-document", documentFormat(request.prompt()));
         };
@@ -72,7 +72,7 @@ public class MediaSkill implements Skill {
         };
         return new SkillResult(
                 definition().name(),
-                "Gerei a " + label + " solicitada. O arquivo **" + artifact.getOriginalFilename()
+                "Gerei a " + label + " solicitada com o perfil visual local. O arquivo **" + artifact.getOriginalFilename()
                         + "** está disponível na sua biblioteca de anexos.",
                 true,
                 context.correlationId(),

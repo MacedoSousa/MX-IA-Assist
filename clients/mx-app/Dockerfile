@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
+ARG MX_BUILD_REV=dev
 COPY . .
 
 ARG EXPO_PUBLIC_MX_API_URL=

@@ -74,8 +74,8 @@ public class ImageGenerationV1Controller {
             Double cfgScale
     ) {
         public ImageGenerationRequest {
-            if (width == 0) width = 768;
-            if (height == 0) height = 768;
+            if (width == 0) width = 640;
+            if (height == 0) height = 640;
         }
     }
 }

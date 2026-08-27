@@ -130,3 +130,10 @@
 - [x] Inventariar todos os marcadores não concluídos em `todo.md` e nos documentos técnicos/operacionais, removendo apenas duplicidades comprovadas.
 - [x] Converter o inventário em uma sequência P0–P2 com evidências, dependências e critérios de aceite para cada incremento reversível.
 - [ ] Executar os incrementos pendentes por prioridade, publicando somente código, testes e documentação sem dados operacionais ou segredos.
+
+### Fidelidade visual e mídia do MX
+
+- [ ] Comparar a interface Expo com o portfólio de referência e registrar os desvios de composição, paleta, tipografia, navegação e responsividade.
+- [ ] Refatorar a interface MX em componentes funcionais com a identidade visual do portfólio, preservando login, conversas, anexos, aprovações e acessibilidade.
+- [ ] Diagnosticar os contratos e logs sanitizados de imagem/vídeo para corrigir imagens sem coerência e vídeos inválidos sem reduzir os limites de segurança.
+- [ ] Validar geração de imagem e vídeo com solicitações determinísticas, registrar evidências sanitizadas e publicar somente o incremento aprovado.

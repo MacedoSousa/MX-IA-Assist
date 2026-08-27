@@ -23,8 +23,16 @@ import java.util.UUID;
 @Service
 public class ImageGenerationService {
 
+    private static final String DEFAULT_NEGATIVE_PROMPT = "blurry, low quality, lowres, out of focus, soft focus, distorted, deformed, duplicate, watermark, signature, text artifacts";
+    private static final double DEFAULT_CFG_SCALE = 7.0;
+    private static final String DEFAULT_SAMPLER = "DPM++ 2M";
+
     public record GenerationOptions(String negativePrompt, Long seed, Double cfgScale) {
-        public static final GenerationOptions DEFAULT = new GenerationOptions(null, null, null);
+        public static final GenerationOptions DEFAULT = new GenerationOptions(
+                DEFAULT_NEGATIVE_PROMPT,
+                null,
+                DEFAULT_CFG_SCALE
+        );
     }
 
     private final AttachmentService attachmentService;
@@ -41,7 +49,7 @@ public class ImageGenerationService {
             @Value("${mx.media.image-generation.enabled:false}") boolean enabled,
             @Value("${mx.media.image-generation.url:http://host.docker.internal:7860}") String baseUrl,
             @Value("${mx.media.image-generation.max-pixels:1048576}") int maxPixels,
-            @Value("${mx.media.image-generation.steps:24}") int steps
+            @Value("${mx.media.image-generation.steps:32}") int steps
     ) {
         this(
                 attachmentService,
@@ -117,7 +125,7 @@ public class ImageGenerationService {
             throw new IllegalStateException("Local image generation is disabled; configure a local Stable Diffusion endpoint first");
         }
 
-        GenerationOptions normalizedOptions = options == null ? GenerationOptions.DEFAULT : options;
+        GenerationOptions normalizedOptions = normalizeOptions(options);
         validateOptions(normalizedOptions);
 
         Map<String, Object> payload = new LinkedHashMap<>();
@@ -134,6 +142,7 @@ public class ImageGenerationService {
         payload.put("width", width);
         payload.put("height", height);
         payload.put("steps", steps);
+        payload.put("sampler_name", DEFAULT_SAMPLER);
         payload.put("batch_size", 1);
         payload.put("send_images", true);
 
@@ -163,6 +172,15 @@ public class ImageGenerationService {
     private String stripDataUri(String value) {
         int comma = value.indexOf(',');
         return comma >= 0 ? value.substring(comma + 1) : value;
+    }
+
+    private GenerationOptions normalizeOptions(GenerationOptions options) {
+        GenerationOptions requested = options == null ? GenerationOptions.DEFAULT : options;
+        String negativePrompt = requested.negativePrompt() == null || requested.negativePrompt().isBlank()
+                ? DEFAULT_NEGATIVE_PROMPT
+                : requested.negativePrompt().trim();
+        double cfgScale = requested.cfgScale() == null ? DEFAULT_CFG_SCALE : requested.cfgScale();
+        return new GenerationOptions(negativePrompt, requested.seed(), cfgScale);
     }
 
     private void validateOptions(GenerationOptions options) {

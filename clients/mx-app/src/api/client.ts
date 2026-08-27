@@ -461,8 +461,8 @@ export class MxApiClient {
       method: "POST",
       body: JSON.stringify({
         prompt: input.prompt,
-        width: input.width ?? 768,
-        height: input.height ?? 768,
+        width: input.width ?? 640,
+        height: input.height ?? 640,
         negativePrompt: input.negativePrompt,
         seed: input.seed,
         cfgScale: input.cfgScale,
@@ -475,9 +475,9 @@ export class MxApiClient {
       method: "POST",
       body: JSON.stringify({
         prompt: input.prompt,
-        durationSeconds: input.durationSeconds ?? 6,
-        width: input.width ?? 1280,
-        height: input.height ?? 720,
+        durationSeconds: input.durationSeconds ?? 5,
+        width: input.width ?? 768,
+        height: input.height ?? 432,
       }),
     });
   }
