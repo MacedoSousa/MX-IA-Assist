@@ -117,6 +117,6 @@
 
 ### Acesso local de protótipo
 
-- [ ] Capturar a causa sanitizada da falha de login relatada pelo usuário e validar o vínculo entre a UI, proxy, Core e banco do caminho Docker.
-- [ ] Comparar as contas e esquemas dos bancos Docker e nativo sem expor e-mails, hashes ou senhas, corrigindo somente a rota/configuração que divergir.
+- [x] Capturar a causa sanitizada da falha de login relatada pelo usuário e validar o vínculo entre a UI, proxy, Core e banco do caminho Docker.
+- [x] Comparar as contas e esquemas dos bancos Docker e nativo sem expor e-mails, hashes ou senhas, corrigindo somente a rota/configuração que divergir.
 - [x] Definir e validar um modo CMD local sem cadastro, limitado a conversa efêmera e sem acesso a memória, anexos, runs, arquivos ou ações sensíveis.
