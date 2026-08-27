@@ -15,6 +15,7 @@ import com.macedxs.mx.agent.skill.general.ExternalSearchClient;
 import com.macedxs.mx.agent.skill.general.GeneralSkill;
 import com.macedxs.mx.agent.skill.general.SelfAnalysisService;
 import com.macedxs.mx.agent.skill.general.StudyKnowledgeContext;
+import com.macedxs.mx.agent.skill.game.GameDevelopmentSkill;
 import com.macedxs.mx.agent.skill.media.MediaSkill;
 import com.macedxs.mx.agent.skill.quality.QualitySkill;
 import com.macedxs.mx.agent.skill.infrastructure.InfrastructureSkill;
@@ -172,6 +173,14 @@ public class ConversationConfiguration {
     }
 
     @Bean
+    GameDevelopmentSkill gameDevelopmentSkill(
+            @Qualifier("ollamaModelGateway") ModelGateway modelGateway,
+            StudyKnowledgeContext studyKnowledgeContext
+    ) {
+        return new GameDevelopmentSkill(modelGateway, studyKnowledgeContext);
+    }
+
+    @Bean
     MediaSkill mediaSkill(
             ImageGenerationService imageGenerationService,
             VideoGenerationService videoGenerationService,
@@ -188,6 +197,7 @@ public class ConversationConfiguration {
             InfrastructureSkill infrastructureSkill,
             DataSkill dataSkill,
             TeachingSkill teachingSkill,
+            GameDevelopmentSkill gameDevelopmentSkill,
             SelfImprovementSkill selfImprovementSkill,
             MediaSkill mediaSkill
     ) {
@@ -198,6 +208,7 @@ public class ConversationConfiguration {
         registry.register(infrastructureSkill);
         registry.register(dataSkill);
         registry.register(teachingSkill);
+        registry.register(gameDevelopmentSkill);
         registry.register(selfImprovementSkill);
         registry.register(mediaSkill);
         return registry;

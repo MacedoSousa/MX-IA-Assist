@@ -71,8 +71,9 @@
 ## Evolução local, skills e ambiente de desenvolvimento
 
 - [ ] Auditar o runtime atual e definir a migração controlada dos serviços MX para execução direta no Windows, com inicialização automática, logs e reversão documentada.
+- [ ] Validar a autenticação das instâncias PostgreSQL nativas nas portas 15432 e 15433, restaurar o dump mais recente em uma instância paralela e reconciliar o perfil local antes do corte.
 - [ ] Projetar um workspace local restrito para arquivos, terminal, execução de builds, prévia de projetos e coleta de evidências, preservando aprovação para operações de escrita ou publicação.
 - [ ] Mapear o conhecimento autorizado disponível e definir skills para criação de jogos, documentos, imagens detalhadas e conversas com melhor planejamento e revisão.
-- [ ] Avaliar integrações locais complementares, incluindo Obsidian, ferramentas de desenvolvimento e automações compatíveis com o hardware atual.
+- [ ] Avaliar integrações locais complementares, incluindo Obsidian, Mintlify, ferramentas de desenvolvimento e automações compatíveis com o hardware atual.
 - [ ] Refatorar o WebUI em módulos e rotas funcionais, tomando o portfólio local como referência visual e conectando as ações à API do MX Core.
 - [ ] Validar a execução direta, segurança do workspace, fluxos de criação e experiência responsiva; publicar o roadmap e as correções aprovadas.

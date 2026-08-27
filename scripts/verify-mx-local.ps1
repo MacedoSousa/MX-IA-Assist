@@ -57,8 +57,8 @@ if (-not (Test-Path 'C:\Windows\Fonts\arial.ttf')) {
 }
 
 if (Get-Command pg_isready -ErrorAction SilentlyContinue) {
-    & pg_isready --host 127.0.0.1 --port 5432 --dbname mx | Out-Host
-    if ($LASTEXITCODE -ne 0) { $failures.Add('PostgreSQL indisponível em 127.0.0.1:5432') }
+    & pg_isready --host 127.0.0.1 --port 15432 --dbname mx | Out-Host
+    if ($LASTEXITCODE -ne 0) { $failures.Add('PostgreSQL indisponível em 127.0.0.1:15432') }
 }
 Test-MxEndpoint -Name 'Ollama' -Uri 'http://127.0.0.1:11434/api/tags' -Required
 Test-MxEndpoint -Name 'Forge' -Uri 'http://127.0.0.1:7860/sdapi/v1/sd-models' -Required:$RequireImageGeneration

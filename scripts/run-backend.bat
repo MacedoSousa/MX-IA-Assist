@@ -12,6 +12,14 @@ set "OLLAMA_URL=http://localhost:11434"
 set "MX_WORKSPACE_ROOT=%SCRIPT_DIR%workspaces"
 set "SPRING_PROFILES_ACTIVE=dev,local-windows"
 set "MX_LOG_FILE=%SCRIPT_DIR%logs\mx-core.log"
+
+set "LOCAL_ENV=%SCRIPT_DIR%scripts\local\mx-local.env"
+if not exist "%LOCAL_ENV%" (
+  echo Arquivo de configuracao local ausente: %LOCAL_ENV%
+  echo Execute scripts\initialize-mx-local-db.ps1 antes de iniciar o MX Core.
+  exit /b 2
+)
+for /f "usebackq tokens=1,* delims==" %%A in ("%LOCAL_ENV%") do set "%%A=%%B"
 set "SECURITY_CORS_ALLOWED_ORIGINS=http://localhost:8081,http://127.0.0.1:8081,http://%LAN_IP%:8081,http://localhost:19006,http://%LAN_IP%:19006"
 set "SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS="
 

@@ -40,6 +40,18 @@ class SkillRegistryRouterTest {
     }
 
     @Test
+    void shouldRouteGameRequestsToGameDevelopmentSkill() {
+        SkillRegistry registry = new SkillRegistry();
+        registry.register(skill("general", Set.of()));
+        registry.register(skill("game-development", Set.of("jogo", "godot", "unity", "gamedev")));
+
+        RouteDecision decision = new SkillRouter(registry).route("Quero criar um jogo de estratégia no Godot");
+
+        assertThat(decision.skill().definition().name()).isEqualTo("game-development");
+        assertThat(decision.requiresClarification()).isFalse();
+    }
+
+    @Test
     void shouldUseGeneralSkillWhenNoSpecialistMatches() {
         SkillRegistry registry = new SkillRegistry();
         registry.register(skill("general", Set.of()));

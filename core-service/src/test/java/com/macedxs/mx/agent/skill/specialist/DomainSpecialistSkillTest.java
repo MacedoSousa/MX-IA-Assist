@@ -4,6 +4,7 @@ import com.macedxs.mx.agent.application.AutonomyLevel;
 import com.macedxs.mx.agent.application.SkillExecutionContext;
 import com.macedxs.mx.agent.application.SkillRequest;
 import com.macedxs.mx.agent.skill.data.DataSkill;
+import com.macedxs.mx.agent.skill.game.GameDevelopmentSkill;
 import com.macedxs.mx.agent.skill.infrastructure.InfrastructureSkill;
 import com.macedxs.mx.agent.skill.teaching.TeachingSkill;
 import com.macedxs.mx.conversation.application.port.ModelGateway;
@@ -44,6 +45,21 @@ class DomainSpecialistSkillTest {
         assertThat(skill.definition().name()).isEqualTo("teaching");
         assertThat(skill.definition().triggers()).contains("ensino", "teaching", "didática");
         assertThat(skill.definition().description()).contains("aprendizagem adaptativa");
+    }
+
+    @Test
+    void shouldExposeGameDevelopmentContractAndAPlanningPrompt() {
+        CapturingGateway gateway = new CapturingGateway();
+        GameDevelopmentSkill skill = new GameDevelopmentSkill(
+                gateway,
+                new com.macedxs.mx.agent.skill.general.StudyKnowledgeContext("Resumo local")
+        );
+
+        skill.execute(request("Crie um jogo de estratégia local no Godot"), context());
+
+        assertThat(skill.definition().name()).isEqualTo("game-development");
+        assertThat(skill.definition().triggers()).contains("jogo", "godot", "gamedev");
+        assertThat(gateway.lastPrompt).contains("vertical slice", "loop principal", "Solicitação do usuário");
     }
 
     private static SkillRequest request(String prompt) {

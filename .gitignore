@@ -15,6 +15,7 @@
 **/env/*.local
 scripts/local/*.ps1
 scripts/local/*.env
+scripts/local/*.bat
 
 # Builds Java/Maven
 **/target/

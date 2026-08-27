@@ -6,7 +6,7 @@ logging:
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5432/mx}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:15432/mx}
     username: ${SPRING_DATASOURCE_USERNAME:mx}
     password: ${SPRING_DATASOURCE_PASSWORD:mx_dev_password}
   data:
