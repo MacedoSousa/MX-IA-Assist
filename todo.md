@@ -114,3 +114,9 @@
 - [x] Mapear a URL de API e o fluxo de autenticação efetivamente usados pela interface em `8082`.
 - [x] Corrigir a divergência entre cliente, Core de referência e Core shadow sem alterar contas, senhas ou dados persistidos.
 - [ ] Validar login e sessão pelo cliente funcional com credencial fornecida localmente, sem registrar segredo em scripts ou logs.
+
+### Acesso local de protótipo
+
+- [ ] Capturar a causa sanitizada da falha de login relatada pelo usuário e validar o vínculo entre a UI, proxy, Core e banco do caminho Docker.
+- [ ] Comparar as contas e esquemas dos bancos Docker e nativo sem expor e-mails, hashes ou senhas, corrigindo somente a rota/configuração que divergir.
+- [x] Definir e validar um modo CMD local sem cadastro, limitado a conversa efêmera e sem acesso a memória, anexos, runs, arquivos ou ações sensíveis.

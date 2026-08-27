@@ -24,7 +24,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Value("${security.cors.allowed-origins:http://localhost:3000,http://localhost:8081,http://localhost:19006}")
+    @Value("${security.cors.allowed-origins:http://localhost:3000,http://localhost:8081,http://localhost:8082,http://127.0.0.1:8082,http://localhost:19006}")
     private String allowedOrigins;
 
     @Value("${security.cors.allowed-origin-patterns:}")
